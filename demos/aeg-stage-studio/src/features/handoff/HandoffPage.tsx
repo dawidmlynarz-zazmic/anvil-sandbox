@@ -13,6 +13,7 @@ import { Timeline, TimelineItem } from '@anvil/components/anvil/timeline'
 import { StepFooter } from '~/components/StepFooter'
 import { GUARDRAIL } from '~/mocks/copy'
 import { clipKey, useProject } from '~/state/ProjectContext'
+import { StillImage } from '~/components/StillImage'
 
 /** The end of the loop: everything production needs, once the artist has approved. */
 export function HandoffPage() {
@@ -78,7 +79,7 @@ export function HandoffPage() {
               <ul className="grid grid-cols-2 gap-4">
                 {stills.map((s) => (
                   <li key={s.id} className="flex flex-col gap-2">
-                    <img src={s.image} alt={`Approved concept ${s.title}`} className="aspect-video w-full rounded-lg object-cover" />
+                    <StillImage still={s} alt={`Approved concept ${s.title}`} className="aspect-video w-full rounded-lg object-cover" />
                     <span className="type-text-sm-semibold">{s.title}</span>
                   </li>
                 ))}

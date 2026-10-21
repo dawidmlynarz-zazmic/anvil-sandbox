@@ -7,3 +7,6 @@ storybook-static/
 .claude/launch.json
 .pnpm-store/
 .npmrc
+.env
+.env.*
+!.env.example

@@ -1,5 +1,5 @@
 // ANVIL-CANDIDATE: see docs/anvil-upgrade-candidates.md#clip-player
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@anvil/components/ui/button'
 import { Icon, PauseIcon, PlayIcon, RotateCcwIcon } from '@anvil/components/ui/icon'
 import { Slider } from '@anvil/components/ui/slider'
@@ -18,12 +18,16 @@ export interface ClipPlayerProps extends Omit<React.ComponentProps<'div'>, 'chil
   label: string
   /** Shown over the clip while it is being edited or rendered. */
   busy?: boolean
+  /** Draws the frame at time `t` live (e.g. a 3D scene). Without it, the player animates the poster. */
+  renderFrame?: (t: number, variant: 'main' | 'compare') => ReactNode
+  /** Names the two halves when comparing, e.g. ["Golden hour", "Night"]. */
+  compareLabels?: [string, string]
 }
 
 const clock = (s: number) => `0:${String(Math.floor(s)).padStart(2, '0')}`
 
 /** A video preview with play, a scrubber and a time readout. Today it animates a still; swap the poster for a <video> later. */
-export function ClipPlayer({ poster, comparePoster, compare = false, seconds = 8, label, busy, className, ...props }: ClipPlayerProps) {
+export function ClipPlayer({ poster, comparePoster, compare = false, seconds = 8, label, busy, renderFrame, compareLabels, className, ...props }: ClipPlayerProps) {
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(false)
   const last = useRef(0)
@@ -56,7 +60,7 @@ export function ClipPlayer({ poster, comparePoster, compare = false, seconds = 8
   }, [poster])
 
   const ended = time >= seconds
-  const zoom = 1 + (time / seconds) * 0.08
+  const zoom = renderFrame ? 1 : 1 + (time / seconds) * 0.08
 
   return (
     <div className={cn('flex flex-col gap-3', className)} {...props}>
@@ -67,15 +71,23 @@ export function ClipPlayer({ poster, comparePoster, compare = false, seconds = 8
           className="absolute inset-0 size-full object-cover"
           style={{ transform: `scale(${zoom})` }}
         />
-        {compare && comparePoster && (
+        {renderFrame && <div className="absolute inset-0">{renderFrame(time, 'main')}</div>}
+        {compare && (comparePoster || renderFrame) && (
           <>
-            <img
-              src={comparePoster}
-              alt=""
-              className="absolute inset-0 size-full object-cover"
-              style={{ transform: `scale(${zoom})`, clipPath: 'inset(0 0 0 50%)' }}
-            />
+            <div className="absolute inset-0" style={{ clipPath: 'inset(0 0 0 50%)' }}>
+              {renderFrame ? (
+                renderFrame(time, 'compare')
+              ) : (
+                <img src={comparePoster} alt="" className="size-full object-cover" style={{ transform: `scale(${zoom})` }} />
+              )}
+            </div>
             <span aria-hidden className="bg-background absolute inset-y-0 start-1/2 w-0.5" />
+            {compareLabels && (
+              <>
+                <span className="bg-background/80 absolute start-3 top-3 rounded-sm px-1.5 type-text-2xs-medium">{compareLabels[0]}</span>
+                <span className="bg-background/80 absolute end-3 top-3 rounded-sm px-1.5 type-text-2xs-medium">{compareLabels[1]}</span>
+              </>
+            )}
           </>
         )}
         {busy && (

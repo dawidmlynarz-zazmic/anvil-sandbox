@@ -17,7 +17,7 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 - Type: new component
 - Needed for: `/motion` (and later `/review` motion tab)
 - Closest Anvil option checked: `agent/widget-media` (audio player: play, waveform, duration) and `ui/slider` — no video preview with a scrubber and a before/after comparison
-- Proposed API: `poster`, `comparePoster`, `compare`, `seconds`, `label`, `busy`
+- Proposed API: `poster`, `comparePoster`, `compare`, `seconds`, `label`, `busy`, `renderFrame(t, variant)` (draws the frame live, e.g. a 3D scene), `compareLabels`
 - Built from: `ui/button`, `ui/slider`, tokens only
 - States covered: default, compare, busy
 - Accessibility notes: frame is `role="img"` with `label`; Play/Pause/Replay button changes its name; scrubber has `aria-label`; time is an `<output>`

@@ -10,13 +10,22 @@ import { ArrowRightIcon, CheckIcon, ClipboardCheckIcon, Icon, PackageIcon, UserI
 import { Spinner } from '@anvil/components/ui/spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@anvil/components/ui/tabs'
 import { ClipPlayer } from '~/components/local/ClipPlayer/ClipPlayer'
-import { ClipTile } from '~/components/local/ClipTile/ClipTile'
+import { MomentTile } from '~/components/MomentTile'
 import { PinnedImage } from '~/components/local/PinnedImage/PinnedImage'
 import { StepFooter } from '~/components/StepFooter'
+import { clipFrame } from '~/components/clipFrame'
+import { INDOOR } from '~/mocks/venues'
 import { SYNTHID_SHORT } from '~/mocks/copy'
 import { clipKey, useProject } from '~/state/ProjectContext'
-import type { ReviewComment } from '~/state/types'
+import type { ReviewComment, Still } from '~/state/types'
 import { ApproveButton, RequestChangesDialog } from './ReviewDialogs'
+import { StillImage, useStillUrl } from '~/components/StillImage'
+
+/** The concept's 3D render with the artist's numbered pins on it. */
+function PinnedStill({ still, ...props }: Omit<React.ComponentProps<typeof PinnedImage>, 'src'> & { still: Still }) {
+  const src = useStillUrl(still)
+  return <PinnedImage src={src ?? ''} {...props} />
+}
 
 export function ReviewPage() {
   const navigate = useNavigate()
@@ -108,7 +117,7 @@ export function ReviewPage() {
                     const s = allStills.find((x) => x.id === id)
                     return s ? (
                       <li key={id}>
-                        <img src={s.image} alt={s.title} className="h-16 w-28 rounded-md object-cover" />
+                        <StillImage still={s} alt={s.title} className="h-16 w-28 rounded-md object-cover" />
                       </li>
                     ) : null
                   })}
@@ -171,8 +180,8 @@ export function ReviewPage() {
                   <TabsTrigger value="compare">Compare previous version</TabsTrigger>
                 </TabsList>
                 <TabsContent value="concepts" className="pt-4">
-                  <PinnedImage
-                    src={still.image}
+                  <PinnedStill
+                    still={still}
                     alt={`Stage concept ${still.title}`}
                     pins={pins}
                     activeId={activeId}
@@ -182,16 +191,24 @@ export function ReviewPage() {
                 </TabsContent>
                 <TabsContent value="motion" className="flex flex-col gap-4 pt-4">
                   {slot?.status === 'ready' ? (
-                    <ClipPlayer poster={slot.clip.poster} label={`Song ${song}, clip version ${slot.clip.version}`} />
+                    <ClipPlayer
+                      poster={slot.clip.poster}
+                      renderFrame={clipFrame(still, slot.clip, Math.max(0, brief.moments.findIndex((m) => m.number === song)), brief.moments.length, INDOOR.has(brief.venueId))?.render}
+                      label={`Song ${song}, clip version ${slot.clip.version}`}
+                    />
                   ) : (
                     <p className="text-muted-foreground type-text-sm-normal">This clip wasn’t ready when you sent, so the artist hasn’t seen it.</p>
                   )}
                   <ul className="grid grid-cols-4 gap-3">
-                    {brief.moments.map((m) => {
+                    {brief.moments.map((m, i) => {
                       const c = clips[clipKey(still.id, m.number)]
                       return (
                         <li key={m.number} className="min-w-0">
-                          <ClipTile
+                          <MomentTile
+                            still={still}
+                            index={i}
+                            total={brief.moments.length}
+                            indoor={INDOOR.has(brief.venueId)}
                             song={m.number}
                             title={m.title}
                             status={c ? (c.status === 'ready' ? 'ready' : 'generating') : 'not-started'}
@@ -208,11 +225,11 @@ export function ReviewPage() {
                   {previous ? (
                     <div className="grid grid-cols-2 gap-4">
                       <figure className="flex flex-col gap-2">
-                        <img src={previous.image} alt={previous.title} className="aspect-video w-full rounded-xl object-cover" />
+                        <StillImage still={previous} alt={previous.title} className="aspect-video w-full rounded-xl object-cover" />
                         <figcaption className="text-muted-foreground type-text-xs-normal">{previous.title} · round {previous.round}</figcaption>
                       </figure>
                       <figure className="flex flex-col gap-2">
-                        <img src={still.image} alt={still.title} className="aspect-video w-full rounded-xl object-cover" />
+                        <StillImage still={still} alt={still.title} className="aspect-video w-full rounded-xl object-cover" />
                         <figcaption className="text-muted-foreground type-text-xs-normal">{still.title} · round {still.round} · sent</figcaption>
                       </figure>
                     </div>

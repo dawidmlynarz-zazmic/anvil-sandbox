@@ -27,6 +27,14 @@ Consumed read-only from the sibling clone `~/anvil-ui` (override the path with `
   project stands, the next step and the history.
 - State is kept in `sessionStorage`: a reload keeps the demo where it was; a new tab starts fresh.
 
+## Concept images
+
+Concepts are rendered in the browser as real 3D scenes (three.js via React Three Fiber, in `src/scene/`): the stage,
+its concept (arch, monolith, ribbons, halo), sky, haze, light beams and a crowd, lit for the chosen time of day and
+seen from the chosen camera view. Stills are rendered once off-screen and cached for the session; Motion renders the
+scene live, with the cue's camera move. No API key or network is needed. Without WebGL the app falls back to flat 2D
+art. `/lab` (development only) shows the scenes side by side for tuning.
+
 ## Demo script
 
 1. **New project**: click *New project* and answer the agent with the suggestion chips. Point out the brief filling in

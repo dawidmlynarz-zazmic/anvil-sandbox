@@ -5,6 +5,7 @@ import { Checkbox } from '@anvil/components/ui/checkbox'
 import { Icon, MessageSquareIcon } from '@anvil/components/ui/icon'
 import type { Still, StillComment } from '~/state/types'
 import { ConceptComment } from './ConceptComment'
+import { StillImage } from '~/components/StillImage'
 
 interface ConceptCardProps {
   still: Still
@@ -20,36 +21,37 @@ interface ConceptCardProps {
   onRemoveComment: () => void
 }
 
-/** One generated concept: Anvil's Image Generation Card with a select checkbox on the image and a note beneath. */
+/** One generated concept: Anvil's Image Generation Card with a select checkbox in its title row and a note beneath. */
 export function ConceptCard({ still, selected, comment, applied, nextRound, editable, onSelect, onSaveComment, onRemoveComment }: ConceptCardProps) {
   const [composing, setComposing] = useState(false)
   return (
     <div className="flex flex-col gap-2">
-      <ImageGenerationCard
-        status="ready"
-        prompt={still.title}
-        className={selected ? 'max-w-none ring-2 ring-border-action' : 'max-w-none'}
-        actions={
-          <MessageAction
-            label={comment ? 'Edit note' : 'Add a note'}
-            pressed={composing}
-            disabled={!editable || applied}
-            onClick={() => setComposing((c) => !c)}
-          >
-            <Icon icon={MessageSquareIcon} />
-          </MessageAction>
-        }
-      >
-        <div className="relative size-full">
-          <img src={still.image} alt={`Stage concept ${still.title}`} className="size-full object-cover" />
-          <Checkbox
-            checked={selected}
-            onCheckedChange={onSelect}
-            aria-label={`Select ${still.title}`}
-            className="absolute end-3 top-3 shadow-sm"
-          />
-        </div>
-      </ImageGenerationCard>
+      <div className="relative">
+        <ImageGenerationCard
+          status="ready"
+          prompt={still.title}
+          className={selected ? 'max-w-none ring-2 ring-border-action' : 'max-w-none'}
+          actions={
+            <MessageAction
+              label={comment ? 'Edit note' : 'Add a note'}
+              pressed={composing}
+              disabled={!editable || applied}
+              onClick={() => setComposing((c) => !c)}
+            >
+              <Icon icon={MessageSquareIcon} />
+            </MessageAction>
+          }
+        >
+          <StillImage still={still} />
+        </ImageGenerationCard>
+        {/* At the end of the card's title row. The card has no slot there, so it sits over the row. */}
+        <Checkbox
+          checked={selected}
+          onCheckedChange={onSelect}
+          aria-label={`Select ${still.title}`}
+          className="absolute end-4 top-2.5"
+        />
+      </div>
       <ConceptComment
         title={still.title}
         comment={comment}

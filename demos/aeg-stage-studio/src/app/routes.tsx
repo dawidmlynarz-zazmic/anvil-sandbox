@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, useParams, type RouteObject } from 'react-router-dom'
 import { BriefPage } from '~/features/brief/BriefPage'
 import { HandoffPage } from '~/features/handoff/HandoffPage'
@@ -8,6 +9,9 @@ import { currentStep } from '~/state/project'
 import { ProjectScope, useProject, type Step } from '~/state/ProjectContext'
 import { useStore } from '~/state/store'
 import { AppShell } from './AppShell'
+
+// Dev-only 3D lab, loaded on demand so three.js stays out of the main bundle.
+const LabPage = lazy(() => import('~/scene/LabPage').then((m) => ({ default: m.LabPage })))
 
 /** The core loop. The brief comes before it, once per project. */
 export const LOOP: { step: Step; label: string }[] = [
@@ -54,5 +58,6 @@ export const routes: RouteObject[] = [
       { path: 'handoff', element: <HandoffPage /> },
     ],
   },
+  ...(import.meta.env.DEV ? [{ path: '/lab', element: <Suspense fallback={null}><LabPage /></Suspense> }] : []),
   { path: '*', element: <Navigate to="/" replace /> },
 ]

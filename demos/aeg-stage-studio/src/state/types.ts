@@ -44,7 +44,19 @@ export interface Still {
   /** Concept letter, A–D. */
   concept: string
   title: string
+  /** 2D fallback art, shown until (or instead of) the 3D render. */
   image: string
+  /** What the 3D renderer draws for this concept. Missing on concepts saved before the 3D renderer existed. */
+  spec?: StillSpec
+}
+
+/** The 3D stage a concept shows. Mirrors the renderer's StageSpec without importing three.js into state. */
+export interface StillSpec {
+  concept: 'arch' | 'monolith' | 'ribbons' | 'halo'
+  timeOfDay: TimeOfDay
+  crowd: Crowd
+  view: StageView
+  seed: number
 }
 
 export interface Round {

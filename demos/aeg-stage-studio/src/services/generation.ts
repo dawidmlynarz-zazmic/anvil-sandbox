@@ -52,6 +52,8 @@ const clipFor = (stillId: string, momentNumber: number, version = 1, edits: stri
 /** A round's four concepts, synchronously. `project` keeps ids and images distinct between projects. */
 export function stillsFor(req: StillsRequest): Still[] {
   const prefix = req.project ? `${req.project}.` : ''
+  // Rounds and projects vary the render slightly (proportions, crowd), so round 2's B is a new take on B.
+  const seed = [...`${prefix}${req.round}`].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % 997
   return CONCEPTS.map((concept) => ({
     id: `${prefix}r${req.round}-${concept.letter}`,
     round: req.round,
@@ -63,6 +65,7 @@ export function stillsFor(req: StillsRequest): Still[] {
       req.timeOfDay,
       req.crowd === 'full' ? 1.4 : 0.7,
     ),
+    spec: { concept: concept.shape, timeOfDay: req.timeOfDay, crowd: req.crowd, view: req.view, seed },
   }))
 }
 

@@ -11,8 +11,10 @@ import { Switch } from '@anvil/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@anvil/components/ui/tabs'
 import { KeyValueList, KeyValueRow } from '@anvil/components/anvil/key-value-row'
 import { ClipPlayer } from '~/components/local/ClipPlayer/ClipPlayer'
-import { ClipTile } from '~/components/local/ClipTile/ClipTile'
+import { MomentTile } from '~/components/MomentTile'
 import { StepFooter } from '~/components/StepFooter'
+import { clipFrame } from '~/components/clipFrame'
+import { INDOOR } from '~/mocks/venues'
 import { clipKey, useProject } from '~/state/ProjectContext'
 
 export function MotionPage() {
@@ -30,6 +32,7 @@ export function MotionPage() {
   const song = moments.find((m) => m.number === selected) ?? moments[0]
   const slot = concept && song ? clips[clipKey(concept, song.number)] : undefined
   const clip = slot?.status === 'ready' ? slot.clip : slot?.previous
+  const frame = clipFrame(still, clip, Math.max(0, moments.findIndex((m) => m.number === song?.number)), moments.length, INDOOR.has(brief.venueId))
   const readyCount = motionStills.reduce(
     (n, id) => n + moments.filter((m) => clips[clipKey(id, m.number)]?.status === 'ready').length,
     0,
@@ -118,17 +121,21 @@ export function MotionPage() {
                   Song {song.number} · {song.title}
                   {clip && clip.version > 1 && <span className="text-muted-foreground type-text-sm-normal"> · clip v{clip.version}</span>}
                 </h2>
-                <div className="flex items-center gap-2">
-                  <Switch id="compare-night" checked={compareNight} onCheckedChange={setCompareNight} />
-                  <Label htmlFor="compare-night">Compare night</Label>
-                </div>
+                {(!frame || frame.other) && (
+                  <div className="flex items-center gap-2">
+                    <Switch id="compare-night" checked={compareNight} onCheckedChange={setCompareNight} />
+                    <Label htmlFor="compare-night">Compare {frame?.other ? frame.other.toLowerCase() : 'night'}</Label>
+                  </div>
+                )}
               </div>
               {clip ? (
                 <ClipPlayer
                   poster={clip.poster}
                   comparePoster={clip.posterNight}
-                  compare={compareNight}
+                  compare={compareNight && (!frame || !!frame.other)}
                   busy={slot?.status === 'generating'}
+                  renderFrame={frame?.render}
+                  compareLabels={frame?.labels}
                   label={`Song ${song.number} · ${song.title}, clip version ${clip.version}`}
                 />
               ) : (
@@ -146,7 +153,11 @@ export function MotionPage() {
                   </div>
                 </div>
               )}
-              {compareNight && <p className="text-muted-foreground type-text-xs-normal">Left: golden hour. Right: the same shot at night.</p>}
+              {compareNight && (!frame || frame.other) && (
+                <p className="text-muted-foreground type-text-xs-normal">
+                  Left: {frame ? frame.labels[0].toLowerCase() : 'golden hour'}. Right: the same shot at {frame ? frame.labels[1].toLowerCase() : 'night'}.
+                </p>
+              )}
             </div>
 
             <Card>
@@ -198,12 +209,16 @@ export function MotionPage() {
               Key moments
             </h2>
             <ul className="grid grid-cols-4 gap-3">
-              {moments.map((m) => {
+              {moments.map((m, i) => {
                 const c = clips[clipKey(still.id, m.number)]
                 const poster = c?.status === 'ready' ? c.clip.poster : c?.status === 'generating' ? c.previous?.poster : undefined
                 return (
                   <li key={m.number} className="min-w-0">
-                    <ClipTile
+                    <MomentTile
+                      still={still}
+                      index={i}
+                      total={moments.length}
+                      indoor={INDOOR.has(brief.venueId)}
                       song={m.number}
                       title={m.title}
                       status={c ? (c.status === 'ready' ? 'ready' : 'generating') : 'not-started'}
