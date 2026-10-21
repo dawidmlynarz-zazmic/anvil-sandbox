@@ -12,8 +12,9 @@ import { Tabs, TabsList, TabsTrigger } from '@anvil/components/ui/tabs'
 import { KeyValueList, KeyValueRow } from '@anvil/components/anvil/key-value-row'
 import { ClipPlayer } from '~/components/local/ClipPlayer/ClipPlayer'
 import { MomentTile } from '~/components/MomentTile'
+import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
-import { clipFrame } from '~/components/clipFrame'
+import { clipFrame, useMomentThumb } from '~/components/clipFrame'
 import { IllustrativeNote } from '~/components/IllustrativeNote'
 import { INDOOR } from '~/mocks/venues'
 import { clipKey, useProject } from '~/state/ProjectContext'
@@ -33,7 +34,10 @@ export function MotionPage() {
   const song = moments.find((m) => m.number === selected) ?? moments[0]
   const slot = concept && song ? clips[clipKey(concept, song.number)] : undefined
   const clip = slot?.status === 'ready' ? slot.clip : slot?.previous
-  const frame = clipFrame(still, clip, Math.max(0, moments.findIndex((m) => m.number === song?.number)), moments.length, INDOOR.has(brief.venueId))
+  const songIndex = Math.max(0, moments.findIndex((m) => m.number === song?.number))
+  const frame = clipFrame(still, clip, songIndex, moments.length, INDOOR.has(brief.venueId))
+  // Under the live 3D frame (while it loads), show the same stage's 3D still, never the old 2D poster.
+  const playerPoster = useMomentThumb(still, songIndex, moments.length, INDOOR.has(brief.venueId), clip?.poster)
   const readyCount = motionStills.reduce(
     (n, id) => n + moments.filter((m) => clips[clipKey(id, m.number)]?.status === 'ready').length,
     0,
@@ -88,7 +92,7 @@ export function MotionPage() {
   return (
     <section aria-labelledby="motion-title" className="flex h-full flex-col">
       <div className="step-scroll relative min-h-0 flex-1 overflow-y-auto p-6">
-        <div className="mx-auto flex max-w-4xl flex-col gap-6">
+        <div className={`${STEP_CONTENT} gap-6`}>
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <h1 id="motion-title" tabIndex={-1} className="type-heading-2xl outline-none">
@@ -116,7 +120,7 @@ export function MotionPage() {
             <IllustrativeNote kind="motion" />
           </div>
 
-          <div className="grid grid-cols-[minmax(0,1fr)_18rem] items-start gap-6">
+          <div className="flex flex-col gap-6">
             <div className="flex min-w-0 flex-col gap-3">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="type-text-base-semibold">
@@ -132,7 +136,7 @@ export function MotionPage() {
               </div>
               {clip ? (
                 <ClipPlayer
-                  poster={clip.poster}
+                  poster={playerPoster}
                   comparePoster={clip.posterNight}
                   compare={compareNight && (!frame || !!frame.other)}
                   busy={slot?.status === 'generating'}
@@ -167,7 +171,7 @@ export function MotionPage() {
                 <CardTitle>Cues for song {song.number}</CardTitle>
                 <CardDescription>{song.intent}</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col gap-4">
+              <CardContent className="grid grid-cols-1 items-start gap-6 @xl:grid-cols-2">
                 {clip ? (
                   <KeyValueList>
                     <KeyValueRow layout="aligned" label="Lighting">{clip.cue.lighting}</KeyValueRow>
@@ -210,7 +214,7 @@ export function MotionPage() {
             <h2 id="moments-title" className="type-text-base-semibold">
               Key moments
             </h2>
-            <ul className="grid grid-cols-4 gap-3">
+            <ul className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
               {moments.map((m, i) => {
                 const c = clips[clipKey(still.id, m.number)]
                 const poster = c?.status === 'ready' ? c.clip.poster : c?.status === 'generating' ? c.previous?.poster : undefined

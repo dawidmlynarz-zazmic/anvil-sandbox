@@ -223,7 +223,7 @@ export function SetlistCard() {
         <ul className="grid grid-cols-2 gap-3">
           {brief.moments.map((m) => (
             <li key={m.number}>
-              <Card size="sm" className="h-full">
+              <Card size="sm" className="h-full min-w-0">
                 <CardContent className="flex flex-col gap-2">
                   <div className="flex items-center justify-between gap-2">
                     <Badge tone="agent" variant="subtle" size="sm">

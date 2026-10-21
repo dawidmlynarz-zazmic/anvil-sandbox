@@ -21,10 +21,13 @@ export function ClipTile({ song, title, status, poster, selected, className, ...
     <Card asChild size="sm" className={cn('w-full min-w-0 gap-2 p-2 text-start', selected && 'ring-2 ring-border-action', className)}>
       <button type="button" aria-pressed={selected} {...props}>
         <span className="bg-muted relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md">
-          {poster && status !== 'not-started' ? (
+          {status === 'not-started' ? (
+            <Icon icon={ClapperboardIcon} className="text-muted-foreground" />
+          ) : poster ? (
             <img src={poster} alt="" className="size-full object-cover" />
           ) : (
-            <Icon icon={ClapperboardIcon} className="text-muted-foreground" />
+            // Thumbnail still rendering: a quiet placeholder rather than stand-in art.
+            <span aria-hidden className="size-full animate-pulse" />
           )}
         </span>
         <span className="flex flex-col gap-1">

@@ -18,9 +18,9 @@ export function ConceptTile({ still, readOnly }: { still: Still; readOnly: boole
       rationale={RATIONALE[still.concept]}
       version={still.version ?? 1}
       change={still.change}
-      mediaSrc={src ?? ''}
+      mediaSrc={src}
       mediaAlt={`Stage concept ${still.title}`}
-      previous={previous ? { version: previous.version, src: previousSrc ?? previous.image, changes: previous.annotations } : undefined}
+      previous={previous ? { version: previous.version, src: previousSrc, changes: previous.annotations } : undefined}
       checks={briefCheck(still, p.brief)}
       selected={p.selected.includes(still.id)}
       onSelectedChange={() => p.toggleSelect(still.id)}

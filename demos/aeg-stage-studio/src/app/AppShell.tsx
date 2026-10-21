@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Icon, MessageSquareIcon, MoonIcon, PanelRightIcon, SunIcon } from '@anvil/components/ui/icon'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@anvil/components/ui/resizable'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@anvil/components/ui/sidebar'
 import { ChatPanel } from '~/features/chat/ChatPanel'
 import { useProject } from '~/state/ProjectContext'
@@ -11,6 +12,19 @@ import { InviteDialog } from './InviteDialog'
 import { LoopRail } from './LoopRail'
 import { NextHint } from './NextHint'
 import { ProjectsSidebar } from './ProjectsSidebar'
+
+const CHAT_WIDTH_KEY = 'stage-studio:chat-width'
+const CHAT_WIDTH = { default: 352, min: 300, max: 560 }
+
+/** The agent panel's width in pixels, as the user last dragged it (the default without storage). */
+const readChatWidth = () => {
+  try {
+    const saved = Number(localStorage.getItem(CHAT_WIDTH_KEY))
+    return saved >= CHAT_WIDTH.min && saved <= CHAT_WIDTH.max ? saved : CHAT_WIDTH.default
+  } catch {
+    return CHAT_WIDTH.default
+  }
+}
 
 const STATUS_BADGE = {
   'awaiting-artist': { tone: 'warning', text: 'Waiting for the artist' },
@@ -26,9 +40,23 @@ export function AppShell() {
   const { meta, status, phase } = useProject()
   const { pathname } = useLocation()
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
-  const [chatOpen, setChatOpen] = useState(true)
+  // Narrow windows start with the work only; the agent and the progress rail open from the header.
+  const [chatOpen, setChatOpen] = useState(() => window.innerWidth >= 1024)
   const [railOpen, setRailOpen] = useState(() => window.innerWidth >= 1280)
   const first = useRef(true)
+  const [chatWidth, setChatWidth] = useState(readChatWidth)
+  const chatPixels = useRef(chatWidth)
+  // Save the width only when the user drags it, in pixels, so it's the same on any window size.
+  const saveChatWidth = (_: unknown, meta: { isUserInteraction: boolean }) => {
+    if (!meta.isUserInteraction) return
+    const width = Math.round(chatPixels.current)
+    setChatWidth(width)
+    try {
+      localStorage.setItem(CHAT_WIDTH_KEY, String(width))
+    } catch {
+      // Not saved; the default width comes back next time.
+    }
+  }
 
   // Move focus to the new screen's heading, so keyboard and screen-reader users land on what they opened.
   useEffect(() => {
@@ -52,7 +80,7 @@ export function AppShell() {
   const badge = phase === 'setup' ? { tone: 'agent' as const, text: 'Setting up' } : status === 'draft' ? null : STATUS_BADGE[status]
 
   return (
-    <SidebarProvider defaultOpen={false} className="h-svh min-h-0 min-w-5xl">
+    <SidebarProvider defaultOpen={false} className="h-svh min-h-0 min-w-3xl">
       <ProjectsSidebar />
       <SidebarInset className="h-svh min-h-0 min-w-0">
         <header className="border-border flex h-14 shrink-0 items-center gap-2 border-b px-3">
@@ -102,11 +130,30 @@ export function AppShell() {
           </Button>
         </header>
         <div className="flex min-h-0 flex-1">
-          {chatOpen && <ChatPanel />}
-          <main className="relative min-w-0 flex-1 overflow-hidden">
-            <Outlet />
-            <NextHint />
-          </main>
+          {/* Drag the line between the agent and the work to give either more room; the width is remembered. */}
+          <ResizablePanelGroup orientation="horizontal" className="min-w-0 flex-1" onLayoutChanged={saveChatWidth}>
+            {chatOpen && (
+              <>
+                <ResizablePanel
+                  id="chat"
+                  defaultSize={chatWidth}
+                  minSize={CHAT_WIDTH.min}
+                  maxSize={CHAT_WIDTH.max}
+                  groupResizeBehavior="preserve-pixel-size"
+                  onResize={(size) => (chatPixels.current = size.inPixels)}
+                >
+                  <ChatPanel />
+                </ResizablePanel>
+                <ResizableHandle withHandle aria-label="Resize the agent panel" />
+              </>
+            )}
+            <ResizablePanel id="work" minSize={360}>
+              <main className="relative h-full min-w-0 overflow-hidden">
+                <Outlet />
+                <NextHint />
+              </main>
+            </ResizablePanel>
+          </ResizablePanelGroup>
           {railOpen && <LoopRail />}
         </div>
       </SidebarInset>

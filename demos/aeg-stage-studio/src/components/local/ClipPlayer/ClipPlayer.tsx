@@ -7,8 +7,8 @@ import { cn } from '@anvil/lib/utils'
 import { SYNTHID_SHORT } from '~/mocks/copy'
 
 export interface ClipPlayerProps extends Omit<React.ComponentProps<'div'>, 'children'> {
-  /** The still shown for the clip (placeholder for a real video source). */
-  poster: string
+  /** The still shown for the clip (placeholder for a real video source). Undefined while it renders: a placeholder shows. */
+  poster?: string
   /** A second still shown on the right half when `compare` is on. */
   comparePoster?: string
   compare?: boolean
@@ -53,24 +53,26 @@ export function ClipPlayer({ poster, comparePoster, compare = false, seconds = 8
     return () => cancelAnimationFrame(frame)
   }, [playing, seconds])
 
-  // A new clip (or a new edit of it) starts from the beginning.
+  // A new clip (or a new edit of it) starts from the beginning. The label names the clip and its version.
   useEffect(() => {
     setTime(0)
     setPlaying(false)
-  }, [poster])
+  }, [label])
 
   const ended = time >= seconds
   const zoom = renderFrame ? 1 : 1 + (time / seconds) * 0.08
 
   return (
     <div className={cn('flex flex-col gap-3', className)} {...props}>
-      <div role="img" aria-label={label} className="bg-muted relative aspect-video overflow-hidden rounded-xl">
-        <img
-          src={poster}
-          alt=""
-          className="absolute inset-0 size-full object-cover"
-          style={{ transform: `scale(${zoom})` }}
-        />
+      <div role="img" aria-label={label} className={cn('bg-muted relative aspect-video overflow-hidden rounded-xl', !poster && !renderFrame && 'animate-pulse')}>
+        {poster && (
+          <img
+            src={poster}
+            alt=""
+            className="absolute inset-0 size-full object-cover"
+            style={{ transform: `scale(${zoom})` }}
+          />
+        )}
         {renderFrame && <div className="absolute inset-0">{renderFrame(time, 'main')}</div>}
         {compare && (comparePoster || renderFrame) && (
           <>

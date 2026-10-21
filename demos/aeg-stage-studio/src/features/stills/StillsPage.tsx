@@ -1,12 +1,11 @@
-import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@anvil/components/ui/alert'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { EmptyState, EmptyStateDescription, EmptyStateHeader, EmptyStateMedia, EmptyStateTitle } from '@anvil/components/ui/empty-state'
-import { ArrowRightIcon, Icon, ImageIcon, LayoutGridIcon, ListIcon, RefreshCwIcon } from '@anvil/components/ui/icon'
-import { ToggleGroup, ToggleGroupItem } from '@anvil/components/ui/toggle-group'
+import { ArrowRightIcon, Icon, ImageIcon, RefreshCwIcon } from '@anvil/components/ui/icon'
 import { IllustrativeNote } from '~/components/IllustrativeNote'
+import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
 import { useProject } from '~/state/ProjectContext'
 import { ConceptCardPending, ConceptTile } from './ConceptTile'
@@ -19,7 +18,6 @@ export function StillsPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const { rounds, currentRound, selected, feedback, briefRevision, generateRound, setRoundView, proceedToMotion, path } = useProject()
-  const [layout, setLayout] = useState<'list' | 'grid'>('grid')
 
   const requested = Number(params.get('round'))
   const round = rounds.find((r) => r.number === requested) ?? currentRound
@@ -54,8 +52,8 @@ export function StillsPage() {
   return (
     <section aria-labelledby="stills-title" className="flex h-full min-w-0 flex-col">
       <div className="step-scroll relative min-h-0 flex-1 overflow-y-auto p-6">
-        <div className="@container mx-auto flex max-w-5xl flex-col gap-5">
-          <div className="flex items-start justify-between gap-4">
+        <div className={`${STEP_CONTENT} gap-5`}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex max-w-2xl flex-col gap-2">
               <div className="flex items-center gap-3">
                 <h1 id="stills-title" tabIndex={-1} className="type-heading-2xl outline-none">
@@ -104,14 +102,6 @@ export function StillsPage() {
                 {feedback.length > 0 && ` ${feedback.length} note${feedback.length === 1 ? '' : 's'} from the chat will shape the next round.`}
               </p>
             </div>
-            <ToggleGroup type="single" variant="outline" size="sm" value={layout} onValueChange={(v) => v && setLayout(v as 'list' | 'grid')} aria-label="Layout">
-              <ToggleGroupItem value="grid" aria-label="Side by side">
-                <Icon icon={LayoutGridIcon} />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="list" aria-label="One under another">
-                <Icon icon={ListIcon} />
-              </ToggleGroupItem>
-            </ToggleGroup>
           </section>
 
           {!isLatest && (
@@ -124,7 +114,7 @@ export function StillsPage() {
             {round.done ? `Round ${round.number} ready: 4 concepts` : `Rendering round ${round.number}: ${round.stills.length} of 4 concepts`}
           </p>
           <ul
-            className={layout === 'grid' ? 'grid grid-cols-1 gap-4 @2xl:grid-cols-2' : 'mx-auto flex w-full max-w-3xl flex-col gap-6'}
+            className="flex flex-col gap-6"
             aria-label={`Round ${round.number} concepts`}
             aria-busy={!round.done}
           >

@@ -50,12 +50,13 @@ export interface ConceptCardProps {
   /** What produced the current version, e.g. “Sharper top edge”. */
   change?: string
   /** The current image's URL. */
-  mediaSrc: string
+  /** Undefined while the image is still rendering: the card shows a placeholder. */
+  mediaSrc?: string
   mediaAlt: string
   /** The previous version: enables Compare (a dialog with both, side by side) and Revert. */
   previous?: {
     version: number
-    src: string
+    src?: string
     /** The changes that turned it into the current version; pinned ones are shown on its image. */
     changes?: { number: number; text: string; x?: number; y?: number }[]
   }
@@ -394,7 +395,7 @@ function CompareVersions({
 }: {
   title: string
   version: number
-  current: { src: string; alt: string }
+  current: { src?: string; alt: string }
   previous: NonNullable<ConceptCardProps['previous']>
   change?: string
   onRevert?: () => void
@@ -425,7 +426,7 @@ function CompareVersions({
               </figcaption>
             </figure>
             <figure className="flex flex-col gap-2">
-              <img src={current.src} alt={current.alt} className="aspect-video w-full rounded-lg object-cover" />
+              <PinnedImage src={current.src} alt={current.alt} pins={[]} className="rounded-lg" />
               <figcaption className="type-text-sm-semibold">
                 v{version} · now
               </figcaption>

@@ -10,6 +10,7 @@ import { CheckIcon, DownloadIcon, Icon, PackageIcon } from '@anvil/components/ui
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@anvil/components/ui/table'
 import { CheckRow } from '@anvil/components/anvil/check-row'
 import { Timeline, TimelineItem } from '@anvil/components/anvil/timeline'
+import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
 import { GUARDRAIL } from '~/mocks/copy'
 import { clipKey, useProject } from '~/state/ProjectContext'
@@ -49,7 +50,7 @@ export function HandoffPage() {
   return (
     <section aria-labelledby="handoff-title" className="flex h-full min-w-0 flex-col">
       <div className="step-scroll relative min-h-0 flex-1 overflow-y-auto p-6">
-        <div className="mx-auto flex max-w-3xl flex-col gap-6">
+        <div className={`${STEP_CONTENT} gap-6`}>
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <h1 id="handoff-title" tabIndex={-1} className="type-heading-2xl outline-none">

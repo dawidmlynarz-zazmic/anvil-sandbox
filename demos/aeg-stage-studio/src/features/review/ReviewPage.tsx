@@ -16,19 +16,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@anvil/components/ui/t
 import { ClipPlayer } from '~/components/local/ClipPlayer/ClipPlayer'
 import { MomentTile } from '~/components/MomentTile'
 import { PinnedImage } from '~/components/local/PinnedImage/PinnedImage'
+import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
-import { clipFrame } from '~/components/clipFrame'
+import { clipFrame, useMomentThumb } from '~/components/clipFrame'
 import { INDOOR } from '~/mocks/venues'
 import { SYNTHID_SHORT } from '~/mocks/copy'
 import { clipKey, useProject } from '~/state/ProjectContext'
-import type { ReviewComment, Still } from '~/state/types'
+import type { MotionClip, ReviewComment, Still } from '~/state/types'
 import { ApproveButton, ArtistApproveDialog, RequestChangesDialog } from './ReviewDialogs'
 import { StillImage, useStillUrl } from '~/components/StillImage'
 
 /** The concept's 3D render with the artist's numbered pins on it. */
 function PinnedStill({ still, ...props }: Omit<React.ComponentProps<typeof PinnedImage>, 'src'> & { still: Still }) {
   const src = useStillUrl(still)
-  return <PinnedImage src={src ?? ''} {...props} />
+  return <PinnedImage src={src} {...props} />
+}
+
+/** A song's clip as the artist saw it: live 3D, over that song's 3D still while the scene loads. */
+function ReviewClip({ still, clip, index, total, indoor }: { still: Still; clip: MotionClip; index: number; total: number; indoor: boolean }) {
+  const poster = useMomentThumb(still, index, total, indoor, clip.poster)
+  return (
+    <ClipPlayer
+      poster={poster}
+      renderFrame={clipFrame(still, clip, index, total, indoor)?.render}
+      label={`Song ${clip.momentNumber}, clip version ${clip.version}`}
+    />
+  )
 }
 
 export function ReviewPage() {
@@ -116,7 +129,7 @@ export function ReviewPage() {
   return (
     <section aria-label="Review and sign-off" className="flex h-full min-w-0 flex-col">
       <div className="step-scroll relative min-h-0 flex-1 overflow-y-auto p-6">
-        <div className="mx-auto flex max-w-3xl flex-col gap-6">
+        <div className={`${STEP_CONTENT} gap-6`}>
           {header}
 
           {artistView && (
@@ -204,7 +217,7 @@ export function ReviewPage() {
               )}
 
               <Tabs value={tab} onValueChange={setTab}>
-                <TabsList>
+                <TabsList className="max-w-full overflow-x-auto">
                   <TabsTrigger value="concepts">Concept</TabsTrigger>
                   <TabsTrigger value="motion">Motion ({conceptClips.length})</TabsTrigger>
                   <TabsTrigger value="compare">Compare previous version</TabsTrigger>
@@ -255,10 +268,12 @@ export function ReviewPage() {
                 </TabsContent>
                 <TabsContent value="motion" className="flex flex-col gap-4 pt-4">
                   {slot?.status === 'ready' ? (
-                    <ClipPlayer
-                      poster={slot.clip.poster}
-                      renderFrame={clipFrame(still, slot.clip, Math.max(0, brief.moments.findIndex((m) => m.number === song)), brief.moments.length, INDOOR.has(brief.venueId))?.render}
-                      label={`Song ${song}, clip version ${slot.clip.version}`}
+                    <ReviewClip
+                      still={still}
+                      clip={slot.clip}
+                      index={Math.max(0, brief.moments.findIndex((m) => m.number === song))}
+                      total={brief.moments.length}
+                      indoor={INDOOR.has(brief.venueId)}
                     />
                   ) : (
                     <p className="text-muted-foreground type-text-sm-normal">This clip wasn’t ready when you sent, so the artist hasn’t seen it.</p>
@@ -279,7 +294,7 @@ export function ReviewPage() {
                       </Button>
                     </form>
                   )}
-                  <ul className="grid grid-cols-4 gap-3">
+                  <ul className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
                     {brief.moments.map((m, i) => {
                       const c = clips[clipKey(still.id, m.number)]
                       return (

@@ -54,16 +54,6 @@ async function draw(spec: StageSpec): Promise<string> {
   return canvas!.toDataURL('image/jpeg', 0.86)
 }
 
-/** True when the browser can render WebGL; otherwise callers keep the 2D fallback art. */
-export function canRender() {
-  try {
-    const c = document.createElement('canvas')
-    return !!(c.getContext('webgl2') || c.getContext('webgl'))
-  } catch {
-    return false
-  }
-}
-
 export function cachedStill(spec: StageSpec) {
   return cache.get(specKey(spec))
 }

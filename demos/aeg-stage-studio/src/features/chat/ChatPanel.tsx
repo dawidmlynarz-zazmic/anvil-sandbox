@@ -198,7 +198,7 @@ export function ChatPanel() {
   }
 
   return (
-    <aside aria-label="Stage agent" className="border-border h-full w-88 shrink-0 border-e">
+    <aside aria-label="Stage agent" className="h-full w-full">
       <ChatShell surface="side-panel">
         <ChatShellHeader title="Stage agent" subtitle={latest.phase === 'setup' ? 'Setting up the brief with you' : 'Works with you through every round'} online />
         <ChatShellThread>

@@ -7,6 +7,7 @@ Started with the Brief screen; extended per screen.
 | Stepper (Brief, Stills, Motion, Review) | `anvil/progress-steps` | `status` done · current · upcoming | No (`anvil/stepper` is a quantity control) |
 | Round badge, working-name tag | `ui/badge` | `tone`, `variant` | No |
 | Breadcrumb | `ui/breadcrumb` | | No |
+| Agent panel / workspace split (drag to resize, width remembered) | `ui/resizable` | `ResizableHandle withHandle`; panel sizes in px (`defaultSize`, `minSize`, `maxSize`), `onLayoutChanged` `isUserInteraction` to save | No |
 | Agent chat messages | `agent/message-row` | `role`, `status`, `widget` | No |
 | Mood-board thumbs, setlist PDF | `ui/attachment` | `size`, `orientation`, `AttachmentMedia variant="image"` | No |
 | Clarifying chips | `agent/quick-reply` | `QuickReplyGroup` | No |

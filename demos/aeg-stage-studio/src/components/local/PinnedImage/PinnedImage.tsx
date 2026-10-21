@@ -12,7 +12,8 @@ export interface ImagePin {
 }
 
 export interface PinnedImageProps extends Omit<React.ComponentProps<'div'>, 'children'> {
-  src: string
+  /** The image; while it's undefined (still rendering) the frame shows a quiet placeholder. */
+  src?: string
   alt: string
   pins: ImagePin[]
   activeId?: string | null
@@ -28,7 +29,8 @@ export interface PinnedImageProps extends Omit<React.ComponentProps<'div'>, 'chi
 /** An image with numbered comment pins. Choosing a pin (or its comment) highlights the other. */
 export function PinnedImage({ src, alt, pins, activeId, onActiveChange, resolvedIds = [], onPlace, draft, className, ...props }: PinnedImageProps) {
   return (
-    <div className={cn('bg-muted relative aspect-video overflow-hidden rounded-xl', onPlace && 'cursor-crosshair', className)} {...props}>
+    <div className={cn('bg-muted relative aspect-video overflow-hidden rounded-xl', !src && 'animate-pulse', onPlace && 'cursor-crosshair', className)} {...props}>
+      {src && (
       <img
         src={src}
         alt={alt}
@@ -42,6 +44,8 @@ export function PinnedImage({ src, alt, pins, activeId, onActiveChange, resolved
             : undefined
         }
       />
+      )}
+      {!src && <span className="sr-only">{alt} (rendering)</span>}
       {draft && (
         <span
           aria-hidden
