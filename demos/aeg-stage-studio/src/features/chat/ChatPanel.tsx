@@ -130,20 +130,15 @@ export function ChatPanel() {
       const code = /\b([A-D])(\d+)\b/i.exec(value)
       const target = code && latest?.stills.find((s) => s.concept === code[1]!.toUpperCase() && s.round === Number(code[2]))
       if (target) {
-        project.setComment(target.id, value)
-        void reply(
-          'Adding a note',
-          `You named ${target.title}, so this belongs on that concept rather than the whole round.`,
-          [`Matched “${code![0]}” to ${target.title}`, 'Saved it as your note on that concept'],
-          `Added as your note on ${target.title}. It will shape round ${project.rounds.length + 1}; you can edit it under the concept.`,
-        )
+        // “B1: sharper top edge” refines that concept, the same as describing the change on its card.
+        void project.refineStill(target.id, value.replace(/^\s*[A-D]\d+\s*[:,-]?\s*/i, '') || value)
       } else {
         project.addFeedback(value)
         void reply(
           'Noting feedback',
           'This is about the round as a whole, so I’ll keep it for the next round instead of tying it to one concept.',
           ['Read your feedback', `Queued it for round ${project.rounds.length + 1}`],
-          `Noted for round ${project.rounds.length + 1}. Choose the scene and press Generate when you’re ready. To comment on one concept, mention it, e.g. “B1: sharper top edge”.`,
+          `Noted for round ${project.rounds.length + 1}. Start a new round when you’re ready. To change one concept now, name it, e.g. “B1: sharper top edge”.`,
         )
       }
       return

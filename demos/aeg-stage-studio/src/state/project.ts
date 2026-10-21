@@ -56,6 +56,8 @@ export interface ProjectState {
   versions: Version[]
   sentVersion: number | null
   reached: number
+  /** The artist's 1–5 rating at sign-off: “How close is this to your vision?” */
+  artistRating?: number | null
 }
 
 export type Action =
@@ -67,6 +69,8 @@ export type Action =
   | { type: 'round/start'; round: Round }
   | { type: 'round/still'; round: number; still: Still }
   | { type: 'round/done'; round: number }
+  | { type: 'still/patch'; id: string; patch: Partial<Still> }
+  | { type: 'round/view'; round: number; settings: Settings }
   | { type: 'still/select'; id: string }
   | { type: 'comment/set'; stillId: string; text: string; round: number; id: number }
   | { type: 'comment/remove'; stillId: string }
@@ -80,6 +84,8 @@ export type Action =
   | { type: 'status/set'; status: ProjectStatus }
   | { type: 'review/set'; comments: ReviewComment[] }
   | { type: 'review/resolve'; id: string; resolved?: boolean }
+  | { type: 'review/add'; comment: ReviewComment }
+  | { type: 'rating/set'; rating: number | null }
   | { type: 'version/add'; summary: string; author: string; sent?: boolean }
 
 const SECTION_OF: Record<keyof Brief, BriefSection> = {
@@ -118,6 +124,7 @@ export function newProject(id: string, opening: ChatTurn[]): ProjectState {
     versions: [],
     sentVersion: null,
     reached: 0,
+    artistRating: null,
   }
 }
 
@@ -164,6 +171,18 @@ function step(state: ProjectState, action: Action): ProjectState {
       return mapRound(state, action.round, (r) => ({ ...r, stills: [...r.stills, action.still] }))
     case 'round/done':
       return mapRound(state, action.round, (r) => ({ ...r, done: true }))
+    case 'still/patch':
+      return {
+        ...state,
+        rounds: state.rounds.map((r) => ({ ...r, stills: r.stills.map((st) => (st.id === action.id ? { ...st, ...action.patch } : st)) })),
+      }
+    case 'round/view':
+      // Same designs, seen differently: only the scene each concept is rendered in changes.
+      return mapRound(state, action.round, (r) => ({
+        ...r,
+        settings: action.settings,
+        stills: r.stills.map((st) => (st.spec ? { ...st, spec: { ...st.spec, ...action.settings } } : st)),
+      }))
     case 'still/select':
       return {
         ...state,
@@ -202,6 +221,10 @@ function step(state: ProjectState, action: Action): ProjectState {
       return { ...state, status: action.status }
     case 'review/set':
       return { ...state, review: action.comments }
+    case 'review/add':
+      return { ...state, review: [...state.review, action.comment] }
+    case 'rating/set':
+      return { ...state, artistRating: action.rating }
     case 'review/resolve':
       return { ...state, review: state.review.map((c) => (c.id === action.id ? { ...c, resolved: action.resolved ?? !c.resolved } : c)) }
     case 'version/add': {

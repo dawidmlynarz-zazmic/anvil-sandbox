@@ -35,7 +35,7 @@ export function NextHint() {
             : status === 'feedback'
               ? { title: 'Next: sign off', text: 'Go through the artist’s comments in Review, then approve or request changes.' }
               : !motionStills.length
-                ? { title: 'Next: pick concepts', text: 'Tick the concepts you like and put them into motion.' }
+                ? { title: 'Next: pick concepts', text: 'Select the concepts you like, then put them into motion.' }
                 : { title: 'Next: send to the artist', text: 'When the clips look right, send concepts and motion from Motion.' }
 
   const dismiss = () => {
@@ -48,7 +48,7 @@ export function NextHint() {
   }
 
   return (
-    <div className="pointer-events-none absolute end-6 bottom-20 z-10 w-72">
+    <div data-next-hint className="pointer-events-none absolute end-6 bottom-20 z-10 w-72">
       <Alert size="xs" tone="agent" role="status" onDismiss={dismiss} className="shadow-elevation-raised pointer-events-auto">
         <Icon icon={LightbulbIcon} />
         <AlertTitle>{next.title}</AlertTitle>

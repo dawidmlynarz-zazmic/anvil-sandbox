@@ -33,7 +33,7 @@ export function BriefPage() {
 
   return (
     <section aria-labelledby="brief-title" className="flex h-full min-w-0 flex-col">
-      <div className="relative min-h-0 flex-1 overflow-y-auto p-6">
+      <div className="step-scroll relative min-h-0 flex-1 overflow-y-auto p-6">
         <div className="mx-auto flex max-w-2xl flex-col gap-4">
           <div className="flex flex-col gap-2">
             <h1 id="brief-title" tabIndex={-1} className="type-heading-2xl outline-none">

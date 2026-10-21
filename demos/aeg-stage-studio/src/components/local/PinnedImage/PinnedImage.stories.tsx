@@ -20,3 +20,4 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {}
 export const ActivePin: Story = { args: { activeId: 'b' } }
 export const SomeResolved: Story = { args: { resolvedIds: ['a'] } }
+export const PlacingAPin: Story = { args: { onPlace: () => undefined, draft: { x: 45, y: 60, number: 4 } } }

@@ -66,7 +66,7 @@ function coachella(): ProjectState {
     rounds: rounds(id, [golden]),
     messages: [
       ...openingMessages,
-      ...turns([['assistant', 'Round 1 is ready: four concepts for golden hour, full crowd, front of house. B1 · Stone monolith follows your “monolithic” keyword most closely. Tick the ones you want to take forward, and leave a note on any concept to steer the next round.']], 3),
+      ...turns([['assistant', 'Round 1 is ready: four concepts for golden hour, full crowd, front of house. B1 · Stone monolith follows your “monolithic” keyword most closely. Select the ones to take into motion, annotate what should change on any concept, or ask for more like one you like.']], 3),
     ],
     versions: versions([['Round 1 · 4 concepts (golden hour, full crowd, front of house)', 'Stage agent']]),
   }
@@ -151,6 +151,7 @@ function arena(): ProjectState {
     clips: clipsFor([chosen.id], brief),
     status: 'approved',
     review,
+    artistRating: 4,
     sentVersion: 6,
     reached: 3,
     versions: versions([

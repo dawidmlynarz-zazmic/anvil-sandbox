@@ -6,6 +6,7 @@ import { Icon, MessageSquareIcon, MoonIcon, PanelRightIcon, SunIcon } from '@anv
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@anvil/components/ui/sidebar'
 import { ChatPanel } from '~/features/chat/ChatPanel'
 import { useProject } from '~/state/ProjectContext'
+import { AboutDemo } from './AboutDemo'
 import { InviteDialog } from './InviteDialog'
 import { LoopRail } from './LoopRail'
 import { NextHint } from './NextHint'
@@ -41,6 +42,11 @@ export function AppShell() {
   const toggleTheme = () => {
     document.documentElement.classList.toggle('dark', !dark)
     setDark(!dark)
+    try {
+      localStorage.setItem('stage-studio:theme', dark ? 'light' : 'dark')
+    } catch {
+      // Without storage the choice lasts until the next reload.
+    }
   }
 
   const badge = phase === 'setup' ? { tone: 'agent' as const, text: 'Setting up' } : status === 'draft' ? null : STATUS_BADGE[status]
@@ -65,7 +71,7 @@ export function AppShell() {
             <span className="truncate type-text-sm-semibold">
               {meta.artist} · {meta.event}
             </span>
-            <span className="text-muted-foreground type-text-xs-normal">AEG Presents</span>
+            <span className="text-muted-foreground type-text-xs-normal">AEG Presents · on Gemini Enterprise Agent Platform</span>
           </div>
           <div className="flex-1" />
           {badge && (
@@ -73,6 +79,7 @@ export function AppShell() {
               {badge.text}
             </Badge>
           )}
+          <AboutDemo />
           <InviteDialog />
           <Button
             variant="ghost"

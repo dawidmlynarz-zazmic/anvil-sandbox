@@ -34,7 +34,7 @@ function Dropdown<T extends string>({
   )
 }
 
-/** The scene the next round is rendered in. Nothing changes until the user generates a round. */
+/** Time of day, crowd and camera: how the concepts are seen. */
 export function SceneSettings({
   settings,
   disabled,
@@ -44,15 +44,15 @@ export function SceneSettings({
   settings: Settings
   disabled?: boolean
   onChange: (s: Settings) => void
-  /** The Generate button, beside the dropdowns. */
-  action: React.ReactNode
+  /** Optional control beside the dropdowns. */
+  action?: React.ReactNode
 }) {
   return (
     <div className="flex flex-wrap items-end gap-3">
       <Dropdown<TimeOfDay> label="Time of day" value={settings.timeOfDay} options={TIME_LABEL} disabled={disabled} onChange={(timeOfDay) => onChange({ ...settings, timeOfDay })} />
       <Dropdown<Crowd> label="Crowd" value={settings.crowd} options={CROWD_LABEL} disabled={disabled} onChange={(crowd) => onChange({ ...settings, crowd })} />
       <Dropdown<StageView> label="Camera view" value={settings.view} options={VIEW_LABEL} disabled={disabled} onChange={(view) => onChange({ ...settings, view })} />
-      <div className="pb-0.5">{action}</div>
+      {action && <div className="pb-0.5">{action}</div>}
     </div>
   )
 }

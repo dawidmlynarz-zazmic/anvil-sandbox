@@ -12,6 +12,12 @@
     />
   </head>
   <body>
+    <script>
+      // Light by default; keep a dark choice across reloads (set before paint, so there's no flash).
+      try {
+        if (localStorage.getItem('stage-studio:theme') === 'dark') document.documentElement.classList.add('dark')
+      } catch {}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

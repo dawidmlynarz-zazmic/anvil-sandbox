@@ -46,6 +46,27 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 - Story: `src/components/local/PinnedImage/PinnedImage.stories.tsx`
 - Recommendation: add to Anvil
 
+## concept-card
+- Type: new component (replaces using `agent/image-generation-card` on Stills)
+- Needed for: `/stills`
+- Closest Anvil option checked: `agent/image-generation-card` (one prompt row, actions as icon buttons, no place for
+  versions, a description field, a check result or selection) and `ui/card` with `ui/checkbox`: selection and
+  feedback were hard to find and the note rendered outside the card
+- Proposed API: `title`, `rationale`, `version`, `change`, `mediaSrc`, `mediaAlt`, `previousMedia`, `checks`,
+  `selected` + `onSelectedChange`, `dismissed`, `busy`, `variants` + `onPickVariant` / `onCloseVariants`,
+  `annotations` + `onAddAnnotation(text, at?)` / `onRemoveAnnotation` / `onApplyAnnotations`, `onMoreLikeThis`,
+  `onRegenerate`, `onRestorePrevious`, `onToggleDismissed`, `readOnly`
+- Built from: `ui/card` (+ `CardAction`, `CardFooter`), `ui/checkbox`, `ui/input`, local `PinnedImage`, `ui/dropdown-menu`, `ui/popover`,
+  `anvil/check-row`, `ui/badge`, `ui/skeleton`, `ui/spinner`
+- States covered: default, selected, annotating with pinned and whole-concept changes, v2 with compare, refining,
+  variations (loading and ready), dismissed, read-only;
+  plus `ConceptCardPending` while generating
+- Accessibility notes: Select is a checkbox named per concept; Annotate is a toggle (`aria-pressed`); the change field
+  is labelled with the pin number or “whole concept”; pins are numbered buttons; the
+  brief-check badge is a button with its result in its name; variations are buttons named “Use variation N”
+- Story: `src/components/local/ConceptCard/ConceptCard.stories.tsx`
+- Recommendation: add to Anvil as a generated-asset card (it isn't stage-specific)
+
 ## Anvil issues found
 - `MessageAction` used as a `PopoverTrigger asChild` works, but needs a `TooltipProvider` above it (the app provides one).
 - `ui/sidebar` `SidebarMenuButton size="lg"` sets `p-0!` when collapsed (`collapsible="icon"`), so anything smaller than a

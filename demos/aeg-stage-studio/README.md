@@ -37,13 +37,7 @@ art. `/lab` (development only) shows the scenes side by side for tuning.
 
 ## Demo script
 
-1. **New project**: click *New project* and answer the agent with the suggestion chips. Point out the brief filling in
-   and the “From the agent” labels. Click *Start project*: round 1 renders, with the agent's reasoning in the chat.
-2. **Stills** ([Artist A] · Coachella 2027): tick B1, type “B1: sharper top edge” in the chat, then *Put into motion*.
-3. **Motion**: on song 14, type “slow the split” in the chat and watch the clip update to v2. *Send to artist*.
-4. **Review**: the waiting state, then the artist's comments arrive. Click a pin, then *Request changes* or *Approve*.
-5. **Handoff** ([Artist C] · Crypto.com Arena): the approved design, cue sheet, decision log and *Export package*.
-6. Jump to [Artist B] · The O2 to show a project waiting on sign-off.
+See [docs/demo-script.md](docs/demo-script.md): about three minutes, following deck slide 6.
 
 ## Run
 

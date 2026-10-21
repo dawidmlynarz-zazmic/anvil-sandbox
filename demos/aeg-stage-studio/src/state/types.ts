@@ -48,6 +48,40 @@ export interface Still {
   image: string
   /** What the 3D renderer draws for this concept. Missing on concepts saved before the 3D renderer existed. */
   spec?: StillSpec
+  /** This concept's version (1 when first generated). Refine, regenerate and variations make the next one. */
+  version?: number
+  /** What produced this version, in words: “Sharper top edge”, “Regenerated”. */
+  change?: string
+  /** Earlier versions, oldest first. */
+  history?: StillVersion[]
+  /** The user said “not this direction”: kept, greyed out, and avoided by the next round. */
+  dismissed?: boolean
+  /** “More like this”: three candidates waiting to be picked, or still being made. */
+  variants?: StillSpec[] | 'generating'
+  /** Work in progress on this concept. */
+  busy?: 'refining' | 'regenerating'
+  /** Changes the user has noted but not applied yet; applying them makes the next version. */
+  annotations?: Annotation[]
+  /** This design has been reworked since it was first generated (drives the brief check). */
+  reworked?: boolean
+}
+
+/** A change to make, pinned to a spot on the image (x, y: 0–100) or about the whole concept. */
+export interface Annotation {
+  number: number
+  text: string
+  x?: number
+  y?: number
+}
+
+export interface StillVersion {
+  version: number
+  image: string
+  spec?: StillSpec
+  change?: string
+  /** The annotations that produced the version after this one. */
+  annotations?: Annotation[]
+  reworked?: boolean
 }
 
 /** The 3D stage a concept shows. Mirrors the renderer's StageSpec without importing three.js into state. */

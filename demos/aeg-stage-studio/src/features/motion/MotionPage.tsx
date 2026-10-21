@@ -14,6 +14,7 @@ import { ClipPlayer } from '~/components/local/ClipPlayer/ClipPlayer'
 import { MomentTile } from '~/components/MomentTile'
 import { StepFooter } from '~/components/StepFooter'
 import { clipFrame } from '~/components/clipFrame'
+import { IllustrativeNote } from '~/components/IllustrativeNote'
 import { INDOOR } from '~/mocks/venues'
 import { clipKey, useProject } from '~/state/ProjectContext'
 
@@ -58,7 +59,7 @@ export function MotionPage() {
             <EmptyStateTitle>Nothing in motion yet</EmptyStateTitle>
             <EmptyStateDescription>
               {moments.length
-                ? 'Here each key moment from the brief becomes an eight-second clip of your chosen concept. Tick concepts in Stills and put them into motion.'
+                ? 'Here each key moment from the brief becomes an eight-second clip of your chosen concept. Select concepts in Stills and put them into motion.'
                 : 'Add key moments to the brief first: each one becomes an eight-second clip here.'}
             </EmptyStateDescription>
           </EmptyStateHeader>
@@ -86,7 +87,7 @@ export function MotionPage() {
 
   return (
     <section aria-labelledby="motion-title" className="flex h-full flex-col">
-      <div className="relative min-h-0 flex-1 overflow-y-auto p-6">
+      <div className="step-scroll relative min-h-0 flex-1 overflow-y-auto p-6">
         <div className="mx-auto flex max-w-4xl flex-col gap-6">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
@@ -112,6 +113,7 @@ export function MotionPage() {
               Each key moment from the brief gets an eight-second clip of this concept. Pick one to preview it, check
               its lighting and camera cues, and describe any change in plain words, here or in the chat.
             </p>
+            <IllustrativeNote kind="motion" />
           </div>
 
           <div className="grid grid-cols-[minmax(0,1fr)_18rem] items-start gap-6">
@@ -185,7 +187,7 @@ export function MotionPage() {
                 >
                   <Input
                     label="Edit in plain words"
-                    hint="e.g. “slow the split”. The rest of the clip stays the same."
+                    hint="e.g. “slow the split”. The rest of the clip stays the same. Edits use a preview model: confirm cover before production use."
                     placeholder="Describe the change"
                     value={instruction}
                     disabled={slot?.status !== 'ready'}

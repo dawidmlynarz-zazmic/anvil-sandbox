@@ -18,7 +18,7 @@ import { StillImage } from '~/components/StillImage'
 /** The end of the loop: everything production needs, once the artist has approved. */
 export function HandoffPage() {
   const navigate = useNavigate()
-  const { brief, rounds, motionStills, clips, status, review, versions, sentVersion, daysSinceBrief, path } = useProject()
+  const { brief, rounds, motionStills, clips, status, review, versions, sentVersion, daysSinceBrief, artistRating, path } = useProject()
   const [exported, setExported] = useState(false)
   const approved = status === 'approved'
   const stills = rounds.flatMap((r) => r.stills).filter((s) => motionStills.includes(s.id))
@@ -48,7 +48,7 @@ export function HandoffPage() {
 
   return (
     <section aria-labelledby="handoff-title" className="flex h-full min-w-0 flex-col">
-      <div className="relative min-h-0 flex-1 overflow-y-auto p-6">
+      <div className="step-scroll relative min-h-0 flex-1 overflow-y-auto p-6">
         <div className="mx-auto flex max-w-3xl flex-col gap-6">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
@@ -64,11 +64,23 @@ export function HandoffPage() {
             </p>
           </div>
 
-          <WidgetMetricGroup>
-            <WidgetMetricCard label="Rounds to approval" value={rounds.length} period="Concept rounds from the brief" />
-            <WidgetMetricCard label="Days to approval" value={daysSinceBrief} period="From brief to sign-off" />
-            <WidgetMetricCard label="Artist comments addressed" value={`${review.length - open.length} of ${review.length}`} period="On the approved version" />
-          </WidgetMetricGroup>
+          <section aria-labelledby="value-title" className="flex flex-col gap-2">
+            <h2 id="value-title" className="type-text-base-semibold">
+              Value to prove
+            </h2>
+            <p className="text-muted-foreground type-text-xs-normal">
+              The pilot’s three measures. “Today” is AEG’s current process, to be filled in with the production team.
+            </p>
+            <WidgetMetricGroup>
+              <WidgetMetricCard label="Concept rounds" value={rounds.length} period="Today: [typical rounds]" />
+              <WidgetMetricCard label="Days to approved design" value={daysSinceBrief} period="Today: [typical weeks]" />
+              <WidgetMetricCard
+                label="Artist feedback"
+                value={artistRating ? `${artistRating}/5` : 'Not rated'}
+                period={artistRating ? '“How close is this to your vision?”' : 'Rated by the artist at sign-off'}
+              />
+            </WidgetMetricGroup>
+          </section>
 
           <Card>
             <CardHeader>
@@ -126,7 +138,7 @@ export function HandoffPage() {
           </Card>
 
           <div className="grid grid-cols-2 items-start gap-4">
-            <Card>
+            <Card className="row-span-2">
               <CardHeader>
                 <CardTitle>Decision log</CardTitle>
                 <CardDescription>How the design got here, version by version.</CardDescription>
@@ -153,6 +165,20 @@ export function HandoffPage() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Rights and provenance</CardTitle>
+                <CardDescription>Residency terms, and what legal should confirm before production use.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2">
+                <CheckRow>Artist owns the outputs</CheckRow>
+                <CheckRow>SynthID watermark on every image and clip</CheckRow>
+                <CheckRow status="pending">C2PA credentials: check per model (Nano Banana Pro, Veo 3.1)</CheckRow>
+                <CheckRow status="pending">Google gen AI indemnity covers GA Gemini and Veo models · legal to confirm scope</CheckRow>
+                <CheckRow status="pending">Clip edits used Gemini Omni Flash, in preview · confirm cover</CheckRow>
               </CardContent>
             </Card>
 
