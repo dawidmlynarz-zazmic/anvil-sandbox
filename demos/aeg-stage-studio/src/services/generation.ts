@@ -1,0 +1,100 @@
+import { stageArt, type ArtShape } from '~/mocks/art'
+import { initialBrief } from '~/mocks/project'
+import type {
+  Brief,
+  BriefInput,
+  MotionClip,
+  MotionRequest,
+  Still,
+  StillsRequest,
+} from '~/state/types'
+
+// Mocked adapter. The signatures match the plan so Agent Platform calls can replace it without touching the UI.
+export interface GenerationService {
+  draftBrief(input: BriefInput): Promise<Brief>
+  generateStills(req: StillsRequest): AsyncIterable<Still> // yields one at a time
+  generateMotion(req: MotionRequest): Promise<MotionClip>
+  editMotion(clipId: string, instruction: string): Promise<MotionClip>
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const between = (min: number, max: number) => min + Math.random() * (max - min)
+
+const CONCEPTS: { letter: string; title: string; shape: ArtShape }[] = [
+  { letter: 'A', title: 'Open-air arch', shape: 'arch' },
+  { letter: 'B', title: 'Stone monolith', shape: 'monolith' },
+  { letter: 'C', title: 'Kinetic LED ribbons', shape: 'ribbons' },
+  { letter: 'D', title: 'Floating halo', shape: 'halo' },
+]
+
+const CUES = [
+  { lighting: 'Low amber wash, rising to white on the downbeat', led: 'Slow desert horizon, dust particles', camera: 'Crane up from pit, 6 s' },
+  { lighting: 'Backlight sweep, magenta to deep blue', led: 'Sun disc setting behind the monolith', camera: 'Slow push-in on the artist' },
+  { lighting: 'Split-colour halves, mirrored', led: 'Two panels drifting apart', camera: 'Locked wide, front of house' },
+]
+
+const clipFor = (stillId: string, momentNumber: number, version = 1, edits: string[] = []): MotionClip => {
+  const concept = CONCEPTS.find((c) => stillId.endsWith(c.letter)) ?? CONCEPTS[1]!
+  const seed = `${stillId}-${momentNumber}-${version}`
+  return {
+    id: `clip-${stillId}-${momentNumber}-${version}`,
+    momentNumber,
+    title: `Song ${momentNumber}`,
+    poster: stageArt(seed, concept.shape, 'golden-hour'),
+    posterNight: stageArt(seed, concept.shape, 'night'),
+    seconds: 8,
+    cue: CUES[momentNumber % CUES.length]!,
+    version,
+    edits,
+  }
+}
+
+/** A round's four concepts, synchronously. `project` keeps ids and images distinct between projects. */
+export function stillsFor(req: StillsRequest): Still[] {
+  const prefix = req.project ? `${req.project}.` : ''
+  return CONCEPTS.map((concept) => ({
+    id: `${prefix}r${req.round}-${concept.letter}`,
+    round: req.round,
+    concept: concept.letter,
+    title: `${concept.letter}${req.round} · ${concept.title}`,
+    image: stageArt(
+      `${prefix}r${req.round}-${concept.letter}-${req.timeOfDay}-${req.view}`,
+      concept.shape,
+      req.timeOfDay,
+      req.crowd === 'full' ? 1.4 : 0.7,
+    ),
+  }))
+}
+
+/** A clip that is already rendered when the user arrives at Motion. Synchronous, so state can be seeded. */
+export const seedClip = (stillId: string, momentNumber: number) => clipFor(stillId, momentNumber)
+
+export const generation: GenerationService = {
+  async draftBrief(input) {
+    await sleep(between(1500, 2500))
+    const extra = input.description.trim().split(/\s+/).slice(0, 2).join(' ')
+    return {
+      ...initialBrief,
+      keywords: extra ? [...initialBrief.keywords, extra] : initialBrief.keywords,
+    }
+  },
+
+  async *generateStills(req) {
+    await sleep(between(1200, 1800))
+    for (const still of stillsFor(req)) {
+      yield still
+      await sleep(between(400, 900))
+    }
+  },
+
+  async generateMotion(req) {
+    await sleep(between(2000, 3500))
+    return clipFor(req.stillId, req.momentNumber)
+  },
+
+  async editMotion(clipId, instruction) {
+    await sleep(between(2000, 3500))
+    const [, stillId = 'r1-B', moment = '14', version = '1'] = /^clip-(.+)-(\d+)-(\d+)$/.exec(clipId) ?? []
+    return clipFor(stillId, Number(moment), Number(version) + 1, [instruction])
+  },
+}

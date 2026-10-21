@@ -1,0 +1,9 @@
+.DS_Store
+node_modules/
+dist/
+storybook-static/
+*.tsbuildinfo
+.claude/settings.local.json
+.claude/launch.json
+.pnpm-store/
+.npmrc

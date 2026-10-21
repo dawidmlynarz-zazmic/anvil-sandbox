@@ -1,0 +1,3 @@
+@import '@anvil/styles/globals.css';
+/* Tailwind v4 only scans this project by default: also generate the classes Anvil's components use. */
+@source '../../../../../anvil-ui/src';
