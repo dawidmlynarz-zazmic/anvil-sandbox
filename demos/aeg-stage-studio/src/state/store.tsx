@@ -106,7 +106,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const resetDemo = useCallback(() => {
     try {
       sessionStorage.removeItem(KEY)
-      localStorage.removeItem('stage-studio:next-hint-dismissed')
     } catch {
       // Ignore: the in-memory reset below is what matters.
     }

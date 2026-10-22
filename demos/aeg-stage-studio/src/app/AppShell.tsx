@@ -10,7 +10,6 @@ import { useProject } from '~/state/ProjectContext'
 import { AboutDemo } from './AboutDemo'
 import { InviteDialog } from './InviteDialog'
 import { LoopRail } from './LoopRail'
-import { NextHint } from './NextHint'
 import { ProjectsSidebar } from './ProjectsSidebar'
 
 const CHAT_WIDTH_KEY = 'stage-studio:chat-width'
@@ -140,7 +139,6 @@ export function AppShell() {
             <ResizablePanel id="work" minSize={360}>
               <main className="relative h-full min-w-0 overflow-hidden">
                 <Outlet />
-                {!asArtist && <NextHint />}
               </main>
             </ResizablePanel>
           </ResizablePanelGroup>
