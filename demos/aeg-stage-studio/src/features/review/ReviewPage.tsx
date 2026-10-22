@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { reveal } from '~/lib/reveal'
 import { Alert, AlertDescription, AlertTitle } from '@anvil/components/ui/alert'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
@@ -46,7 +47,9 @@ function ReviewClip({ still, clip, brief }: { still: Still; clip: MotionClip; br
 export function ReviewPage() {
   const navigate = useNavigate()
   const p = useProject()
-  const { brief, rounds, motionStills, clips, status, review, sentVersion, meta, path } = p
+  const { brief, rounds, motionStills, clips, status, review, sentVersion, versions, meta, approvedStill, path } = p
+  // Each time you send counts as one review: “Review 2”, not the project's internal step number.
+  const reviewNumber = Math.max(1, versions.filter((v) => v.summary.startsWith('Sent to the artist')).length)
   const [tab, setTab] = useState('concepts')
   const [conceptId, setConceptId] = useState<string | undefined>()
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -116,7 +119,7 @@ export function ReviewPage() {
         </h1>
         {!artistView && (
           <Badge tone="agent" variant="subtle">
-            Version {sentVersion}
+            Review {reviewNumber}
           </Badge>
         )}
         <div className="ms-auto flex items-center gap-2">
@@ -138,6 +141,8 @@ export function ReviewPage() {
       setTab('motion')
       setSong(c.target.song)
     } else setTab('concepts')
+    // Bring the image or the clip the comment points at into view.
+    window.setTimeout(() => reveal(document.getElementById('review-view')), 0)
   }
 
   return (
@@ -164,7 +169,7 @@ export function ReviewPage() {
                 <div className="flex flex-col gap-1" aria-live="polite">
                   <p className="type-text-base-semibold">Waiting for the artist</p>
                   <p className="text-muted-foreground type-text-sm-normal">
-                    Sent version {sentVersion}: {motionStills.length} concept{motionStills.length === 1 ? '' : 's'} and their motion clips.
+                    Sent: {motionStills.map((id) => allStills.find((x) => x.id === id)?.title.split(' · ')[0]).join(', ')} and their motion clips.
                     Artists usually reply within a day. In this demo their comments arrive in a few seconds.
                   </p>
                 </div>
@@ -195,7 +200,7 @@ export function ReviewPage() {
             >
               <Icon icon={CheckIcon} />
               <AlertTitle>Approved for production</AlertTitle>
-              <AlertDescription>Version {sentVersion} is signed off. The handoff package is ready.</AlertDescription>
+              <AlertDescription>{allStills.find((x) => x.id === approvedStill)?.title ?? 'The design'} is signed off. The handoff package is ready.</AlertDescription>
             </Alert>
           )}
 
@@ -235,7 +240,7 @@ export function ReviewPage() {
                 </Tabs>
               )}
 
-              <Tabs value={tab} onValueChange={setTab}>
+              <Tabs id="review-view" className="scroll-mt-4" value={tab} onValueChange={setTab}>
                 <TabsList className="max-w-full overflow-x-auto">
                   <TabsTrigger value="concepts">Concept</TabsTrigger>
                   <TabsTrigger value="motion">Motion ({conceptClips.length})</TabsTrigger>

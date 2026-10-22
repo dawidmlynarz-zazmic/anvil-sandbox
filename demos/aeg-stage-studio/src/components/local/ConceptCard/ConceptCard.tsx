@@ -1,5 +1,5 @@
 // ANVIL-CANDIDATE: see docs/anvil-upgrade-candidates.md#concept-card
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@anvil/components/ui/card'
@@ -35,6 +35,7 @@ import { Spinner } from '@anvil/components/ui/spinner'
 import { CheckRow } from '@anvil/components/anvil/check-row'
 import { cn } from '@anvil/lib/utils'
 import { PinnedImage } from '~/components/local/PinnedImage/PinnedImage'
+import { reveal } from '~/lib/reveal'
 
 export interface ConceptCheck {
   label: string
@@ -126,6 +127,19 @@ export function ConceptCard({
   const [annotating, setAnnotating] = useState(false)
   const [pin, setPin] = useState<{ x: number; y: number } | null>(null)
   const [text, setText] = useState('')
+  const cardRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const firstVersion = useRef(version)
+  // A new version (applied changes, a pick, a refine from the chat): bring the card back into view to show it.
+  useEffect(() => {
+    if (version === firstVersion.current) return
+    firstVersion.current = version
+    reveal(cardRef.current)
+  }, [version])
+  // After placing a pin, type straight away.
+  useEffect(() => {
+    if (pin) inputRef.current?.focus()
+  }, [pin])
   const issues = checks?.filter((c) => !c.ok) ?? []
   const editable = !readOnly && !dismissed && !busy
   const nextNumber = (annotations.at(-1)?.number ?? 0) + 1
@@ -139,7 +153,7 @@ export function ConceptCard({
   }
 
   return (
-    <Card className={cn('@container/card gap-3', selected && 'ring-2 ring-border-action', dismissed && 'opacity-60', className)}>
+    <Card ref={cardRef} className={cn('@container/card scroll-mt-4 gap-3', selected && 'ring-2 ring-border-action', dismissed && 'opacity-60', className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           {title}
@@ -292,6 +306,7 @@ export function ConceptCard({
                 <Label htmlFor={`${title}-change`}>{pin ? `What should change at ${nextNumber}?` : 'Change for the whole concept'}</Label>
                 <InputGroup className="bg-background">
                   <InputGroupInput
+                    ref={inputRef}
                     id={`${title}-change`}
                     autoFocus
                     placeholder={pin ? 'e.g. narrower here' : 'e.g. warmer overall'}

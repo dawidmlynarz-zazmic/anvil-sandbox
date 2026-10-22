@@ -97,7 +97,8 @@ export function LoopRail() {
     status === 'approved' ? 'Package ready to export' : 'Unlocks when the artist approves',
   ]
 
-  const version = sentVersion ? `Version ${sentVersion}` : rounds.length ? `Round ${rounds.length}` : 'Not started'
+  const sends = versions.filter((v) => v.summary.startsWith('Sent to the artist')).length
+  const version = sends ? `Review ${sends}` : rounds.length ? `Round ${rounds.length}` : 'Not started'
 
   return (
     <aside aria-label="Project progress" className="border-border relative flex h-full w-64 shrink-0 flex-col gap-4 overflow-y-auto border-s p-4">
@@ -163,7 +164,7 @@ export function LoopRail() {
                 <TimelineItem
                   key={v.number}
                   tone={v.number === sentVersion ? 'agent' : v.summary.startsWith('Approved') ? 'success' : 'neutral'}
-                  title={<span className="type-text-xs-medium">v{v.number} · {v.summary}</span>}
+                  title={<span className="type-text-xs-medium">{v.summary}</span>}
                   detail={`${v.author} · ${v.time}`}
                   last={i === all.length - 1}
                 />

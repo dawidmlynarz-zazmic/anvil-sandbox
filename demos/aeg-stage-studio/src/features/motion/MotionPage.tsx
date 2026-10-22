@@ -4,7 +4,7 @@ import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anvil/components/ui/card'
 import { EmptyState, EmptyStateDescription, EmptyStateHeader, EmptyStateMedia, EmptyStateTitle } from '@anvil/components/ui/empty-state'
-import { ClapperboardIcon, Icon, SendIcon, SparklesIcon } from '@anvil/components/ui/icon'
+import { ClapperboardIcon, Icon, SparklesIcon } from '@anvil/components/ui/icon'
 import { Input } from '@anvil/components/ui/input'
 import { Label } from '@anvil/components/ui/label'
 import { Switch } from '@anvil/components/ui/switch'
@@ -17,11 +17,12 @@ import { StepFooter } from '~/components/StepFooter'
 import { clipFrame, useMomentThumb } from '~/components/clipFrame'
 import { IllustrativeNote } from '~/components/IllustrativeNote'
 import { clipKey, useProject } from '~/state/ProjectContext'
+import { SendDialog } from './SendDialog'
 
 export function MotionPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const { brief, rounds, motionStills, clips, status, generateClip, editClip, sendToArtist, setMotionFocus, path } = useProject()
+  const { brief, rounds, motionStills, clips, status, meta, generateClip, editClip, sendToArtist, setMotionFocus, path } = useProject()
   const moments = brief.moments
   const [selected, setSelected] = useState(() => (moments.some((m) => m.number === 14) ? 14 : (moments[0]?.number ?? 0)))
   const [compareNight, setCompareNight] = useState(false)
@@ -80,10 +81,20 @@ export function MotionPage() {
     void editClip(still.id, song.number, text)
   }
 
-  const send = () => {
-    sendToArtist()
+  const send = (note: string) => {
+    sendToArtist(note || undefined)
     navigate(path('review'))
   }
+  // Exactly what the artist will get: each concept in motion, its version, and its ready clips.
+  const sendItems = motionStills.flatMap((id) => {
+    const st = allStills.find((x) => x.id === id)
+    if (!st) return []
+    const ready = moments.flatMap((m) => {
+      const c = clips[clipKey(id, m.number)]
+      return c?.status === 'ready' ? [{ song: m.number, title: m.title, version: c.clip.version }] : []
+    })
+    return [{ title: st.title, version: st.version ?? 1, clips: ready }]
+  })
 
   const sent = status === 'awaiting-artist' || status === 'feedback' || status === 'approved'
 
@@ -242,10 +253,13 @@ export function MotionPage() {
         note={sent ? 'Already sent. Sending again shares the latest clips as a new version.' : 'The artist sees your concepts and clips together, and comments on both.'}
         status={`${readyCount} ${readyCount === 1 ? 'clip' : 'clips'} ready${rendering ? ` · ${rendering} rendering` : ''}`}
       >
-        <Button onClick={send} disabled={readyCount === 0 || status === 'awaiting-artist'}>
-          <Icon icon={SendIcon} />
-          {sent ? 'Send new version to artist' : 'Send to artist for review'}
-        </Button>
+        <SendDialog
+          artist={meta.artist}
+          items={sendItems}
+          label={sent ? 'Send new version to artist' : 'Send to artist for review'}
+          disabled={readyCount === 0 || status === 'awaiting-artist'}
+          onSend={send}
+        />
       </StepFooter>
     </section>
   )

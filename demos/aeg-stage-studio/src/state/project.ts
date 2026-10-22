@@ -61,6 +61,8 @@ export interface ProjectState {
   artistRating?: number | null
   /** The one design approved for production. */
   approvedStill?: string | null
+  /** The handoff package has gone to the production team. */
+  exported?: boolean
 }
 
 export type Action =
@@ -77,6 +79,7 @@ export type Action =
   | { type: 'still/select'; id: string }
   | { type: 'selection/set'; ids: string[] }
   | { type: 'approve/still'; id: string }
+  | { type: 'export/done' }
   | { type: 'comment/set'; stillId: string; text: string; round: number; id: number }
   | { type: 'comment/remove'; stillId: string }
   | { type: 'feedback/add'; text: string }
@@ -229,6 +232,8 @@ function step(state: ProjectState, action: Action): ProjectState {
       return { ...state, selected: action.ids }
     case 'approve/still':
       return { ...state, approvedStill: action.id }
+    case 'export/done':
+      return { ...state, exported: true }
     case 'review/set':
       return { ...state, review: action.comments }
     case 'review/add':

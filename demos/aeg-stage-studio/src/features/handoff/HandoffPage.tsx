@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { WidgetMetricCard, WidgetMetricGroup } from '@anvil/components/agent/widget-metric-card'
 import { Alert, AlertDescription, AlertTitle } from '@anvil/components/ui/alert'
@@ -6,7 +5,7 @@ import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anvil/components/ui/card'
 import { EmptyState, EmptyStateDescription, EmptyStateHeader, EmptyStateMedia, EmptyStateTitle } from '@anvil/components/ui/empty-state'
-import { CheckIcon, DownloadIcon, Icon, PackageIcon } from '@anvil/components/ui/icon'
+import { CheckIcon, DownloadIcon, Icon, PackageIcon, PlusIcon } from '@anvil/components/ui/icon'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@anvil/components/ui/table'
 import { CheckRow } from '@anvil/components/anvil/check-row'
 import { Timeline, TimelineItem } from '@anvil/components/anvil/timeline'
@@ -14,13 +13,15 @@ import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
 import { GUARDRAIL } from '~/mocks/copy'
 import { clipKey, useProject } from '~/state/ProjectContext'
+import { useStore } from '~/state/store'
+import { revealTop } from '~/lib/reveal'
 import { StillImage } from '~/components/StillImage'
 
 /** The end of the loop: everything production needs, once the artist has approved. */
 export function HandoffPage() {
   const navigate = useNavigate()
-  const { brief, rounds, motionStills, clips, status, review, versions, sentVersion, daysSinceBrief, artistRating, approvedStill, path } = useProject()
-  const [exported, setExported] = useState(false)
+  const { brief, rounds, motionStills, clips, status, review, versions, sentVersion, daysSinceBrief, artistRating, approvedStill, exported, exportPackage, path } = useProject()
+  const { createProject } = useStore()
   const approved = status === 'approved'
   // One design goes to production: the approved one (older saved projects fall back to the first sent).
   const all = rounds.flatMap((r) => r.stills)
@@ -69,6 +70,26 @@ export function HandoffPage() {
               Everything the production team needs to build the approved design, in one package. {GUARDRAIL}
             </p>
           </div>
+
+          {exported && (
+            <Alert
+              tone="success"
+              role="status"
+              action={
+                <Button size="xs" variant="outline" intent="neutral" onClick={() => navigate(`/p/${createProject()}/brief`)}>
+                  <Icon icon={PlusIcon} />
+                  Start the next show
+                </Button>
+              }
+            >
+              <Icon icon={CheckIcon} />
+              <AlertTitle>Sent to the production team</AlertTitle>
+              <AlertDescription>
+                {design?.title} is with production: stills, motion, the cue sheet and the decision log. Legal still confirms the
+                pending items below. This is a demo, so nothing left the app.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <section aria-labelledby="value-title" className="flex flex-col gap-2">
             <h2 id="value-title" className="type-text-base-semibold">
@@ -155,7 +176,7 @@ export function HandoffPage() {
                     <TimelineItem
                       key={v.number}
                       tone={v.summary.startsWith('Approved') ? 'success' : v.number === sentVersion ? 'agent' : 'neutral'}
-                      title={<span className="type-text-xs-medium">v{v.number} · {v.summary}</span>}
+                      title={<span className="type-text-xs-medium">{v.summary}</span>}
                       detail={`${v.author} · ${v.time}`}
                       last={i === versions.length - 1}
                     />
@@ -203,17 +224,17 @@ export function HandoffPage() {
             </Card>
           </div>
 
-          {exported && (
-            <Alert tone="success" role="status">
-              <Icon icon={CheckIcon} />
-              <AlertTitle>Package exported</AlertTitle>
-              <AlertDescription>Sent to [production team’s tools]. This is a demo, so nothing left the app.</AlertDescription>
-            </Alert>
-          )}
         </div>
       </div>
       <StepFooter note="The artist owns everything in the package." status={exported ? 'Sent to production' : 'Ready to export'}>
-        <Button onClick={() => setExported(true)} disabled={exported}>
+        <Button
+          onClick={() => {
+            exportPackage()
+            // The confirmation sits at the top of the page: bring it into view.
+            revealTop(document.querySelector('.step-scroll'))
+          }}
+          disabled={exported}
+        >
           <Icon icon={DownloadIcon} />
           {exported ? 'Exported' : 'Export package'}
         </Button>

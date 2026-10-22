@@ -10,7 +10,7 @@ const ON_CONCEPT: Record<ArtShape, { x: number; y: number; text: string }[]> = {
   ],
   monolith: [
     { x: 50, y: 30, text: 'The monolith is the right idea. Make the top edge sharper, less boxy.' },
-    { x: 50, y: 70, text: 'Can the screen inside glow warmer during golden hour?' },
+    { x: 50, y: 70, text: 'Can the screen inside glow a little warmer?' },
   ],
   ribbons: [
     { x: 30, y: 40, text: 'The ribbons feel busy. Try three instead of five.' },
@@ -22,7 +22,7 @@ const ON_CONCEPT: Record<ArtShape, { x: number; y: number; text: string }[]> = {
   ],
 }
 
-export function artistFeedback(concepts: Still[], moments: SetlistMoment[], clipSongs: number[]): Omit<ReviewComment, 'number'>[] {
+export function artistFeedback(concepts: Still[], moments: SetlistMoment[], clipSongs: number[], editedSongs: number[] = []): Omit<ReviewComment, 'number'>[] {
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   const comments: Omit<ReviewComment, 'number'>[] = []
   concepts.forEach((still, i) => {
@@ -48,7 +48,8 @@ export function artistFeedback(concepts: Still[], moments: SetlistMoment[], clip
         target: { kind: 'clip', song },
         author: 'Artist',
         time,
-        text: `${title}: it feels rushed. Hold the opening for two more beats before it moves.`,
+        // A clip you already reworked gets a reaction to the edit, not the same note again.
+        text: editedSongs.includes(song) ? `${title}: the pacing works now. Keep this one.` : `${title}: it feels rushed. Hold the opening for two more beats before it moves.`,
         resolved: false,
       })
     }

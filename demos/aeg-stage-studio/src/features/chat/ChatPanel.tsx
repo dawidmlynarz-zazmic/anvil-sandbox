@@ -81,7 +81,13 @@ function FollowEnd({ signal }: { signal: string }) {
     scrollToEnd({ behavior: 'smooth' })
     // Content keeps growing while the scroll runs (reasoning opens, text streams in), so settle once more.
     const settle = setTimeout(() => scrollToEnd({ behavior: 'smooth' }), 350)
-    return () => clearTimeout(settle)
+    // Attachment thumbnails can load later and push the latest message down, and a throttled window may not run the
+    // smooth scroll at all: land on the end once more, without animation.
+    const late = setTimeout(() => scrollToEnd({ behavior: 'auto' }), 1000)
+    return () => {
+      clearTimeout(settle)
+      clearTimeout(late)
+    }
   }, [signal, scrollToEnd])
   return null
 }
@@ -316,7 +322,7 @@ export function ChatPanel() {
             aria-label="Message the stage agent"
             placeholder={latest.phase === 'setup' ? PLACEHOLDER.setup : (PLACEHOLDER[stepOf(pathname)] ?? PLACEHOLDER.brief)}
             onSubmit={(text) => void send(text)}
-            onAttach={() => live.current.patchBrief({ referenceCount: live.current.brief.referenceCount + 1 }, 'you')}
+            onAttach={() => live.current.attachReferences()}
           />
         </ChatShellComposer>
       </ChatShell>

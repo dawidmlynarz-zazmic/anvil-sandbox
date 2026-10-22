@@ -63,7 +63,12 @@ interface ProjectApi extends ProjectState {
   setMotionFocus: (stillId: string, song: number) => void
   generateClip: (stillId: string, song: number) => Promise<void>
   editClip: (stillId: string, song: number, instruction: string, echo?: boolean) => Promise<void>
-  sendToArtist: () => void
+  /** Sends the concepts in motion and their clips to the artist, with an optional note from you. */
+  sendToArtist: (note?: string) => void
+  /** Sends the handoff package to the production team. */
+  exportPackage: () => void
+  /** Attaches reference images (mocked: the sample mood board) to the conversation and the brief. */
+  attachReferences: () => void
   toggleResolved: (commentId: string) => void
   requestChanges: (commentIds: string[]) => void
   /** Signs off one design for production, with the artist's rating when they gave one. */
@@ -218,7 +223,8 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       const fresh = sent.filter((st) => !now.review.some((c) => c.stillId === st.id))
       const addressed = now.review.filter((c) => c.addressedIn).length
       const clipSongs = now.brief.moments.map((m) => m.number).filter((song) => fresh[0] && now.clips[clipKey(fresh[0].id, song)]?.status === 'ready')
-      const reply = addressed ? artistPraise(fresh, addressed) : artistFeedback(fresh, now.brief.moments, clipSongs)
+      const edited = clipSongs.filter((song) => { const c = fresh[0] && now.clips[clipKey(fresh[0].id, song)]; return c?.status === 'ready' && c.clip.edits.length > 0 })
+      const reply = addressed ? artistPraise(fresh, addressed) : artistFeedback(fresh, now.brief.moments, clipSongs, edited)
       const comments = reply.map((c, i) => ({ ...c, number: now.review.length + i + 1 }))
       d({ type: 'review/set', comments: [...now.review, ...comments] })
       d({ type: 'status/set', status: 'feedback' })
@@ -403,7 +409,10 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const old = st?.history?.find((h) => h.version === version)
     if (!st || !old) return
     // Going back to a design brings back its brief-check result too.
-    newVersion(st, old.spec, `Reverted to v${version}`, undefined, old.reworked ?? false)
+    const code = st.title.split(' · ')[0]
+    const next = newVersion(st, old.spec, `Reverted to v${version}`, undefined, old.reworked ?? false)
+    d({ type: 'version/add', summary: `${code} v${next}: back to the v${version} design`, author: 'You' })
+    say('assistant', `${code} is back to the v${version} design (now v${next}). Nothing was lost: v${next - 1} is still in its history.`)
   }
 
   const toggleDismissed: ProjectApi['toggleDismissed'] = (sid) => {
@@ -411,6 +420,15 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     if (!st) return
     patch(sid, { dismissed: !st.dismissed })
     if (!st.dismissed && get().selected.includes(sid)) d({ type: 'still/select', id: sid })
+    const code = st.title.split(' · ')[0]
+    const kind = st.title.split(' · ')[1]?.toLowerCase() ?? 'this direction'
+    d({ type: 'version/add', summary: st.dismissed ? `${code}: brought back` : `${code}: set aside (not this direction)`, author: 'You' })
+    say(
+      'assistant',
+      st.dismissed
+        ? `${code} is back. The next round can use the ${kind} again.`
+        : `Set ${code} aside. The next round won’t use the ${kind}; bring it back from its menu any time.`,
+    )
   }
 
   return {
@@ -496,13 +514,32 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       thinking = { ...thinking, title: `Edited song ${song}`, seconds, tools: thinking.tools.map((t) => ({ ...t, status: 'done' as const, seconds, output: `Clip v${clip.version} · 8 s · SynthID watermarked` })) }
       updateMessage(msg, { pending: false, thinking, text: `Done: song ${song} now has “${instruction}” applied (clip v${clip.version}). The earlier version is kept.` })
     },
-    sendToArtist: () => {
+    sendToArtist: (note) => {
       const s = get()
       const ready = Object.entries(s.clips).filter(([k, c]) => s.motionStills.some((sid) => k.startsWith(`${sid}|`)) && c.status === 'ready')
+      const names = s.motionStills.map((sid) => stillTitle(sid).split(' · ')[0]).join(', ')
       d({ type: 'status/set', status: 'awaiting-artist' })
-      d({ type: 'version/add', summary: `Sent to the artist · ${plural(s.motionStills.length, 'concept')}, ${plural(ready.length, 'clip')}`, author: 'You', sent: true })
-      say('assistant', `Sent to the artist: ${plural(s.motionStills.length, 'concept')} and ${plural(ready.length, 'motion clip')}. I’ll tell you here as soon as they reply.`)
+      d({ type: 'version/add', summary: `Sent to the artist: ${names} and ${plural(ready.length, 'clip')}${note ? ', with a note' : ''}`, author: 'You', sent: true })
+      say('assistant', `Sent to the artist: ${names} and ${plural(ready.length, 'motion clip')}.${note ? ` Your note: “${note}”.` : ''} I’ll tell you here as soon as they reply.`)
       scheduleReply()
+    },
+    exportPackage: () => {
+      const s = get()
+      if (s.exported) return
+      const design = stillTitle(s.approvedStill ?? s.motionStills[0] ?? '')
+      d({ type: 'export/done' })
+      d({ type: 'version/add', summary: `Package sent to production: ${design}`, author: 'You' })
+      say(
+        'assistant',
+        `The package for ${design} is with the production team: stills, motion, the cue sheet and the decision log. Three things are still with legal before anything is built: C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the placeholders.`,
+      )
+    },
+    attachReferences: () => {
+      const turnId = store.nextId()
+      d({ type: 'chat/add', turn: { id: turnId, role: 'user', text: 'Here’s the mood board.', attachments: true } })
+      const s = get()
+      d({ type: 'brief/patch', patch: { referenceCount: s.brief.referenceCount + 3 }, source: 'you' })
+      say('assistant', `Got 3 reference images. They’re added to the visual direction, and I’ll use them in every image and video prompt.`)
     },
     toggleResolved: (commentId) => d({ type: 'review/resolve', id: commentId }),
     requestChanges: (commentIds) => {

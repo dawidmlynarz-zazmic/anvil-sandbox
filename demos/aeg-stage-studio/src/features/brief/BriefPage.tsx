@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@anvil/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anvil/components/ui/card'
@@ -8,6 +9,7 @@ import { StepFooter } from '~/components/StepFooter'
 import { GUARDRAIL } from '~/mocks/copy'
 import { useProject } from '~/state/ProjectContext'
 import { briefReadiness } from '~/state/readiness'
+import { reveal } from '~/lib/reveal'
 import type { BriefSection } from '~/state/types'
 import { ConstraintsCard, SetlistCard, ShowCard, SlotCard, VenueCard, VisualDirectionCard } from './BriefCards'
 
@@ -34,6 +36,17 @@ export function BriefPage() {
   // One readiness rule for the checklist, the footer, the rail and the agent.
   const readiness = briefReadiness(p)
   const who = readiness.items[0]!
+
+  // When the agent fills in one more section, bring it into view, so what it talks about is on screen.
+  const shownKeys = visible.map((s) => s.key).join(',')
+  const lastShown = useRef(shownKeys)
+  useEffect(() => {
+    const before = lastShown.current.split(',').filter(Boolean)
+    lastShown.current = shownKeys
+    const added = visible.filter((s) => !before.includes(s.key))
+    if (added.length === 1) reveal(document.getElementById(`brief-${added[0]!.key}`))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shownKeys])
 
   return (
     <section aria-labelledby="brief-title" className="flex h-full min-w-0 flex-col">
@@ -79,7 +92,9 @@ export function BriefPage() {
           {setup && formOpen && !who.done && <ShowCard />}
 
           {visible.map(({ key, Card: Section }) => (
-            <Section key={key} />
+            <div key={key} id={`brief-${key}`} className="scroll-mt-4">
+              <Section />
+            </div>
           ))}
         </div>
       </div>
