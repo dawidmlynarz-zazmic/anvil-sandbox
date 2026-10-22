@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
-import { artistFeedback } from '~/mocks/review'
+import { artistFeedback, artistPraise } from '~/mocks/review'
 import { applyAnswer, DONE_TEXT, QUESTIONS } from '~/services/interview'
 import { generation } from '~/services/generation'
 import { listing, take, tweaksFrom } from '~/services/changes'
@@ -9,6 +9,7 @@ import { venuesFor } from '~/mocks/venues'
 import { shapeFor, stageArt } from '~/mocks/art'
 import { motionThinking, roundThinking } from '~/services/reasoning'
 import { clipKey, type Action, type ProjectState, type Settings } from './project'
+import { briefReadiness } from './readiness'
 import { useStore } from './store'
 import { CROWD_LABEL, TIME_LABEL, VIEW_LABEL, type Brief, type BriefSection, type ChatTurn, type MotionClip, type Annotation, type ReviewComment, type Round, type Still, type StillSpec, type Thinking } from './types'
 
@@ -28,13 +29,15 @@ interface ProjectApi extends ProjectState {
   answerSetup: (text: string) => Promise<void>
   /** Setup: skip the interview and show the whole brief form. */
   revealBrief: () => void
+  /** Setup in the form: the artist and the event. */
+  setShow: (artist: string, event: string) => void
   /** Setup → loop: generates round 1 from the brief. */
   startProject: () => void
   /**
    * A new round of four concepts. `direction` is the user's “what should be different” for the whole round;
    * `useSelected` (default true) uses the selected concepts as the reference.
    */
-  generateRound: (settings: Settings, note?: string, artistComments?: string[], direction?: string, useSelected?: boolean) => Promise<void>
+  generateRound: (settings: Settings, note?: string, artistComments?: string[], direction?: string, useSelected?: boolean, reselect?: boolean) => Promise<void>
   toggleSelect: (stillId: string) => void
   /** See the current round at another time of day, crowd or camera: re-renders, no new designs. */
   setRoundView: (round: number, settings: Settings) => void
@@ -63,8 +66,8 @@ interface ProjectApi extends ProjectState {
   sendToArtist: () => void
   toggleResolved: (commentId: string) => void
   requestChanges: (commentIds: string[]) => void
-  /** Signs off the sent version, with the artist's rating when they gave one. */
-  approve: (rating?: number) => void
+  /** Signs off one design for production, with the artist's rating when they gave one. */
+  approve: (stillId: string, rating?: number) => void
   /** Artist preview: the presenter plays the artist, so the simulated reply is cancelled. */
   takeOverReview: () => void
   /** Artist preview: a comment pinned on the concept image, or on a song's clip. */
@@ -131,7 +134,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     updateMessage(messageId, { pending: false, text: summary, thinking })
   }
 
-  const generateRound: ProjectApi['generateRound'] = async (settings, note = '', artistComments = [], direction = '', useSelected = true) => {
+  const generateRound: ProjectApi['generateRound'] = async (settings, note = '', artistComments = [], direction = '', useSelected = true, reselect = false) => {
     const s = get()
     const number = s.rounds.length + 1
     const all = s.rounds.flatMap((r) => r.stills)
@@ -141,7 +144,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     d({ type: 'round/start', round: { number, note, settings, stills: [], done: false, briefRevision: s.briefRevision } })
     d({ type: 'feedback/clear' })
     // Round 1 opens the brief's four directions; later rounds are planned from the selection, so the message is true.
-    const planned = number === 1 ? undefined : planRound({ round: number, parents, dismissed, notes: [...feedback, ...artistComments] })
+    const planned = number === 1 ? undefined : planRound({ round: number, parents, dismissed, notes: [...feedback, ...artistComments], addressing: reselect })
     const keywords = s.brief.keywords.slice(0, 3).join(', ').toLowerCase()
     await runRound(
       number,
@@ -152,6 +155,13 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       [...feedback.map((f) => `Read your note: “${f}”`), ...artistComments.map((c) => `Read the artist's comment: “${c}”`)],
       planned?.plan,
     )
+    // After Request changes, the new round's takes on the sent designs replace the old picks, so the obvious next
+    // step (Put into motion) sends the revised work, not the version the artist already commented on.
+    if (reselect && planned) {
+      const made = get().rounds.find((r) => r.number === number)?.stills ?? []
+      const picks = made.filter((_, i) => /^builds on|^hybrid/.test(planned.plan[i]?.why ?? ''))
+      d({ type: 'selection/set', ids: (picks.length ? picks : made.slice(0, 1)).map((st) => st.id) })
+    }
   }
 
   const answerSetup: ProjectApi['answerSetup'] = async (text) => {
@@ -170,14 +180,22 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     if (result.meta) d({ type: 'meta/patch', patch: result.meta })
     if (result.patch) d({ type: 'brief/patch', patch: result.patch, source: 'agent' })
     if (question.section !== 'who') d({ type: 'brief/reveal', sections: [question.section as BriefSection] })
-    const next = QUESTIONS[s.setupStep + 1]
+    // Skip questions already answered in the form, so the agent never asks for what's there.
+    const now = briefReadiness({ ...get(), setupStep: s.setupStep + 1 })
+    const nextIndex = QUESTIONS.findIndex((q, i) => i > s.setupStep && !now.items.find((it) => it.key === q.section)?.done)
+    const next = nextIndex >= 0 ? QUESTIONS[nextIndex] : undefined
     // Suggest the stages of the event the user named (Stagecoach's, not Coachella's).
     const nextSuggestions = next?.section === 'venue' ? venuesFor(result.meta?.event ?? s.meta.event).map((v) => v.name) : next?.suggestions
-    d({ type: 'setup/step', step: s.setupStep + 1 })
+    d({ type: 'setup/step', step: nextIndex >= 0 ? nextIndex : QUESTIONS.length })
+    const missing = now.left.map((i) => i.label.toLowerCase())
     updateMessage(replyId, {
       pending: false,
       thinking: { ...thinking, seconds: 1 },
-      text: next ? `${result.summary} ${next.ask}` : `${result.summary} ${DONE_TEXT}`,
+      text: next
+        ? `${result.summary} ${next.ask}`
+        : missing.length
+          ? `${result.summary} Still missing in the brief: ${listing(missing)}.`
+          : `${result.summary} ${DONE_TEXT}`,
       suggestions: nextSuggestions,
     })
   }
@@ -195,12 +213,22 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       pendingReplies.delete(id)
       const now = get()
       if (now.status !== 'awaiting-artist' || manualReview.has(id)) return
-      const concepts = now.rounds.flatMap((r) => r.stills).filter((st) => now.motionStills.includes(st.id))
-      const clipSongs = now.brief.moments.map((m) => m.number).filter((song) => concepts[0] && now.clips[clipKey(concepts[0].id, song)]?.status === 'ready')
-      const comments = artistFeedback(concepts, now.brief.moments, clipSongs).map((c, i) => ({ ...c, number: i + 1 }))
-      d({ type: 'review/set', comments })
+      const sent = now.rounds.flatMap((r) => r.stills).filter((st) => now.motionStills.includes(st.id))
+      // The artist only reacts to designs they haven't seen; earlier comments stay, with what was addressed.
+      const fresh = sent.filter((st) => !now.review.some((c) => c.stillId === st.id))
+      const addressed = now.review.filter((c) => c.addressedIn).length
+      const clipSongs = now.brief.moments.map((m) => m.number).filter((song) => fresh[0] && now.clips[clipKey(fresh[0].id, song)]?.status === 'ready')
+      const reply = addressed ? artistPraise(fresh, addressed) : artistFeedback(fresh, now.brief.moments, clipSongs)
+      const comments = reply.map((c, i) => ({ ...c, number: now.review.length + i + 1 }))
+      d({ type: 'review/set', comments: [...now.review, ...comments] })
       d({ type: 'status/set', status: 'feedback' })
-      say('assistant', `The artist replied with ${plural(comments.length, 'comment')}. Open Review to go through them, then approve or request changes.`)
+      const named = fresh.map((st) => st.title.split(' · ')[0]).join(' and ')
+      say(
+        'assistant',
+        addressed && fresh.length
+          ? `The artist replied: ${named} ${fresh.length === 1 ? 'addresses' : 'address'} their notes, and they’re happy with it. Approve it in Review, or request more changes.`
+          : `The artist replied with ${plural(comments.length, 'comment')}. Open Review to go through them, then approve or request changes.`,
+      )
     }, 6000)
   }
 
@@ -400,7 +428,16 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     toggleDismissed,
     patchBrief: (patch, source = 'you') => d({ type: 'brief/patch', patch, source }),
     answerSetup,
-    revealBrief: () => d({ type: 'brief/reveal', sections: ['venue', 'slot', 'visual', 'constraints', 'moments'] }),
+    revealBrief: () => {
+      d({ type: 'brief/reveal', sections: ['venue', 'slot', 'visual', 'constraints', 'moments'] })
+      // Close the open question: say what's left, so the chat and the form agree.
+      // The store updates after this call returns, so read readiness as it will be with every section shown.
+      const s = get()
+      const shown = Object.fromEntries(Object.entries(s.provenance).map(([k, v]) => [k, v === 'pending' ? 'blank' : v])) as typeof s.provenance
+      const left = briefReadiness({ ...s, provenance: shown }).left.map((i) => i.label.toLowerCase())
+      say('assistant', left.length ? `Sure, use the form in the brief. Still to set: ${listing(left)}. You can keep answering here too.` : 'The brief is complete. Start the project when you’re ready.')
+    },
+    setShow: (artist, event) => d({ type: 'meta/patch', patch: { artist: artist || 'New project', event: event || 'Brief in progress' } }),
     startProject: () => {
       d({ type: 'brief/reveal', sections: ['venue', 'slot', 'visual', 'constraints', 'moments'] })
       d({ type: 'phase/set', phase: 'loop' })
@@ -463,7 +500,6 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       const s = get()
       const ready = Object.entries(s.clips).filter(([k, c]) => s.motionStills.some((sid) => k.startsWith(`${sid}|`)) && c.status === 'ready')
       d({ type: 'status/set', status: 'awaiting-artist' })
-      d({ type: 'review/set', comments: [] })
       d({ type: 'version/add', summary: `Sent to the artist · ${plural(s.motionStills.length, 'concept')}, ${plural(ready.length, 'clip')}`, author: 'You', sent: true })
       say('assistant', `Sent to the artist: ${plural(s.motionStills.length, 'concept')} and ${plural(ready.length, 'motion clip')}. I’ll tell you here as soon as they reply.`)
       scheduleReply()
@@ -472,23 +508,30 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     requestChanges: (commentIds) => {
       const s = get()
       const chosen = s.review.filter((c) => commentIds.includes(c.id))
-      chosen.forEach((c) => d({ type: 'review/resolve', id: c.id, resolved: true }))
+      const next = s.rounds.length + 1
+      // Taken into the next round: resolved here, and labelled with the round that addresses them.
+      d({ type: 'review/set', comments: s.review.map((c) => (commentIds.includes(c.id) ? { ...c, resolved: true, addressedIn: next } : c)) })
       d({ type: 'status/set', status: 'draft' })
-      d({ type: 'version/add', summary: `Changes requested · ${plural(chosen.length, 'comment')} taken into the next round`, author: 'Artist' })
-      say('assistant', `Starting round ${s.rounds.length + 1} with ${plural(chosen.length, 'artist comment')} applied. The rest stay open in Review.`)
+      d({ type: 'version/add', summary: `Changes requested · ${plural(chosen.length, 'artist comment')} taken into round ${next}`, author: 'You' })
+      say('assistant', `Starting round ${next} from the designs the artist saw, with ${chosen.length === 1 ? '1 of their comments' : `${chosen.length} of their comments`}. The rest stay open in Review.`)
+      // Build on what was sent, then select the new takes on it.
+      d({ type: 'selection/set', ids: s.motionStills })
       const last = s.rounds.at(-1)
-      if (last) void generateRound(last.settings, 'Changes requested by the artist', chosen.map((c) => c.text))
+      // Comments on the image steer the new concepts; a clip comment ("Cold open: feels rushed") is about motion, not the design.
+      if (last) void generateRound(last.settings, 'Changes requested by the artist', chosen.filter((c) => c.target.kind === 'concept').map((c) => c.text), '', true, true)
     },
-    approve: (rating) => {
+    approve: (stillId, rating) => {
       const s = get()
       manualReview.delete(id)
+      const name = stillTitle(stillId)
+      d({ type: 'approve/still', id: stillId })
       d({ type: 'status/set', status: 'approved' })
       if (rating) d({ type: 'rating/set', rating })
-      d({ type: 'version/add', summary: rating ? `Approved by the artist · rated ${rating}/5` : 'Approved for production', author: rating ? 'Artist' : 'You' })
+      d({ type: 'version/add', summary: rating ? `Approved by the artist: ${name} · rated ${rating}/5` : `Approved for production: ${name}`, author: rating ? 'Artist' : 'You' })
       const open = s.review.filter((c) => !c.resolved).length
       say(
         'assistant',
-        `${rating ? `The artist approved and rated it ${rating}/5.` : 'Approved.'} The handoff package is ready: ${plural(s.rounds.length, 'round')} from brief to approval.${open ? ` ${plural(open, 'comment')} were left open and are recorded in the decision log.` : ''}`,
+        `${rating ? `The artist approved ${name} and rated it ${rating}/5.` : `${name} is approved.`} The handoff package is ready: ${plural(s.rounds.length, 'round')} from brief to approval.${open ? ` ${open === 1 ? '1 comment was' : `${open} comments were`} left open and ${open === 1 ? 'is' : 'are'} recorded in the decision log.` : ''}`,
       )
     },
     takeOverReview: () => {

@@ -26,7 +26,8 @@ export function artistFeedback(concepts: Still[], moments: SetlistMoment[], clip
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   const comments: Omit<ReviewComment, 'number'>[] = []
   concepts.forEach((still, i) => {
-    ON_CONCEPT[shapeFor(still.concept)].forEach((c, j) =>
+    // The concept's real type: a planned round can put any type in any slot.
+    ON_CONCEPT[still.spec?.concept ?? shapeFor(still.concept)].forEach((c, j) =>
       comments.push({
         id: `${still.id}-c${j}`,
         stillId: still.id,
@@ -53,4 +54,21 @@ export function artistFeedback(concepts: Still[], moments: SetlistMoment[], clip
     }
   })
   return comments
+}
+
+/**
+ * The artist's reply to a new design that took their earlier comments on: one note per concept, saying it's
+ * resolved. Marked resolved, so it doesn't count as something left to do.
+ */
+export function artistPraise(concepts: Still[], addressed: number): Omit<ReviewComment, 'number'>[] {
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return concepts.map((still) => ({
+    id: `${still.id}-ok`,
+    stillId: still.id,
+    target: { kind: 'concept', x: 50, y: 45 },
+    author: 'Artist',
+    time,
+    text: `Much closer. ${addressed > 1 ? `All ${addressed} of my notes` : 'My note'} landed. This is the one.`,
+    resolved: true,
+  }))
 }

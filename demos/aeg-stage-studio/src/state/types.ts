@@ -207,6 +207,8 @@ export interface ReviewComment {
   time: string
   text: string
   resolved: boolean
+  /** The round that took this comment on (Request changes), shown as “Addressed in round N”. */
+  addressedIn?: number
 }
 
 /** One entry in the project's real history. Numbers count up from v1 as things happen. */

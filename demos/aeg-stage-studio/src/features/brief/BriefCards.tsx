@@ -19,12 +19,18 @@ import type { BriefSection } from '~/state/types'
 
 /** Title + explainer shared by the brief cards, with who last set the section: the agent or you. */
 function SectionHeader({ title, section, children }: { title: string; section: BriefSection; children: React.ReactNode }) {
-  const { provenance } = useProject()
+  const { provenance, brief } = useProject()
+  // Shown in the form but not set by anyone yet: say so, rather than crediting the agent.
+  const empty = (section === 'visual' && !brief.keywords.length) || (section === 'moments' && !brief.moments.length)
   return (
     <CardHeader>
       <CardTitle>{title}</CardTitle>
       <CardAction>
-        {provenance[section] === 'agent' ? (
+        {provenance[section] === 'blank' || empty ? (
+          <Badge tone={empty ? 'warning' : 'neutral'} variant="subtle" size="sm">
+            {empty ? 'Not set yet' : 'Default, check it'}
+          </Badge>
+        ) : provenance[section] === 'agent' ? (
           <Badge tone="agent" variant="subtle" size="sm">
             <Icon icon={SparklesIcon} />
             From the agent
@@ -38,6 +44,36 @@ function SectionHeader({ title, section, children }: { title: string; section: B
       </CardAction>
       <CardDescription>{children}</CardDescription>
     </CardHeader>
+  )
+}
+
+/** The artist and the event, for a brief filled in with the form instead of the agent's questions. */
+export function ShowCard() {
+  const { setShow } = useProject()
+  const [artist, setArtist] = useState('')
+  const [event, setEvent] = useState('')
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Artist and event</CardTitle>
+        <CardDescription>Who the show is for. This names the project.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="grid grid-cols-1 items-end gap-3 @md:grid-cols-[1fr_1fr_auto]"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (artist.trim()) setShow(artist.trim(), event.trim())
+          }}
+        >
+          <Input label="Artist" placeholder="e.g. [Artist D]" value={artist} onChange={(e) => setArtist(e.target.value)} />
+          <Input label="Event" placeholder="e.g. Stagecoach 2027" value={event} onChange={(e) => setEvent(e.target.value)} />
+          <Button type="submit" variant="outline" intent="neutral" disabled={!artist.trim()}>
+            Save
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   )
 }
 

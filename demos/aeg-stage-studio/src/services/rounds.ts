@@ -53,11 +53,14 @@ export function planRound({
   parents,
   dismissed,
   notes,
+  addressing = false,
 }: {
   round: number
   parents: Still[]
   dismissed: ConceptShape[]
   notes: string[]
+  /** The round takes on the artist's comments: designs built on what they saw count as reworked. */
+  addressing?: boolean
 }): { plan: ConceptPlan[]; summary: string } {
   const text = notes.join('. ')
   const { applied } = tweaksFrom(text)
@@ -75,7 +78,7 @@ export function planRound({
   const usable = parents.filter((p) => p.spec).slice(0, 4 - plan.length)
   const built: string[] = []
   for (const p of usable) {
-    plan.push({ shape: p.spec!.concept, with: p.spec!.with, tweaks: withNotes(p.spec!.tweaks), reworked: p.reworked, why: `builds on ${code(p)}` })
+    plan.push({ shape: p.spec!.concept, with: p.spec!.with, tweaks: withNotes(p.spec!.tweaks), reworked: p.reworked || addressing, why: `builds on ${code(p)}` })
     built.push(`${letter(plan.length - 1)} builds on ${code(p)}`)
   }
   if (built.length) lines.push(listing(built))
@@ -88,7 +91,7 @@ export function planRound({
     if (parent) {
       // Describe the take as it ends up, after the note's changes (a "warmer" note overrides a cool take).
       const tweaks = withNotes(take(n++, parent.spec!.tweaks).tweaks)
-      plan.push({ shape: parent.spec!.concept, with: parent.spec!.with, tweaks, reworked: parent.reworked, why: 'take' })
+      plan.push({ shape: parent.spec!.concept, with: parent.spec!.with, tweaks, reworked: parent.reworked || addressing, why: 'take' })
       takes.push(`${letter(plan.length - 1)} is another take on ${code(parent)} (${describeTweaks(tweaks) || 'new proportions'})`)
       continue
     }
@@ -108,6 +111,6 @@ export function planRound({
     applied.length ? `Every concept has ${listing(applied)}` : '',
     dropped.length ? `I left out the ${listing(dropped.map((s) => SHORT[s]))} you set aside` : '',
   ].filter(Boolean)
-  const unshown = text && !applied.length && !hybrid ? ` I can't show “${notes.join('”, “')}” in this preview; the pilot model applies it.` : ''
+  const unshown = text && !applied.length && !hybrid ? ` I can't show “${notes.join('”, “')}” in this preview; the pilot model applies ${notes.length === 1 ? 'it' : 'them'}.` : ''
   return { plan, summary: `${parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join('. ')}.${unshown}` }
 }

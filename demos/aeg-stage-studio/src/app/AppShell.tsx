@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Icon, MessageSquareIcon, MoonIcon, PanelRightIcon, SunIcon } from '@anvil/components/ui/icon'
@@ -39,6 +39,9 @@ const STATUS_BADGE = {
 export function AppShell() {
   const { meta, status, phase } = useProject()
   const { pathname } = useLocation()
+  // Previewing as the artist: show only what the artist would see (no agent, no progress rail, no internal status).
+  const [params] = useSearchParams()
+  const asArtist = pathname.endsWith('/review') && params.get('as') === 'artist'
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
   // Narrow windows start with the work only; the agent and the progress rail open from the header.
   const [chatOpen, setChatOpen] = useState(() => window.innerWidth >= 1024)
@@ -102,7 +105,7 @@ export function AppShell() {
             <span className="text-muted-foreground type-text-xs-normal">AEG Presents · on Gemini Enterprise Agent Platform</span>
           </div>
           <div className="flex-1" />
-          {badge && (
+          {badge && !asArtist && (
             <Badge tone={badge.tone} variant="subtle">
               {badge.text}
             </Badge>
@@ -132,7 +135,7 @@ export function AppShell() {
         <div className="flex min-h-0 flex-1">
           {/* Drag the line between the agent and the work to give either more room; the width is remembered. */}
           <ResizablePanelGroup orientation="horizontal" className="min-w-0 flex-1" onLayoutChanged={saveChatWidth}>
-            {chatOpen && (
+            {chatOpen && !asArtist && (
               <>
                 <ResizablePanel
                   id="chat"
@@ -150,11 +153,11 @@ export function AppShell() {
             <ResizablePanel id="work" minSize={360}>
               <main className="relative h-full min-w-0 overflow-hidden">
                 <Outlet />
-                <NextHint />
+                {!asArtist && <NextHint />}
               </main>
             </ResizablePanel>
           </ResizablePanelGroup>
-          {railOpen && <LoopRail />}
+          {railOpen && !asArtist && <LoopRail />}
         </div>
       </SidebarInset>
     </SidebarProvider>

@@ -28,8 +28,13 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
   }
 }
 
+/** The demo opens on a brand-new project (the first use case), with the three samples further down the list. */
+const FIRST_PROJECT = 'new-show'
+
 function seeded(): StoreState {
-  return { projects: Object.fromEntries(seedProjects().map((p) => [p.meta.id, p])) }
+  const first = QUESTIONS[0]!
+  const blank = newProject(FIRST_PROJECT, [{ id: 900, role: 'assistant', text: first.ask, suggestions: first.suggestions }])
+  return { projects: Object.fromEntries([...seedProjects(), blank].map((p) => [p.meta.id, p])) }
 }
 
 function load(): StoreState {
@@ -53,7 +58,7 @@ interface StoreApi {
   nextId: () => number
   /** Starts a new project with the agent's first interview question, and returns its id. */
   createProject: () => string
-  /** Drops all changes and goes back to the three sample projects. */
+  /** Drops all changes: back to a new, empty project plus the three samples. */
   resetDemo: () => void
   /** Projects, most recently active first. */
   list: ProjectState[]

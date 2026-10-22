@@ -31,7 +31,8 @@ export interface ProjectMeta {
   briefDate: number
 }
 
-export type Provenance = 'agent' | 'you' | 'pending'
+/** Who set a brief section. `pending`: not shown yet. `blank`: shown in the form, still at its default. */
+export type Provenance = 'agent' | 'you' | 'pending' | 'blank'
 
 /** Everything about one project: its brief, its loop and its conversation. */
 export interface ProjectState {
@@ -58,6 +59,8 @@ export interface ProjectState {
   reached: number
   /** The artist's 1–5 rating at sign-off: “How close is this to your vision?” */
   artistRating?: number | null
+  /** The one design approved for production. */
+  approvedStill?: string | null
 }
 
 export type Action =
@@ -72,6 +75,8 @@ export type Action =
   | { type: 'still/patch'; id: string; patch: Partial<Still> }
   | { type: 'round/view'; round: number; settings: Settings }
   | { type: 'still/select'; id: string }
+  | { type: 'selection/set'; ids: string[] }
+  | { type: 'approve/still'; id: string }
   | { type: 'comment/set'; stillId: string; text: string; round: number; id: number }
   | { type: 'comment/remove'; stillId: string }
   | { type: 'feedback/add'; text: string }
@@ -108,7 +113,8 @@ export function newProject(id: string, opening: ChatTurn[]): ProjectState {
     meta: { id, artist: 'New project', event: 'Brief in progress', createdAt: now, updatedAt: now, briefDate: now },
     phase: 'setup',
     setupStep: 0,
-    brief: { ...initialBrief, keywords: [], referenceCount: 0, moments: [] },
+    // A new project starts empty: no keywords, moments or no-gos until someone actually sets them.
+    brief: { ...initialBrief, keywords: [], referenceCount: 0, moments: [], constraints: { ...initialBrief.constraints, noGo: '' } },
     briefRevision: 1,
     provenance: Object.fromEntries(ALL_SECTIONS.map((s) => [s, 'pending'])) as Record<BriefSection, Provenance>,
     rounds: [],
@@ -162,7 +168,7 @@ function step(state: ProjectState, action: Action): ProjectState {
     }
     case 'brief/reveal': {
       const provenance = { ...state.provenance }
-      for (const s of action.sections) if (provenance[s] === 'pending') provenance[s] = 'agent'
+      for (const s of action.sections) if (provenance[s] === 'pending') provenance[s] = 'blank'
       return { ...state, provenance }
     }
     case 'round/start':
@@ -219,6 +225,10 @@ function step(state: ProjectState, action: Action): ProjectState {
       return { ...state, messages: state.messages.map((m) => (m.id === action.id ? { ...m, ...action.patch } : m)) }
     case 'status/set':
       return { ...state, status: action.status }
+    case 'selection/set':
+      return { ...state, selected: action.ids }
+    case 'approve/still':
+      return { ...state, approvedStill: action.id }
     case 'review/set':
       return { ...state, review: action.comments }
     case 'review/add':

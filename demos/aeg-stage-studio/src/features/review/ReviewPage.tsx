@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@anvil/components/ui/alert'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
@@ -51,8 +51,20 @@ export function ReviewPage() {
   const [conceptId, setConceptId] = useState<string | undefined>()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [song, setSong] = useState(() => brief.moments.find((m) => m.number === 14)?.number ?? brief.moments[0]?.number ?? 0)
-  // Artist preview: the presenter plays the artist (pins comments, approves with a rating).
-  const [artistView, setArtistView] = useState(false)
+  // Artist preview: the presenter plays the artist (pins comments, approves with a rating). It's in the URL, so the
+  // app shell can hide everything the artist wouldn't see (the agent, the progress rail).
+  const [params, setParams] = useSearchParams()
+  const artistView = params.get('as') === 'artist'
+  const setArtistView = (on: boolean) =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (on) next.set('as', 'artist')
+        else next.delete('as')
+        return next
+      },
+      { replace: true },
+    )
   const [draft, setDraft] = useState<{ x: number; y: number } | null>(null)
   const [draftText, setDraftText] = useState('')
   const [clipText, setClipText] = useState('')
@@ -102,17 +114,20 @@ export function ReviewPage() {
         <h1 tabIndex={-1} className="type-heading-2xl outline-none">
           Review and sign-off
         </h1>
-        <Badge tone="agent" variant="subtle">
-          Version {sentVersion}
-        </Badge>
+        {!artistView && (
+          <Badge tone="agent" variant="subtle">
+            Version {sentVersion}
+          </Badge>
+        )}
         <div className="ms-auto flex items-center gap-2">
           <Switch id="artist-view" checked={artistView} onCheckedChange={toggleArtist} disabled={approved} />
           <Label htmlFor="artist-view">Preview as artist</Label>
         </div>
       </div>
       <p className="text-muted-foreground type-text-sm-normal">
-        What the artist saw, and what they said about it. Click a numbered pin or a comment to see where it points.
-        Then approve the design for production, or start another round from their comments.
+        {artistView
+          ? 'The stage design and its motion for your show. Pin a comment anywhere on the image, or approve the design for production.'
+          : 'What the artist saw, and what they said about it. Click a numbered pin or a comment to see where it points. Then approve the design for production, or start another round from their comments.'}
       </p>
     </div>
   )
@@ -199,8 +214,13 @@ export function ReviewPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone="neutral" variant="outline">Artist owns outputs</Badge>
                 <Badge tone="neutral" variant="outline">{SYNTHID_SHORT}</Badge>
-                <Badge tone="warning" variant="outline">C2PA: confirm per model</Badge>
-                <Badge tone="warning" variant="outline">Indemnity: GA models · legal to confirm</Badge>
+                {/* Legal follow-ups are AEG's internal notes: not part of what the artist sees. */}
+                {!artistView && (
+                  <>
+                    <Badge tone="warning" variant="outline">C2PA: confirm per model</Badge>
+                    <Badge tone="warning" variant="outline">Indemnity: GA models · legal to confirm</Badge>
+                  </>
+                )}
               </div>
 
               {motionStills.length > 1 && (
@@ -363,6 +383,11 @@ export function ReviewPage() {
                               <span className="text-muted-foreground type-text-xs-normal">
                                 {c.time} · {c.target.kind === 'clip' ? `song ${c.target.song} clip` : 'on the image'}
                               </span>
+                              {c.addressedIn && (
+                                <Badge tone="success" variant="subtle" size="xs">
+                                  Addressed in round {c.addressedIn}
+                                </Badge>
+                              )}
                             </span>
                             <span className={`type-text-sm-normal ${c.resolved ? 'text-muted-foreground line-through' : ''}`}>{c.text}</span>
                           </button>
@@ -393,9 +418,10 @@ export function ReviewPage() {
             Send comments to the team
           </Button>
           <ArtistApproveDialog
+            name={still.title}
             disabled={approved}
             onApprove={(rating) => {
-              p.approve(rating)
+              p.approve(still.id, rating)
               setArtistView(false)
               navigate(path('handoff'))
             }}
@@ -424,10 +450,11 @@ export function ReviewPage() {
             }}
           />
           <ApproveButton
+            name={still.title.split(' · ')[0]!}
             openCount={open.length}
             disabled={status !== 'feedback'}
             onApprove={() => {
-              p.approve()
+              p.approve(still.id)
               navigate(path('handoff'))
             }}
           />

@@ -13,7 +13,7 @@ import {
   RotateCcwIcon,
   type LucideIcon,
 } from '@anvil/components/ui/icon'
-import { QUESTIONS } from '~/services/interview'
+import { briefReadiness } from '~/state/readiness'
 import { useProject } from '~/state/ProjectContext'
 import { LOOP } from './routes'
 
@@ -30,7 +30,7 @@ export function LoopRail() {
   const { pathname } = useLocation()
   const [params] = useSearchParams()
   const p = useProject()
-  const { phase, setupStep, brief, rounds, selected, motionStills, clips, status, review, sentVersion, versions, path } = p
+  const { phase, brief, rounds, selected, motionStills, clips, status, review, sentVersion, versions, path } = p
   const stills = rounds.flatMap((r) => r.stills)
   const latest = rounds.at(-1)
   const readyClips = Object.values(clips).filter((c) => c.status === 'ready').length
@@ -110,7 +110,7 @@ export function LoopRail() {
             <ItemTitle>Brief</ItemTitle>
             <ItemDescription>
               {setup
-                ? `Setting up · ${Math.min(setupStep, QUESTIONS.length)} of ${QUESTIONS.length} answered`
+                ? `Setting up · ${briefReadiness(p).done} of ${briefReadiness(p).total} done`
                 : `${brief.keywords.length} keyword${brief.keywords.length === 1 ? '' : 's'} · ${brief.moments.length} key moment${brief.moments.length === 1 ? '' : 's'}`}
             </ItemDescription>
           </ItemContent>

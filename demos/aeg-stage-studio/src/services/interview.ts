@@ -15,7 +15,7 @@ export const QUESTIONS: { section: BriefSection | 'who'; ask: string; suggestion
   {
     section: 'slot',
     ask: 'When do they play, and for how long? I’ll match the set to the light at that time.',
-    suggestions: ['Saturday 7:40 pm, 75 min', 'Friday 9:00 pm, 90 min'],
+    suggestions: ['Saturday 7:10 pm, 75 min', 'Friday 9:00 pm, 90 min'],
   },
   {
     section: 'visual',

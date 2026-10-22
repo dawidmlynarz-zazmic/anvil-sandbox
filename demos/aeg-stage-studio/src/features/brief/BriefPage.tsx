@@ -6,10 +6,10 @@ import { CheckRow } from '@anvil/components/anvil/check-row'
 import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
 import { GUARDRAIL } from '~/mocks/copy'
-import { QUESTIONS } from '~/services/interview'
 import { useProject } from '~/state/ProjectContext'
+import { briefReadiness } from '~/state/readiness'
 import type { BriefSection } from '~/state/types'
-import { ConstraintsCard, SetlistCard, SlotCard, VenueCard, VisualDirectionCard } from './BriefCards'
+import { ConstraintsCard, SetlistCard, ShowCard, SlotCard, VenueCard, VisualDirectionCard } from './BriefCards'
 
 const SECTIONS: { key: BriefSection; label: string; Card: () => React.ReactNode }[] = [
   { key: 'venue', label: 'Venue', Card: VenueCard },
@@ -25,12 +25,15 @@ const SECTIONS: { key: BriefSection; label: string; Card: () => React.ReactNode 
  */
 export function BriefPage() {
   const navigate = useNavigate()
-  const { phase, setupStep, provenance, rounds, currentRound, briefRevision, path, startProject, revealBrief } = useProject()
+  const p = useProject()
+  const { phase, provenance, rounds, currentRound, briefRevision, path, startProject, revealBrief } = p
   const setup = phase === 'setup'
   const visible = SECTIONS.filter((s) => provenance[s.key] !== 'pending')
-  const pending = SECTIONS.filter((s) => provenance[s.key] === 'pending')
+  const formOpen = SECTIONS.every((s) => provenance[s.key] !== 'pending')
   const changed = !!currentRound && currentRound.briefRevision < briefRevision
-  const answered = Math.min(setupStep, QUESTIONS.length)
+  // One readiness rule for the checklist, the footer, the rail and the agent.
+  const readiness = briefReadiness(p)
+  const who = readiness.items[0]!
 
   return (
     <section aria-labelledby="brief-title" className="flex h-full min-w-0 flex-col">
@@ -47,29 +50,33 @@ export function BriefPage() {
             </p>
           </div>
 
-          {setup && pending.length > 0 && (
+          {setup && !readiness.ready && (
             <Card>
               <CardHeader>
                 <CardTitle>Still to cover</CardTitle>
                 <CardDescription>
-                  {answered} of {QUESTIONS.length} questions answered. Prefer a form? Fill in the rest yourself.
+                  {readiness.done} of {readiness.total} done.{formOpen ? ' Fill in the rest below, or keep answering in the chat.' : ' Prefer a form? Fill in the rest yourself.'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
-                  {SECTIONS.map((s) => (
-                    <CheckRow key={s.key} status={provenance[s.key] === 'pending' ? 'pending' : 'included'}>
-                      {s.label}
+                  {readiness.items.map((item) => (
+                    <CheckRow key={item.key} status={item.done ? 'included' : 'pending'}>
+                      {item.label}
                     </CheckRow>
                   ))}
                 </div>
-                <Button variant="outline" intent="neutral" size="sm" className="self-start" onClick={revealBrief}>
-                  <Icon icon={PencilIcon} />
-                  Fill in the form instead
-                </Button>
+                {!formOpen && (
+                  <Button variant="outline" intent="neutral" size="sm" className="self-start" onClick={revealBrief}>
+                    <Icon icon={PencilIcon} />
+                    Fill in the form instead
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}
+
+          {setup && formOpen && !who.done && <ShowCard />}
 
           {visible.map(({ key, Card: Section }) => (
             <Section key={key} />
@@ -84,10 +91,10 @@ export function BriefPage() {
               {GUARDRAIL}
             </>
           }
-          status={pending.length ? `${pending.length} part${pending.length === 1 ? '' : 's'} of the brief to go` : 'Brief ready · creates 4 stage concepts'}
+          status={readiness.ready ? 'Brief ready · creates 4 stage concepts' : `${readiness.left.length} part${readiness.left.length === 1 ? '' : 's'} of the brief to go`}
         >
           <Button
-            disabled={pending.length > 0}
+            disabled={!readiness.ready}
             onClick={() => {
               startProject()
               navigate(path('stills'))

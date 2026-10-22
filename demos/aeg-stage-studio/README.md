@@ -20,7 +20,8 @@ Consumed read-only from the sibling clone `~/anvil-ui` (override the path with `
 ## How the app is organised
 
 - **Projects** (left, collapsible like a chat history): one per show. Each has its own brief, loop and conversation.
-  Three sample projects are seeded in different states; **Reset the demo** at the bottom of the list restores them.
+  The demo opens on a new, empty project brief (the first use case), with three sample projects further along in the
+  list; **Reset the demo** at the bottom of the list restores that starting point.
 - **New project** starts with the agent's brief interview (six questions). The brief fills in as you answer;
   **Start project** generates round 1.
 - **The loop**: Stills → Motion → Review → Handoff, repeated version after version. The right rail shows where the

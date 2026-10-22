@@ -19,10 +19,13 @@ import { StillImage } from '~/components/StillImage'
 /** The end of the loop: everything production needs, once the artist has approved. */
 export function HandoffPage() {
   const navigate = useNavigate()
-  const { brief, rounds, motionStills, clips, status, review, versions, sentVersion, daysSinceBrief, artistRating, path } = useProject()
+  const { brief, rounds, motionStills, clips, status, review, versions, sentVersion, daysSinceBrief, artistRating, approvedStill, path } = useProject()
   const [exported, setExported] = useState(false)
   const approved = status === 'approved'
-  const stills = rounds.flatMap((r) => r.stills).filter((s) => motionStills.includes(s.id))
+  // One design goes to production: the approved one (older saved projects fall back to the first sent).
+  const all = rounds.flatMap((r) => r.stills)
+  const design = all.find((s) => s.id === (approvedStill ?? motionStills[0]))
+  const stills = design ? [design] : []
   const open = review.filter((c) => !c.resolved)
 
   if (!approved) {
@@ -56,9 +59,11 @@ export function HandoffPage() {
               <h1 id="handoff-title" tabIndex={-1} className="type-heading-2xl outline-none">
                 Handoff
               </h1>
-              <Badge tone="success" variant="subtle">
-                Version {sentVersion} approved
-              </Badge>
+              {design && (
+                <Badge tone="success" variant="subtle">
+                  {design.title.split(' · ')[0]} approved
+                </Badge>
+              )}
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
               Everything the production team needs to build the approved design, in one package. {GUARDRAIL}
@@ -86,10 +91,10 @@ export function HandoffPage() {
           <Card>
             <CardHeader>
               <CardTitle>Approved design</CardTitle>
-              <CardDescription>The concept{stills.length === 1 ? '' : 's'} the artist signed off.</CardDescription>
+              <CardDescription>The design the artist signed off: {design?.title}.</CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="grid grid-cols-2 gap-4">
+              <ul className="flex flex-col gap-4">
                 {stills.map((s) => (
                   <li key={s.id} className="flex flex-col gap-2">
                     <StillImage still={s} alt={`Approved concept ${s.title}`} className="aspect-video w-full rounded-lg object-cover" />
@@ -103,7 +108,7 @@ export function HandoffPage() {
           <Card>
             <CardHeader>
               <CardTitle>Cue sheet by song</CardTitle>
-              <CardDescription>Lighting, LED content and camera for each key moment, including your edits.</CardDescription>
+              <CardDescription>For {design?.title.split(' · ')[0]}: lighting, LED content and camera for each key moment, including your edits.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>

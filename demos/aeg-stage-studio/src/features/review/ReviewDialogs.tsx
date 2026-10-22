@@ -82,12 +82,12 @@ export function RequestChangesDialog({
   )
 }
 
-/** Approve straight away when everything is resolved; otherwise confirm first. */
-export function ApproveButton({ openCount, disabled, onApprove }: { openCount: number; disabled?: boolean; onApprove: () => void }) {
+/** Approves the design on screen (one design goes to production). Straight away when everything is resolved; otherwise confirm first. */
+export function ApproveButton({ name, openCount, disabled, onApprove }: { name: string; openCount: number; disabled?: boolean; onApprove: () => void }) {
   const button = (
     <Button disabled={disabled} onClick={openCount ? undefined : onApprove}>
       <Icon icon={CheckIcon} />
-      Approve for production
+      Approve {name}
     </Button>
   )
   if (!openCount || disabled) return button
@@ -97,7 +97,7 @@ export function ApproveButton({ openCount, disabled, onApprove }: { openCount: n
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            Approve with {openCount} open comment{openCount === 1 ? '' : 's'}?
+            Approve {name} with {openCount} open comment{openCount === 1 ? '' : 's'}?
           </AlertDialogTitle>
           <AlertDialogDescription>
             The open comments won’t be addressed. They are kept in the decision log that goes to the production team.
@@ -113,20 +113,20 @@ export function ApproveButton({ openCount, disabled, onApprove }: { openCount: n
 }
 
 /** Artist preview: approving asks how close the design is to their vision (the “artist feedback” measure). */
-export function ArtistApproveDialog({ disabled, onApprove }: { disabled?: boolean; onApprove: (rating: number) => void }) {
+export function ArtistApproveDialog({ name, disabled, onApprove }: { name: string; disabled?: boolean; onApprove: (rating: number) => void }) {
   const [rating, setRating] = useState<number | undefined>()
   return (
     <Dialog onOpenChange={(o) => o && setRating(undefined)}>
       <DialogTrigger asChild>
         <Button disabled={disabled}>
           <Icon icon={CheckIcon} />
-          Approve
+          Approve {name.split(' · ')[0]}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Approve this design</DialogTitle>
-          <DialogDescription>Approving sends the package to the production team. One question first.</DialogDescription>
+          <DialogTitle>Approve {name}</DialogTitle>
+          <DialogDescription>This design goes to the production team. One question first.</DialogDescription>
         </DialogHeader>
         <DialogBody>
           <Rating

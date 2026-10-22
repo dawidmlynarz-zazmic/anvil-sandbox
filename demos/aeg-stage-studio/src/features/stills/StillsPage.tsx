@@ -129,7 +129,7 @@ export function StillsPage() {
           </ul>
         </div>
       </div>
-      <StepFooter note="Selected concepts carry into Motion." status={selected.length ? `${selected.length} selected` : 'Nothing selected yet'}>
+      <StepFooter note="Selected concepts carry into Motion." status={selected.length ? `Selected: ${rounds.flatMap((r) => r.stills).filter((st) => selected.includes(st.id)).map((st) => st.title.split(' · ')[0]).join(', ')}` : 'Nothing selected yet'}>
         <Button
           onClick={() => {
             proceedToMotion()
