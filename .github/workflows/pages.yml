@@ -9,6 +9,9 @@ name: Pages
 on:
   push:
     branches: [main]
+  # Picks up Anvil (Storybook) changes daily. Run it by hand to publish an Anvil change straight away.
+  schedule:
+    - cron: '0 6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -21,8 +24,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # The Anvil commit the demos were built and tested against. Update it deliberately.
-  ANVIL_REF: e29e4e7eb4d6d97cb86c670e0e77910757a52786
+  # Follows Anvil's main, so the hosted demos match Storybook. The build typechecks against it: if an Anvil change
+  # breaks a demo, the build fails and the last good version stays live. Set a commit SHA here to freeze it instead.
+  ANVIL_REF: main
 
 jobs:
   build:
@@ -39,7 +43,9 @@ jobs:
 
       # The demos read Anvil from a sibling folder (../anvil-ui), as in local development.
       - name: Put Anvil next to the repo
-        run: mv anvil-ui ../anvil-ui
+        run: |
+          echo "Built against Anvil $(git -C anvil-ui rev-parse --short HEAD): $(git -C anvil-ui log -1 --format=%s)" >> "$GITHUB_STEP_SUMMARY"
+          mv anvil-ui ../anvil-ui
 
       - uses: pnpm/action-setup@v4
 

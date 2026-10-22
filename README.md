@@ -23,8 +23,11 @@ commit it was built against in its own README.
 
 ## Hosted previews (GitHub Pages)
 
-Every push to `main` builds the demos and publishes them to https://dawidmlynarz-zazmic.github.io/anvil-sandbox/
-(`.github/workflows/pages.yml`). The build pins Anvil to the commit in `ANVIL_REF`; update it deliberately.
+Every push to `main`, and a daily run, builds the demos against Anvil's `main` and publishes them to
+https://dawidmlynarz-zazmic.github.io/anvil-sandbox/ (`.github/workflows/pages.yml`), so the hosted demos match
+Storybook. To publish an Anvil change straight away, run the workflow by hand (`gh workflow run pages.yml`). If an Anvil
+change breaks a demo, the build fails and the last good version stays live; each run's summary names the Anvil commit.
+To freeze Anvil, set `ANVIL_REF` to a commit SHA.
 
 **Password screen (optional).** Set a repository secret named `DEMO_PASSWORD` (Settings → Secrets and variables →
 Actions, or `gh secret set DEMO_PASSWORD`), then re-run the Pages workflow. Only the password's SHA-256 goes into the

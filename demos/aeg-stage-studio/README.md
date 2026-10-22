@@ -7,7 +7,8 @@ Build plan: `docs/` (wireframes, Anvil component map, upgrade candidates).
 
 Consumed read-only from the sibling clone `~/anvil-ui` (override the path with `ANVIL_PATH`).
 
-- **Anvil commit:** `ff85dba` (main, 2026-10-21)
+- **Anvil:** follows `main` (last checked against `16e2b76`, 2026-10-22). Locally it reads your `../anvil-ui` clone;
+  the hosted preview builds against Anvil's `main` on every deploy.
 
 ## Conventions
 
