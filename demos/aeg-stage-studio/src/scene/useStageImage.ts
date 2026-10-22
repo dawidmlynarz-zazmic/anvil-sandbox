@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { StageSpec } from './StageScene'
+import { specKey } from './specKey'
 import { canRenderWebGL } from './webgl'
 
 type Renderer = typeof import('./renderStill')
@@ -18,7 +19,7 @@ export function preloadStageRenderer() {
  * of the initial bundle.
  */
 export function useStageImage(spec: StageSpec | undefined) {
-  const key = spec ? `${spec.concept}|${spec.timeOfDay}|${spec.crowd}|${spec.view}|${spec.seed ?? 1}` : ''
+  const key = spec ? specKey(spec) : ''
   const cached = spec ? renderer?.cachedStill(spec) : undefined
   const [rendered, setRendered] = useState<{ key: string; url: string }>()
   useEffect(() => {

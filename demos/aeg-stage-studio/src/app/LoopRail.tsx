@@ -68,7 +68,7 @@ export function LoopRail() {
     ),
     motionStills.length ? (
       <>
-        {readyClips} clips ready ·{' '}
+        {readyClips} {readyClips === 1 ? 'clip' : 'clips'} ready ·{' '}
         {motionStills.map((id, i) => (
           <Fragment key={id}>
             {i > 0 && ', '}
@@ -111,7 +111,7 @@ export function LoopRail() {
             <ItemDescription>
               {setup
                 ? `Setting up · ${Math.min(setupStep, QUESTIONS.length)} of ${QUESTIONS.length} answered`
-                : `${brief.keywords.length} keywords · ${brief.moments.length} key moments`}
+                : `${brief.keywords.length} keyword${brief.keywords.length === 1 ? '' : 's'} · ${brief.moments.length} key moment${brief.moments.length === 1 ? '' : 's'}`}
             </ItemDescription>
           </ItemContent>
         </NavLink>

@@ -70,6 +70,8 @@ export interface ConceptCardProps {
   busy?: string
   /** “More like this”: candidates to pick from, or 'generating'. */
   variants?: ReactNode[] | 'generating'
+  /** What differs in each variation, in a few words, shown under it. */
+  variantCaptions?: string[]
   onPickVariant?: (index: number) => void
   onCloseVariants?: () => void
   /** Changes noted but not applied: pinned to a spot (x, y: 0–100) or about the whole concept. */
@@ -107,6 +109,7 @@ export function ConceptCard({
   dismissed,
   busy,
   variants,
+  variantCaptions,
   onPickVariant,
   onCloseVariants,
   annotations = [],
@@ -240,10 +243,11 @@ export function ConceptCard({
                         type="button"
                         onClick={() => onPickVariant?.(i)}
                         className="focus-visible:focus-ring block w-full overflow-hidden rounded-md outline-none hover:ring-2 hover:ring-border-action *:aspect-video *:w-full *:object-cover"
-                        aria-label={`Use variation ${i + 1}`}
+                        aria-label={`Use variation ${i + 1}${variantCaptions?.[i] ? `: ${variantCaptions[i]}` : ''}`}
                       >
                         {v}
                       </button>
+                      {variantCaptions?.[i] && <span className="text-muted-foreground mt-1 block type-text-2xs-medium">{variantCaptions[i]}</span>}
                     </li>
                   ))}
             </ul>
@@ -290,7 +294,7 @@ export function ConceptCard({
                   <InputGroupInput
                     id={`${title}-change`}
                     autoFocus
-                    placeholder={pin ? 'e.g. sharper top edge' : 'e.g. warmer overall'}
+                    placeholder={pin ? 'e.g. narrower here' : 'e.g. warmer overall'}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                   />

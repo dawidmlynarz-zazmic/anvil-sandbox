@@ -8,7 +8,7 @@ import { Textarea } from '@anvil/components/ui/textarea'
 import type { Settings } from '~/state/project'
 import { SceneSettings } from './SceneSettings'
 
-/** Four new concepts from fresh settings, when none of the current ones is right. A secondary action. */
+/** Four new concepts as the next round: built on the selected ones, or fresh. A secondary action. */
 export function NewRoundDialog({
   nextRound,
   current,
@@ -25,10 +25,13 @@ export function NewRoundDialog({
   const [settings, setSettings] = useState(current)
   const [direction, setDirection] = useState('')
   const [useSelected, setUseSelected] = useState(true)
+  const [open, setOpen] = useState(false)
   return (
     <Dialog
-      onOpenChange={(open) => {
-        if (!open) return
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next)
+        if (!next) return
         setSettings(current)
         setDirection('')
         setUseSelected(selectedCount > 0)
@@ -44,14 +47,14 @@ export function NewRoundDialog({
         <DialogHeader>
           <DialogTitle>Generate new concepts</DialogTitle>
           <DialogDescription>
-            None of these right? The agent makes four new concepts as round {nextRound}. This round and every version stay
-            available from the progress panel.
+            The agent makes four new concepts as round {nextRound}, building on your selection or starting fresh. This round
+            and every version stay available from the progress panel.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
           <Textarea
             label="What should be different this time?"
-            hint="Optional. e.g. “less symmetrical, more open sky behind the stage”"
+            hint="Optional. e.g. “combine the arch with the monolith” or “less symmetrical”"
             rows={3}
             value={direction}
             onChange={(e) => setDirection(e.target.value)}
@@ -65,7 +68,12 @@ export function NewRoundDialog({
           </div>
         </DialogBody>
         <DialogFooter>
-          <Button onClick={() => onGenerate(settings, direction.trim(), useSelected && selectedCount > 0)}>
+          <Button
+            onClick={() => {
+              onGenerate(settings, direction.trim(), useSelected && selectedCount > 0)
+              setOpen(false)
+            }}
+          >
             <Icon icon={SparklesIcon} />
             Generate 4 new concepts
           </Button>

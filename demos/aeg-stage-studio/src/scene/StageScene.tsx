@@ -4,7 +4,8 @@ import { SpotLight, Stars } from '@react-three/drei'
 import { Bloom, EffectComposer, Noise, ToneMapping, Vignette } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 import * as THREE from 'three'
-import type { Crowd, StageView, TimeOfDay } from '~/state/types'
+import type { Crowd, StageTweaks, StageView, TimeOfDay } from '~/state/types'
+import { specKey } from './specKey'
 
 // A small, fully procedural festival stage. Scene content, not UI: colours here describe light and materials.
 
@@ -12,6 +13,10 @@ export type Concept = 'arch' | 'monolith' | 'ribbons' | 'halo'
 
 export interface StageSpec {
   concept: Concept
+  /** A second, smaller centrepiece inside the first, for a concept that combines two. */
+  with?: Concept
+  /** Visible design changes: centrepiece width and height, colour palette, haze, brightness. */
+  tweaks?: StageTweaks
   timeOfDay: TimeOfDay
   crowd: Crowd
   view: StageView
@@ -118,6 +123,16 @@ const LOOKS: Record<TimeOfDay, Look> = {
   },
 }
 
+type Palette = NonNullable<StageTweaks['palette']>
+
+/** Colour palettes a rework can switch to: beam and ribbon colours, the glow of arches and halos, and the LED wall. */
+const PALETTES: Record<Palette, { beams: [string, string]; glow: string; led: [string, string, string]; disc: string }> = {
+  warm: { beams: ['#ffb45c', '#ff7a3d'], glow: '#ffa64d', led: ['#5a1a06', '#e0601c', '#ffc46b'], disc: '#fff0d6' },
+  gold: { beams: ['#ffd36b', '#ffb02e'], glow: '#ffc94d', led: ['#4a3304', '#d8a019', '#fff1b0'], disc: '#fffbe8' },
+  cool: { beams: ['#5fc8ff', '#7a7dff'], glow: '#7cd2ff', led: ['#06143a', '#1f6fd6', '#9fe3ff'], disc: '#eaf8ff' },
+  white: { beams: ['#ffffff', '#ffe9cc'], glow: '#fff4e2', led: ['#2a2a30', '#b8b8c4', '#ffffff'], disc: '#ffffff' },
+}
+
 const VIEWS: Record<StageView, { position: [number, number, number]; target: [number, number, number]; fov: number }> = {
   'front-of-house': { position: [0, 9, 72], target: [0, 11, -4], fov: 30 },
   'back-of-field': { position: [14, 13, 140], target: [0, 12, -4], fov: 24 },
@@ -134,14 +149,19 @@ function rng(seed: number) {
 }
 
 /** The LED wall content: a setting sun over gradient bands, painted once into a texture. */
-function useLedTexture(time: TimeOfDay) {
+function useLedTexture(time: TimeOfDay, palette?: Palette) {
   return useMemo(() => {
     const c = document.createElement('canvas')
     c.width = 256
     c.height = 512
     const g = c.getContext('2d')!
     const sky = g.createLinearGradient(0, 0, 0, 512)
-    if (time === 'night') {
+    const p = palette && PALETTES[palette]
+    if (p) {
+      sky.addColorStop(0, p.led[0])
+      sky.addColorStop(0.55, p.led[1])
+      sky.addColorStop(1, p.led[2])
+    } else if (time === 'night') {
       sky.addColorStop(0, '#2b0a5a')
       sky.addColorStop(0.55, '#c0127e')
       sky.addColorStop(1, '#ff6a3d')
@@ -152,7 +172,7 @@ function useLedTexture(time: TimeOfDay) {
     }
     g.fillStyle = sky
     g.fillRect(0, 0, 256, 512)
-    g.fillStyle = time === 'night' ? '#ffd1a1' : '#fffaf0'
+    g.fillStyle = p ? p.disc : time === 'night' ? '#ffd1a1' : '#fffaf0'
     g.beginPath()
     g.arc(128, 330, 70, 0, Math.PI * 2)
     g.fill()
@@ -161,7 +181,7 @@ function useLedTexture(time: TimeOfDay) {
     const tex = new THREE.CanvasTexture(c)
     tex.colorSpace = THREE.SRGBColorSpace
     return tex
-  }, [time])
+  }, [time, palette])
 }
 
 /** A large dome: a vertical gradient from horizon to zenith plus a soft glow towards the sun. Ignores fog. */
@@ -255,8 +275,8 @@ function StageShell({ lamps }: { lamps: number }) {
   )
 }
 
-function Monolith({ led, time, seed }: { led: number; time: TimeOfDay; seed: number }) {
-  const tex = useLedTexture(time)
+function Monolith({ led, time, seed, palette }: { led: number; time: TimeOfDay; seed: number; palette?: Palette }) {
+  const tex = useLedTexture(time, palette)
   const r = rng(seed)
   const width = 9 + r() * 2
   return (
@@ -279,7 +299,7 @@ function Monolith({ led, time, seed }: { led: number; time: TimeOfDay; seed: num
   )
 }
 
-function Arch({ led }: { led: number }) {
+function Arch({ led, glow = '#ffb35c' }: { led: number; glow?: string }) {
   return (
     <group position={[0, 2, -8]}>
       <mesh position={[0, 0, 0]} castShadow>
@@ -288,7 +308,7 @@ function Arch({ led }: { led: number }) {
       </mesh>
       <mesh position={[0, 0, 1.2]}>
         <torusGeometry args={[12.4, 0.25, 12, 96, Math.PI]} />
-        <meshStandardMaterial color="#ffd9a0" emissive="#ffb35c" emissiveIntensity={led} toneMapped={false} />
+        <meshStandardMaterial color="#ffd9a0" emissive={glow} emissiveIntensity={led} toneMapped={false} />
       </mesh>
     </group>
   )
@@ -320,12 +340,12 @@ function Ribbons({ led, beamColors }: { led: number; beamColors: [string, string
   )
 }
 
-function Halo({ led }: { led: number }) {
+function Halo({ led, glow = '#ffb347' }: { led: number; glow?: string }) {
   return (
     <group position={[0, 16, -8]}>
       <mesh>
         <torusGeometry args={[8, 0.7, 24, 128]} />
-        <meshStandardMaterial color="#ffd38a" emissive="#ffb347" emissiveIntensity={led} toneMapped={false} />
+        <meshStandardMaterial color="#ffd38a" emissive={glow} emissiveIntensity={led} toneMapped={false} />
       </mesh>
       <mesh>
         <torusGeometry args={[10.2, 0.12, 12, 128]} />
@@ -470,16 +490,37 @@ function Rig({ view, motion }: { view: StageView; motion?: StageSpec['motion'] }
   return null
 }
 
-export function StageScene({ concept, timeOfDay, crowd, view, seed = 1, sunOverride, postFx = true, motion }: StageSpec) {
+export function StageScene({ concept, with: second, tweaks = {}, timeOfDay, crowd, view, seed = 1, sunOverride, postFx = true, motion }: StageSpec) {
   const base = sunOverride ? { ...LOOKS[timeOfDay], sun: sunOverride } : LOOKS[timeOfDay]
   // In motion the LED content breathes with the beat and the beams sweep slowly.
   const beat = motion ? 1 + 0.18 * Math.sin(motion.t * motion.pace * 5) : 1
-  const look = { ...base, led: base.led * beat }
+  const palette = tweaks.palette ? PALETTES[tweaks.palette] : undefined
+  const bright = tweaks.brightness ?? 1
+  const haze = tweaks.haze ?? 0
+  const look = {
+    ...base,
+    led: base.led * beat * bright,
+    beams: Math.min(1.3, base.beams * bright + (haze && base.beams ? haze * 0.3 : 0)),
+    beamColors: palette ? palette.beams : base.beamColors,
+    fogNear: base.fogNear * (1 - haze * 0.6),
+    fogFar: base.fogFar * (1 - haze * 0.5),
+  }
+  const glow = palette?.glow
   const sweep = motion ? Math.sin(motion.t * motion.pace * 0.7) * 12 : 0
   const { gl, scene } = useThree()
   gl.toneMappingExposure = look.exposure
   // Lets the off-screen renderer know which spec the scene currently shows.
-  scene.userData.spec = `${concept}|${timeOfDay}|${crowd}|${view}|${seed}`
+  scene.userData.spec = specKey({ concept, with: second, timeOfDay, crowd, view, seed, tweaks })
+  const piece = (c: Concept) =>
+    c === 'monolith' ? (
+      <Monolith led={look.led} time={timeOfDay} seed={seed} palette={tweaks.palette} />
+    ) : c === 'arch' ? (
+      <Arch led={look.led} glow={glow} />
+    ) : c === 'ribbons' ? (
+      <Ribbons led={look.led} beamColors={look.beamColors} />
+    ) : (
+      <Halo led={look.led} glow={glow} />
+    )
 
   return (
     <>
@@ -498,10 +539,15 @@ export function StageScene({ concept, timeOfDay, crowd, view, seed = 1, sunOverr
 
       <Ground color={look.ground} />
       <StageShell lamps={look.beams} />
-      {concept === 'monolith' && <Monolith led={look.led} time={timeOfDay} seed={seed} />}
-      {concept === 'arch' && <Arch led={look.led} />}
-      {concept === 'ribbons' && <Ribbons led={look.led} beamColors={look.beamColors} />}
-      {concept === 'halo' && <Halo led={look.led} />}
+      {/* The centrepiece, sized and raised by the rework; a second one sits inside it, smaller, for combined concepts. */}
+      <group scale={[tweaks.width ?? 1, 1, 1]} position={[0, tweaks.lift ?? 0, 0]}>
+        {piece(concept)}
+        {second && second !== concept && (
+          <group scale={0.55} position={[0, 1, -3]}>
+            {piece(second)}
+          </group>
+        )}
+      </group>
       <Audience count={crowd === 'full' ? 4200 : 1800} phones={look.phones} seed={seed} />
       <Beams strength={look.beams} colors={look.beamColors} sweep={sweep} />
       {/* Stage wash: key lights from the front of house onto the deck and set, a backlight halo behind it */}

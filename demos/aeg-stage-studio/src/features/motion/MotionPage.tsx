@@ -16,7 +16,6 @@ import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
 import { clipFrame, useMomentThumb } from '~/components/clipFrame'
 import { IllustrativeNote } from '~/components/IllustrativeNote'
-import { INDOOR } from '~/mocks/venues'
 import { clipKey, useProject } from '~/state/ProjectContext'
 
 export function MotionPage() {
@@ -34,10 +33,9 @@ export function MotionPage() {
   const song = moments.find((m) => m.number === selected) ?? moments[0]
   const slot = concept && song ? clips[clipKey(concept, song.number)] : undefined
   const clip = slot?.status === 'ready' ? slot.clip : slot?.previous
-  const songIndex = Math.max(0, moments.findIndex((m) => m.number === song?.number))
-  const frame = clipFrame(still, clip, songIndex, moments.length, INDOOR.has(brief.venueId))
+  const frame = clipFrame(still, clip, brief)
   // Under the live 3D frame (while it loads), show the same stage's 3D still, never the old 2D poster.
-  const playerPoster = useMomentThumb(still, songIndex, moments.length, INDOOR.has(brief.venueId), clip?.poster)
+  const playerPoster = useMomentThumb(still, brief, song?.number ?? 0, clip?.poster)
   const readyCount = motionStills.reduce(
     (n, id) => n + moments.filter((m) => clips[clipKey(id, m.number)]?.status === 'ready').length,
     0,
@@ -47,7 +45,7 @@ export function MotionPage() {
     0,
   )
 
-  // Tell the chat which clip is open, so "slow the split" typed there edits this one.
+  // Tell the chat which clip is open, so "slower camera move" typed there edits this one.
   useEffect(() => {
     if (concept && song) setMotionFocus(concept, song.number)
   }, [concept, song, setMotionFocus])
@@ -191,7 +189,7 @@ export function MotionPage() {
                 >
                   <Input
                     label="Edit in plain words"
-                    hint="e.g. “slow the split”. The rest of the clip stays the same. Edits use a preview model: confirm cover before production use."
+                    hint="e.g. “slower camera move”. The rest of the clip stays the same. Edits use a preview model: confirm cover before production use."
                     placeholder="Describe the change"
                     value={instruction}
                     disabled={slot?.status !== 'ready'}
@@ -215,16 +213,14 @@ export function MotionPage() {
               Key moments
             </h2>
             <ul className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
-              {moments.map((m, i) => {
+              {moments.map((m) => {
                 const c = clips[clipKey(still.id, m.number)]
                 const poster = c?.status === 'ready' ? c.clip.poster : c?.status === 'generating' ? c.previous?.poster : undefined
                 return (
                   <li key={m.number} className="min-w-0">
                     <MomentTile
                       still={still}
-                      index={i}
-                      total={moments.length}
-                      indoor={INDOOR.has(brief.venueId)}
+                      brief={brief}
                       song={m.number}
                       title={m.title}
                       status={c ? (c.status === 'ready' ? 'ready' : 'generating') : 'not-started'}
@@ -238,13 +234,13 @@ export function MotionPage() {
             </ul>
           </section>
           <p className="sr-only" aria-live="polite">
-            {rendering ? `${rendering} clip${rendering === 1 ? '' : 's'} rendering` : `${readyCount} clips ready`}
+            {rendering ? `${rendering} clip${rendering === 1 ? '' : 's'} rendering` : `${readyCount} ${readyCount === 1 ? 'clip' : 'clips'} ready`}
           </p>
         </div>
       </div>
       <StepFooter
         note={sent ? 'Already sent. Sending again shares the latest clips as a new version.' : 'The artist sees your concepts and clips together, and comments on both.'}
-        status={`${readyCount} clips ready${rendering ? ` · ${rendering} rendering` : ''}`}
+        status={`${readyCount} ${readyCount === 1 ? 'clip' : 'clips'} ready${rendering ? ` · ${rendering} rendering` : ''}`}
       >
         <Button onClick={send} disabled={readyCount === 0 || status === 'awaiting-artist'}>
           <Icon icon={SendIcon} />

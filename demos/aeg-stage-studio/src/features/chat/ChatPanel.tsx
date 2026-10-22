@@ -20,13 +20,17 @@ const PLACEHOLDER: Record<string, string> = {
   setup: 'Answer the question, or use a suggestion',
   brief: 'Describe the show, or ask me to change the brief…',
   stills: 'Feedback for the next round, or “B1: …” for one concept',
-  motion: 'Change the open clip, e.g. “slow the split”',
+  motion: 'Change the open clip, e.g. “slower camera move”',
   review: 'Ask about the review, e.g. “what’s comment 2?”',
   handoff: 'Ask about the package or the decision log',
 }
 
 /** The step in a project URL: /p/:id/<step>. */
 const stepOf = (pathname: string) => pathname.split('/')[3] || 'brief'
+
+/** A question, not an instruction: it gets an answer and never changes anything. */
+const isQuestion = (text: string) =>
+  /\?\s*$/.test(text) || /^(what|how|why|when|where|who|which|can|could|should|would|is|are|do|does|did|will|have|has|tell me|explain)\b/i.test(text)
 
 /** One conversation for the whole collaboration: it lives in the app shell, so it survives every route change. */
 /** The agent's reasoning, steps and tool calls for one answer. Collapsed by default; the header says what it did. */
@@ -130,15 +134,24 @@ export function ChatPanel() {
       const code = /\b([A-D])(\d+)\b/i.exec(value)
       const target = code && latest?.stills.find((s) => s.concept === code[1]!.toUpperCase() && s.round === Number(code[2]))
       if (target) {
-        // “B1: sharper top edge” refines that concept, the same as describing the change on its card.
+        // “B1: narrower, warmer” refines that concept, the same as describing the change on its card.
         void project.refineStill(target.id, value.replace(/^\s*[A-D]\d+\s*[:,-]?\s*/i, '') || value)
+      } else if (isQuestion(value)) {
+        const round = project.currentRound
+        const picked = project.selected.length
+        void reply(
+          'Checking the round',
+          'You asked a question, so I’ll answer from the round as it stands and change nothing.',
+          ['Read the current round', 'Checked what is selected'],
+          `Round ${round?.number ?? 1} has four concepts${picked ? `, and ${picked} ${picked === 1 ? 'is' : 'are'} selected` : ''}. To change one, name it, e.g. “B1: narrower, warmer”. To steer the next round, tell me what should be different.`,
+        )
       } else {
         project.addFeedback(value)
         void reply(
           'Noting feedback',
           'This is about the round as a whole, so I’ll keep it for the next round instead of tying it to one concept.',
           ['Read your feedback', `Queued it for round ${project.rounds.length + 1}`],
-          `Noted for round ${project.rounds.length + 1}. Start a new round when you’re ready. To change one concept now, name it, e.g. “B1: sharper top edge”.`,
+          `Noted for round ${project.rounds.length + 1}. Start a new round when you’re ready. To change one concept now, name it, e.g. “B1: narrower, warmer”.`,
         )
       }
       return
@@ -171,12 +184,53 @@ export function ChatPanel() {
       return
     }
 
-    // Brief: "avoid …" goes to the no-go list; anything else becomes a visual-direction keyword.
     say('user', value)
+
+    if (step === 'handoff') {
+      const open = project.review.filter((c) => !c.resolved).length
+      void reply(
+        'Checking the package',
+        'You asked about the handoff, so I’ll answer from the package as it stands and change nothing.',
+        ['Read the package contents', 'Checked rights and provenance', 'Counted open comments'],
+        project.status === 'approved'
+          ? `Before production builds it: legal should confirm C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the placeholders.${open ? ` ${open} artist comment${open === 1 ? ' was left open; it’s' : 's were left open; they’re'} in the decision log.` : ''}`
+          : 'The package comes together once the artist approves. Finish the review first.',
+      )
+      return
+    }
+
+    // The brief: a question gets an answer; a short look ("warmer, more haze") becomes a keyword; "avoid …" a no-go.
+    if (project.status === 'approved') {
+      void reply('Checking the brief', 'The design is approved, so the brief is locked.', ['Checked the project status'], 'The brief is locked because the artist approved the design. Start a new project for changes.')
+      return
+    }
+    if (isQuestion(value)) {
+      const missing = [!brief.moments.length && 'key moments', !brief.keywords.length && 'a visual direction'].filter(Boolean)
+      void reply(
+        'Reading the brief',
+        'You asked a question, so I’ll answer from the brief and change nothing.',
+        ['Read the brief'],
+        `The brief has ${brief.keywords.length} visual keyword${brief.keywords.length === 1 ? '' : 's'} and ${brief.moments.length} key moment${brief.moments.length === 1 ? '' : 's'}.${missing.length ? ` Still missing: ${missing.join(' and ')}.` : ''} Tell me a look in a few words (“warmer, more haze”) or a no-go (“avoid red”) and I’ll add it.`,
+      )
+      return
+    }
+    const noGo = /^(avoid|never)\b/i.test(value) || /^no\s+(?!,)[a-z]/i.test(value) && !/^no[,.!]/i.test(value) && value.split(/\s+/).length <= 8
+    // A look reads like "warmer, more haze": short, and never about "I", "we" or "you" ("No, I meant…" is conversation).
+    const conversational = /^(no|yes|yeah|ok|okay|thanks|thank you|sorry|hmm|actually|wait|never ?mind)\b/i.test(value) || /\b(i|i'm|i’m|me|my|we|our|you|your)\b/i.test(value)
+    const short = value.split(/\s+/).length <= 6 && !conversational
+    if (!noGo && !short) {
+      void reply(
+        'Reading your message',
+        'This doesn’t read as a change to the brief, so I’ve left the brief as it is.',
+        ['Read your message', 'Kept the brief unchanged'],
+        'I’ve left the brief as it is. To change it, tell me a look in a few words (“warmer, more haze”) or a no-go (“avoid red”), or edit the cards directly.',
+      )
+      return
+    }
     const replyId = say('assistant', '', true)
     updateMessage(replyId, { thinking: briefThinking(value, '') })
     await generation.draftBrief({ description: value })
-    if (/^(avoid|no|never)\b/i.test(value)) {
+    if (noGo) {
       const rule = value.replace(/[.!]$/, '')
       patchBrief({ constraints: { ...brief.constraints, noGo: `${brief.constraints.noGo}\n${rule}` } }, 'agent')
       updateMessage(replyId, {
@@ -186,7 +240,7 @@ export function ChatPanel() {
       })
       return
     }
-    const words = value.replace(/^(keep it|make it|go for|try|use|add|i want|we want)\s+/i, '').replace(/[.,!?]$/, '').split(/\s+/).slice(0, 4).join(' ')
+    const words = value.replace(/^(keep it|make it|go for|try|use|add|i want|we want)\s+/i, '').replace(/[.,!?]$/, '')
     const added = words.charAt(0).toUpperCase() + words.slice(1)
     const keywords = brief.keywords.includes(added) ? brief.keywords : [...brief.keywords, added]
     patchBrief({ keywords }, 'agent')

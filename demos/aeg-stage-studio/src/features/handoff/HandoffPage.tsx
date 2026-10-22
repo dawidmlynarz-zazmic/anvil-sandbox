@@ -207,7 +207,7 @@ export function HandoffPage() {
           )}
         </div>
       </div>
-      <StepFooter note="The artist owns everything in the package." status={exported ? 'Exported' : 'Ready to export'}>
+      <StepFooter note="The artist owns everything in the package." status={exported ? 'Sent to production' : 'Ready to export'}>
         <Button onClick={() => setExported(true)} disabled={exported}>
           <Icon icon={DownloadIcon} />
           {exported ? 'Exported' : 'Export package'}

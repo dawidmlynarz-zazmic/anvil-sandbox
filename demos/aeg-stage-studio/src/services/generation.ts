@@ -1,5 +1,6 @@
 import { stageArt, type ArtShape } from '~/mocks/art'
 import { initialBrief } from '~/mocks/project'
+import { conceptTitle, SHAPES, type ConceptPlan } from './rounds'
 import type {
   Brief,
   BriefInput,
@@ -12,7 +13,7 @@ import type {
 // Mocked adapter. The signatures match the plan so Agent Platform calls can replace it without touching the UI.
 export interface GenerationService {
   draftBrief(input: BriefInput): Promise<Brief>
-  generateStills(req: StillsRequest): AsyncIterable<Still> // yields one at a time
+  generateStills(req: StillsRequest, plan?: ConceptPlan[]): AsyncIterable<Still> // yields one at a time
   generateMotion(req: MotionRequest): Promise<MotionClip>
   editMotion(clipId: string, instruction: string): Promise<MotionClip>
 }
@@ -49,24 +50,32 @@ const clipFor = (stillId: string, momentNumber: number, version = 1, edits: stri
   }
 }
 
-/** A round's four concepts, synchronously. `project` keeps ids and images distinct between projects. */
-export function stillsFor(req: StillsRequest): Still[] {
+/**
+ * A round's four concepts, synchronously. Without a plan they are the four starting directions; with one (built from
+ * the user's selection, see planRound) each slot draws what the plan says. `project` keeps ids distinct between projects.
+ */
+export function stillsFor(req: StillsRequest, plan?: ConceptPlan[]): Still[] {
   const prefix = req.project ? `${req.project}.` : ''
   // Rounds and projects vary the render slightly (proportions, crowd), so round 2's B is a new take on B.
   const seed = [...`${prefix}${req.round}`].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % 997
-  return CONCEPTS.map((concept) => ({
-    id: `${prefix}r${req.round}-${concept.letter}`,
-    round: req.round,
-    concept: concept.letter,
-    title: `${concept.letter}${req.round} · ${concept.title}`,
-    image: stageArt(
-      `${prefix}r${req.round}-${concept.letter}-${req.timeOfDay}-${req.view}`,
-      concept.shape,
-      req.timeOfDay,
-      req.crowd === 'full' ? 1.4 : 0.7,
-    ),
-    spec: { concept: concept.shape, timeOfDay: req.timeOfDay, crowd: req.crowd, view: req.view, seed },
-  }))
+  const slots: ConceptPlan[] = plan ?? SHAPES.map((shape) => ({ shape, why: 'fresh' }))
+  return CONCEPTS.map((concept, i) => {
+    const slot = slots[i] ?? { shape: concept.shape as ConceptPlan['shape'], why: 'fresh' }
+    return {
+      id: `${prefix}r${req.round}-${concept.letter}`,
+      round: req.round,
+      concept: concept.letter,
+      title: `${concept.letter}${req.round} · ${conceptTitle(slot.shape, slot.with)}`,
+      image: stageArt(
+        `${prefix}r${req.round}-${concept.letter}-${req.timeOfDay}-${req.view}`,
+        slot.shape,
+        req.timeOfDay,
+        req.crowd === 'full' ? 1.4 : 0.7,
+      ),
+      spec: { concept: slot.shape, with: slot.with, tweaks: slot.tweaks, timeOfDay: req.timeOfDay, crowd: req.crowd, view: req.view, seed },
+      reworked: slot.reworked,
+    }
+  })
 }
 
 /** A clip that is already rendered when the user arrives at Motion. Synchronous, so state can be seeded. */
@@ -82,9 +91,9 @@ export const generation: GenerationService = {
     }
   },
 
-  async *generateStills(req) {
+  async *generateStills(req, plan) {
     await sleep(between(1200, 1800))
-    for (const still of stillsFor(req)) {
+    for (const still of stillsFor(req, plan)) {
       yield still
       await sleep(between(400, 900))
     }

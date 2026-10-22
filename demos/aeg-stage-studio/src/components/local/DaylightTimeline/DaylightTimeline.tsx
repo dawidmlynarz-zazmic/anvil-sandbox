@@ -63,7 +63,11 @@ export function DaylightTimeline({ start, end, sunset, from = 16 * 60, to = 23 *
   const startPhase = PHASES.find((_, i) => start >= bounds[i]! && start < bounds[i + 1]!) ?? PHASES[3]
   const endPhase = PHASES.find((_, i) => end > bounds[i]! && end <= bounds[i + 1]!) ?? PHASES[3]
   const parts = PHASES.filter((p) => spent[p.key] >= 1).map((p) => `${Math.round(spent[p.key])} min ${p.label.toLowerCase()}`)
-  const summary = `Starts in ${startPhase.label.toLowerCase()} and ends in ${endPhase.label.toLowerCase()}. ${parts.join(', ')}.`
+  const phase = (p: (typeof PHASES)[number]) => (p.key === 'night' ? 'after dark' : `in ${p.label.toLowerCase()}`)
+  const summary =
+    startPhase === endPhase
+      ? `Entirely ${phase(startPhase)}. ${parts.join(', ')}.`
+      : `Starts ${phase(startPhase)} and ends ${phase(endPhase)}. ${parts.join(', ')}.`
   const hours = [16, 18, 20, 22].map((h) => h * 60)
 
   return (

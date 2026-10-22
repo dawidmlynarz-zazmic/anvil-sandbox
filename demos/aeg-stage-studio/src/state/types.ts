@@ -84,13 +84,31 @@ export interface StillVersion {
   reworked?: boolean
 }
 
+export type ConceptShape = 'arch' | 'monolith' | 'ribbons' | 'halo'
+
+/** Visible design changes on top of a concept: what a rework or a variation actually alters in the render. */
+export interface StageTweaks {
+  /** Horizontal size of the centrepiece (1 = as designed). */
+  width?: number
+  /** Raises (+) or lowers (−) the centrepiece, in metres. */
+  lift?: number
+  palette?: 'warm' | 'gold' | 'cool' | 'white'
+  /** Extra atmospheric haze, 0–1. */
+  haze?: number
+  /** LED and lamp intensity (1 = as designed). */
+  brightness?: number
+}
+
 /** The 3D stage a concept shows. Mirrors the renderer's StageSpec without importing three.js into state. */
 export interface StillSpec {
-  concept: 'arch' | 'monolith' | 'ribbons' | 'halo'
+  concept: ConceptShape
+  /** A second centrepiece, for a concept that combines two (e.g. an arch around a monolith). */
+  with?: ConceptShape
   timeOfDay: TimeOfDay
   crowd: Crowd
   view: StageView
   seed: number
+  tweaks?: StageTweaks
 }
 
 export interface Round {

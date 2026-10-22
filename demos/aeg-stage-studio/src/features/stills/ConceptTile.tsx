@@ -1,6 +1,7 @@
 import { ConceptCard, ConceptCardPending } from '~/components/local/ConceptCard/ConceptCard'
 import { StillImage, useStillUrl } from '~/components/StillImage'
-import { briefCheck, RATIONALE } from '~/services/briefCheck'
+import { briefCheck, rationale } from '~/services/briefCheck'
+import { describeTweaks } from '~/services/rounds'
 import { useProject } from '~/state/ProjectContext'
 import type { Still } from '~/state/types'
 
@@ -15,7 +16,7 @@ export function ConceptTile({ still, readOnly }: { still: Still; readOnly: boole
   return (
     <ConceptCard
       title={still.title}
-      rationale={RATIONALE[still.concept]}
+      rationale={rationale(still, p.brief)}
       version={still.version ?? 1}
       change={still.change}
       mediaSrc={src}
@@ -31,6 +32,7 @@ export function ConceptTile({ still, readOnly }: { still: Still; readOnly: boole
           ? 'generating'
           : still.variants?.map((spec, i) => <StillImage key={i} still={{ ...still, spec: still.spec ? { ...spec, timeOfDay: still.spec.timeOfDay, crowd: still.spec.crowd, view: still.spec.view } : spec }} alt={`Variation ${i + 1}`} />)
       }
+      variantCaptions={Array.isArray(still.variants) ? still.variants.map((v) => describeTweaks(v.tweaks)) : undefined}
       onPickVariant={(i) => p.pickVariant(still.id, i)}
       onCloseVariants={() => p.pickVariant(still.id, null)}
       annotations={still.annotations}

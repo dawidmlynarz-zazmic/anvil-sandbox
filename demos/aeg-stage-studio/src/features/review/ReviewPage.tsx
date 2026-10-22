@@ -19,10 +19,9 @@ import { PinnedImage } from '~/components/local/PinnedImage/PinnedImage'
 import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
 import { clipFrame, useMomentThumb } from '~/components/clipFrame'
-import { INDOOR } from '~/mocks/venues'
 import { SYNTHID_SHORT } from '~/mocks/copy'
 import { clipKey, useProject } from '~/state/ProjectContext'
-import type { MotionClip, ReviewComment, Still } from '~/state/types'
+import type { Brief, MotionClip, ReviewComment, Still } from '~/state/types'
 import { ApproveButton, ArtistApproveDialog, RequestChangesDialog } from './ReviewDialogs'
 import { StillImage, useStillUrl } from '~/components/StillImage'
 
@@ -33,12 +32,12 @@ function PinnedStill({ still, ...props }: Omit<React.ComponentProps<typeof Pinne
 }
 
 /** A song's clip as the artist saw it: live 3D, over that song's 3D still while the scene loads. */
-function ReviewClip({ still, clip, index, total, indoor }: { still: Still; clip: MotionClip; index: number; total: number; indoor: boolean }) {
-  const poster = useMomentThumb(still, index, total, indoor, clip.poster)
+function ReviewClip({ still, clip, brief }: { still: Still; clip: MotionClip; brief: Brief }) {
+  const poster = useMomentThumb(still, brief, clip.momentNumber, clip.poster)
   return (
     <ClipPlayer
       poster={poster}
-      renderFrame={clipFrame(still, clip, index, total, indoor)?.render}
+      renderFrame={clipFrame(still, clip, brief)?.render}
       label={`Song ${clip.momentNumber}, clip version ${clip.version}`}
     />
   )
@@ -271,9 +270,7 @@ export function ReviewPage() {
                     <ReviewClip
                       still={still}
                       clip={slot.clip}
-                      index={Math.max(0, brief.moments.findIndex((m) => m.number === song))}
-                      total={brief.moments.length}
-                      indoor={INDOOR.has(brief.venueId)}
+                      brief={brief}
                     />
                   ) : (
                     <p className="text-muted-foreground type-text-sm-normal">This clip wasn’t ready when you sent, so the artist hasn’t seen it.</p>
@@ -295,15 +292,13 @@ export function ReviewPage() {
                     </form>
                   )}
                   <ul className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
-                    {brief.moments.map((m, i) => {
+                    {brief.moments.map((m) => {
                       const c = clips[clipKey(still.id, m.number)]
                       return (
                         <li key={m.number} className="min-w-0">
                           <MomentTile
                             still={still}
-                            index={i}
-                            total={brief.moments.length}
-                            indoor={INDOOR.has(brief.venueId)}
+                            brief={brief}
                             song={m.number}
                             title={m.title}
                             status={c ? (c.status === 'ready' ? 'ready' : 'generating') : 'not-started'}

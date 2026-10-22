@@ -1,13 +1,11 @@
 import { ClipTile, type ClipStatus } from '~/components/local/ClipTile/ClipTile'
 import { useMomentThumb } from '~/components/clipFrame'
-import type { Still } from '~/state/types'
+import type { Brief, Still } from '~/state/types'
 
 /** A key moment in the strip, with its 3D thumbnail. */
 export function MomentTile({
   still,
-  index,
-  total,
-  indoor,
+  brief,
   song,
   title,
   status,
@@ -16,9 +14,8 @@ export function MomentTile({
   onClick,
 }: {
   still: Still
-  index: number
-  total: number
-  indoor: boolean
+  /** The brief, for the light this song plays in. */
+  brief: Brief
   song: number
   title: string
   status: ClipStatus
@@ -26,6 +23,6 @@ export function MomentTile({
   selected: boolean
   onClick: () => void
 }) {
-  const thumb = useMomentThumb(still, index, total, indoor, poster)
+  const thumb = useMomentThumb(still, brief, song, poster)
   return <ClipTile song={song} title={title} status={status} poster={status === 'not-started' ? undefined : thumb} selected={selected} onClick={onClick} />
 }

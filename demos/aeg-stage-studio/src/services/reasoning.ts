@@ -1,4 +1,5 @@
 import { venues } from '~/mocks/venues'
+import { slotNote } from './light'
 import { CROWD_LABEL, TIME_LABEL, VIEW_LABEL, type Brief, type Thinking, type StillsRequest } from '~/state/types'
 
 type Settings = Omit<StillsRequest, 'round'>
@@ -18,7 +19,7 @@ export function roundThinking(brief: Brief, s: Settings, round: number, pins: nu
   const venue = venues.find((v) => v.id === brief.venueId)?.name ?? 'the venue'
   return {
     title: `Planning round ${round}`,
-    reasoning: `You asked for ${brief.keywords.slice(0, 3).join(', ').toLowerCase()}. ${TIME_LABEL[s.timeOfDay]} matches your slot (${brief.slot.note.toLowerCase()}), so I’ll light every concept for that moment. ${pins ? `You selected ${pins} concept${pins > 1 ? 's' : ''}, so I’ll treat ${pins > 1 ? 'them' : 'it'} as the reference and vary the rest.` : 'Nothing is selected yet, so I’ll explore four different structures.'}`,
+    reasoning: `You asked for ${brief.keywords.slice(0, 3).join(', ').toLowerCase()}. ${TIME_LABEL[s.timeOfDay]} matches your slot (${slotNote(brief).toLowerCase()}), so I’ll light every concept for that moment. ${pins ? `You selected ${pins} concept${pins > 1 ? 's' : ''}, so I’ll treat ${pins > 1 ? 'them' : 'it'} as the reference and vary the rest.` : 'Nothing is selected yet, so I’ll explore four different structures.'}`,
     steps: [`Loaded ${venue} specs`, 'Checked the artist’s no-go list', 'Drafted four prompts from the brief'],
     tools: [
       {

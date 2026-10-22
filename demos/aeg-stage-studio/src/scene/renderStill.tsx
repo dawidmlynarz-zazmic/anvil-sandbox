@@ -1,6 +1,7 @@
 import { createRoot, extend, type ReconcilerRoot } from '@react-three/fiber'
 import * as THREE from 'three'
 import { StageScene, type StageSpec } from './StageScene'
+import { specKey } from './specKey'
 
 // One hidden WebGL canvas renders every concept still, one at a time, and hands back a JPEG data URL.
 // Results are cached in memory for the session (not in sessionStorage: they're ~100 KB each and cheap to redo).
@@ -12,8 +13,6 @@ const inflight = new Map<string, Promise<string>>()
 let root: ReconcilerRoot<HTMLCanvasElement> | null = null
 let canvas: HTMLCanvasElement | null = null
 let queue: Promise<unknown> = Promise.resolve()
-
-export const specKey = (s: StageSpec) => `${s.concept}|${s.timeOfDay}|${s.crowd}|${s.view}|${s.seed ?? 1}`
 
 const tick = () => new Promise((r) => setTimeout(r, 0))
 

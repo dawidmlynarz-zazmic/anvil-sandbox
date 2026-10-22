@@ -12,9 +12,9 @@ export const initialBrief: Brief = {
   venueId: 'coachella-stage',
   slot: {
     day: 'Saturday',
-    time: '7:40 pm',
+    time: '7:10 pm',
     length: '75 min',
-    note: 'Golden hour → night by song 9',
+    note: 'Golden hour → night by song 12',
   },
   keywords: ['Desert modernism', 'Warm haze', 'Monolithic', 'Kinetic light'],
   referenceCount: 3,
@@ -51,7 +51,7 @@ export const openingMessages: ChatTurn[] = [
   {
     id: 2,
     role: 'assistant',
-    text: 'Thanks. I loaded the Coachella Stage specs and matched your slot to sunset, so the show runs from golden hour into night by song 9. I filled in the brief from your mood board and setlist. Two quick answers would sharpen the concepts:',
+    text: 'Thanks. I loaded the Coachella Stage specs and matched your slot to sunset, so the show runs from golden hour into night by song 12. I filled in the brief from your mood board and setlist. Two quick answers would sharpen the concepts:',
     suggestions: ['Keep it symmetrical', 'Avoid red and green'],
   },
 ]

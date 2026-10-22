@@ -2,6 +2,10 @@ import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'r
 import { artistFeedback } from '~/mocks/review'
 import { applyAnswer, DONE_TEXT, QUESTIONS } from '~/services/interview'
 import { generation } from '~/services/generation'
+import { listing, take, tweaksFrom } from '~/services/changes'
+import { openingLight } from '~/services/light'
+import { describeTweaks, planRound } from '~/services/rounds'
+import { venuesFor } from '~/mocks/venues'
 import { shapeFor, stageArt } from '~/mocks/art'
 import { motionThinking, roundThinking } from '~/services/reasoning'
 import { clipKey, type Action, type ProjectState, type Settings } from './project'
@@ -77,6 +81,9 @@ const ProjectContext = createContext<ProjectApi | null>(null)
 
 const describe = (s: Settings) => `${TIME_LABEL[s.timeOfDay]}, ${CROWD_LABEL[s.crowd].toLowerCase()}, ${VIEW_LABEL[s.view]}`
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+/** The honest reply when a described change is beyond what the preview renderer can show. */
+const cantShow = (change: string, code: string) =>
+  `I kept ${code} as it is: this preview can't show “${change}”. In the pilot, Nano Banana Pro edits exactly what you describe. Here I can change size, height, colour, haze and brightness, e.g. “narrower, warmer”.`
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const DEFAULT_SETTINGS: Settings = { timeOfDay: 'golden-hour', crowd: 'full', view: 'front-of-house' }
 
@@ -101,13 +108,13 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
   const stillTitle = (sid: string) => get().rounds.flatMap((r) => r.stills).find((s) => s.id === sid)?.title ?? sid
   const momentTitle = (song: number) => get().brief.moments.find((m) => m.number === song)?.title ?? `Song ${song}`
 
-  const runRound = async (number: number, settings: Settings, summary: string, extraSteps: string[]) => {
+  const runRound = async (number: number, settings: Settings, summary: string, extraSteps: string[], plan?: Parameters<typeof generation.generateStills>[1]) => {
     const started = Date.now()
     let thinking = roundThinking(get().brief, settings, number, get().selected.length)
     thinking = { ...thinking, steps: [...thinking.steps, ...extraSteps] }
     const messageId = say('assistant', '', true)
     updateMessage(messageId, { thinking })
-    for await (const still of generation.generateStills({ round: number, project: id, ...settings })) {
+    for await (const still of generation.generateStills({ round: number, project: id, ...settings }, plan)) {
       d({ type: 'round/still', round: number, still })
       thinking = { ...thinking, steps: [...thinking.steps, `Rendered ${still.title}`] }
       updateMessage(messageId, { thinking })
@@ -127,24 +134,23 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
   const generateRound: ProjectApi['generateRound'] = async (settings, note = '', artistComments = [], direction = '', useSelected = true) => {
     const s = get()
     const number = s.rounds.length + 1
-    const picks = useSelected ? s.selected.length : 0
-    const avoided = s.rounds.flatMap((r) => r.stills).filter((st) => st.dismissed).length
+    const all = s.rounds.flatMap((r) => r.stills)
+    const parents = useSelected ? all.filter((st) => s.selected.includes(st.id)) : []
+    const dismissed = [...new Set(all.filter((st) => st.dismissed && st.spec).map((st) => st.spec!.concept))].filter((shape) => !parents.some((p) => p.spec?.concept === shape))
     const feedback = direction ? [...s.feedback, direction] : s.feedback
     d({ type: 'round/start', round: { number, note, settings, stills: [], done: false, briefRevision: s.briefRevision } })
     d({ type: 'feedback/clear' })
-    const used = [
-      picks ? `${plural(picks, 'selected concept')} as the reference` : '',
-      avoided ? `steered away from ${plural(avoided, 'dismissed direction')}` : '',
-      feedback.length ? `your chat feedback (“${feedback.join('”, “')}”)` : '',
-      artistComments.length ? plural(artistComments.length, 'artist comment') : '',
-    ].filter(Boolean)
+    // Round 1 opens the brief's four directions; later rounds are planned from the selection, so the message is true.
+    const planned = number === 1 ? undefined : planRound({ round: number, parents, dismissed, notes: [...feedback, ...artistComments] })
+    const keywords = s.brief.keywords.slice(0, 3).join(', ').toLowerCase()
     await runRound(
       number,
       settings,
       number === 1
-        ? `Round 1 is ready: four concepts for ${describe(settings).toLowerCase()}. Select the ones to take into motion, annotate what should change on any concept, or ask for more like one you like.`
-        : `Round ${number} is ready for ${describe(settings).toLowerCase()}. ${used.length ? `I used ${used.join(', ')}.` : 'Nothing was selected, so I explored four new concepts.'}`,
-      [...feedback.map((f) => `Applied chat feedback: “${f}”`), ...artistComments.map((c) => `Applied artist comment: “${c}”`)],
+        ? `Round 1 is ready: four directions for ${keywords}, lit for ${describe(settings).toLowerCase()} to match your slot. Select the ones to take into motion, annotate what should change on any concept, or ask for more like one you like.`
+        : `Round ${number} is ready for ${describe(settings).toLowerCase()}. ${planned!.summary}`,
+      [...feedback.map((f) => `Read your note: “${f}”`), ...artistComments.map((c) => `Read the artist's comment: “${c}”`)],
+      planned?.plan,
     )
   }
 
@@ -165,12 +171,14 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     if (result.patch) d({ type: 'brief/patch', patch: result.patch, source: 'agent' })
     if (question.section !== 'who') d({ type: 'brief/reveal', sections: [question.section as BriefSection] })
     const next = QUESTIONS[s.setupStep + 1]
+    // Suggest the stages of the event the user named (Stagecoach's, not Coachella's).
+    const nextSuggestions = next?.section === 'venue' ? venuesFor(result.meta?.event ?? s.meta.event).map((v) => v.name) : next?.suggestions
     d({ type: 'setup/step', step: s.setupStep + 1 })
     updateMessage(replyId, {
       pending: false,
       thinking: { ...thinking, seconds: 1 },
       text: next ? `${result.summary} ${next.ask}` : `${result.summary} ${DONE_TEXT}`,
-      suggestions: next?.suggestions,
+      suggestions: nextSuggestions,
     })
   }
 
@@ -248,9 +256,16 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       `Edit ${st.title}: ${change}. Keep the structure, materials and lighting otherwise.`,
     )
     const fresh = findStill(sid)!
-    const version = newVersion(fresh, fresh.spec && reseed(fresh.spec, (fresh.version ?? 1) + 1), change)
-    d({ type: 'version/add', summary: `${st.title.split(' · ')[0]} v${version}: “${change}”`, author: 'You' })
-    updateMessage(msg, { pending: false, thinking, text: `${st.title.split(' · ')[0]} is now v${version} with “${change}”. Compare it with v${version - 1} on the card.` })
+    const code = st.title.split(' · ')[0]
+    const { tweaks, applied } = tweaksFrom(change, fresh.spec?.tweaks)
+    if (!applied.length || !fresh.spec) {
+      patch(sid, { busy: undefined })
+      updateMessage(msg, { pending: false, thinking, text: cantShow(change, code!) })
+      return
+    }
+    const version = newVersion(fresh, { ...fresh.spec, tweaks }, change)
+    d({ type: 'version/add', summary: `${code} v${version}: “${change}”`, author: 'You' })
+    updateMessage(msg, { pending: false, thinking, text: `${code} is now v${version}: ${listing(applied)}. Compare it with v${version - 1} on the card.` })
   }
 
   const addAnnotation: ProjectApi['addAnnotation'] = (sid, text, at) => {
@@ -283,9 +298,29 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       `Edit ${st.title}:\n${list.map((a) => `${a.number}. ${a.text}${a.x !== undefined ? ` (at ${Math.round(a.x)}%, ${Math.round(a.y ?? 0)}% of the frame)` : ''}`).join('\n')}\nKeep the structure, materials and lighting otherwise.`,
     )
     const fresh = findStill(sid)!
-    const version = newVersion(fresh, fresh.spec && reseed(fresh.spec, (fresh.version ?? 1) + 1), list.length === 1 ? list[0]!.text : `${list.length} changes: ${summary}`, list)
-    d({ type: 'version/add', summary: `${st.title.split(' · ')[0]} v${version}: ${summary}`, author: 'You' })
-    updateMessage(msg, { pending: false, thinking, text: `${st.title.split(' · ')[0]} is now v${version} with your ${list.length === 1 ? 'change' : `${list.length} changes`}. Compare it with v${version - 1} on the card.` })
+    const code = st.title.split(' · ')[0]!
+    // Each noted change is read for what the preview can show; the reply says which ones it could and couldn't.
+    let tweaks = fresh.spec?.tweaks ?? {}
+    const shown: string[] = []
+    const notShown: string[] = []
+    for (const a of list) {
+      const r = tweaksFrom(a.text, tweaks)
+      tweaks = r.tweaks
+      if (r.applied.length) r.applied.forEach((x) => !shown.includes(x) && shown.push(x))
+      else notShown.push(a.text)
+    }
+    if (!shown.length || !fresh.spec) {
+      patch(sid, { busy: undefined })
+      updateMessage(msg, { pending: false, thinking, text: cantShow(list.map((a) => a.text).join('”, “'), code) })
+      return
+    }
+    const version = newVersion(fresh, { ...fresh.spec, tweaks }, list.length === 1 ? list[0]!.text : `${list.length} changes: ${summary}`, list)
+    d({ type: 'version/add', summary: `${code} v${version}: ${summary}`, author: 'You' })
+    updateMessage(msg, {
+      pending: false,
+      thinking,
+      text: `${code} is now v${version}: ${listing(shown)}.${notShown.length ? ` This preview can't show “${notShown.join('”, “')}”; the pilot model applies it.` : ''} Compare it with v${version - 1} on the card.`,
+    })
   }
 
   const regenerateStill: ProjectApi['regenerateStill'] = async (sid) => {
@@ -300,8 +335,11 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       `New version of ${st.title}. Same concept, new proportions and details.`,
     )
     const fresh = findStill(sid)!
-    const version = newVersion(fresh, fresh.spec && reseed(fresh.spec, (fresh.version ?? 1) + 11), 'Regenerated')
-    updateMessage(msg, { pending: false, thinking, text: `Here’s a new take on ${st.title.split(' · ')[0]} (v${version}). The earlier version is kept.` })
+    const code = st.title.split(' · ')[0]
+    const next = take((fresh.version ?? 1) + fresh.round)
+    const version = newVersion(fresh, fresh.spec && { ...reseed(fresh.spec, (fresh.version ?? 1) + 11), tweaks: next.tweaks }, `Regenerated: ${next.caption.toLowerCase()}`)
+    d({ type: 'version/add', summary: `${code} v${version}: regenerated (${next.caption.toLowerCase()})`, author: 'You' })
+    updateMessage(msg, { pending: false, thinking, text: `Here’s a new take on ${code} (v${version}): ${next.caption.toLowerCase()}. The earlier version is kept.` })
   }
 
   const moreLikeThis: ProjectApi['moreLikeThis'] = async (sid) => {
@@ -316,7 +354,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       `Three variations of ${st.title}. Keep the structure; vary the details.`,
     )
     const base = findStill(sid)!.spec!
-    patch(sid, { variants: [1, 2, 3].map((i) => reseed(base, i * 13 + (st.version ?? 1))) })
+    patch(sid, { variants: [0, 1, 2].map((i) => ({ ...reseed(base, i * 13 + (st.version ?? 1)), tweaks: take(i * 2 + (st.version ?? 1), base.tweaks).tweaks })) })
     updateMessage(msg, { pending: false, thinking: { ...thinking, tools: thinking.tools.map((t) => ({ ...t, summary: 'Nano Banana Pro · 3 images', output: '3 images · SynthID watermarked' })) }, text: `Three variations of ${st.title.split(' · ')[0]} are on its card. Pick one to make it the next version.` })
   }
 
@@ -324,7 +362,12 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const st = findStill(sid)
     if (!st || !Array.isArray(st.variants)) return
     if (index === null) return patch(sid, { variants: undefined })
-    newVersion(st, st.variants[index], `Variation ${index + 1}`)
+    const pick = st.variants[index]!
+    const caption = describeTweaks(pick.tweaks) || `variation ${index + 1}`
+    const code = st.title.split(' · ')[0]
+    const version = newVersion(st, pick, `Variation: ${caption}`)
+    d({ type: 'version/add', summary: `${code} v${version}: picked a variation (${caption})`, author: 'You' })
+    say('assistant', `${code} is now v${version}: ${caption}. Compare it with v${version - 1} on the card.`)
   }
 
   const restoreVersion: ProjectApi['restoreVersion'] = (sid, version) => {
@@ -362,7 +405,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       d({ type: 'brief/reveal', sections: ['venue', 'slot', 'visual', 'constraints', 'moments'] })
       d({ type: 'phase/set', phase: 'loop' })
       d({ type: 'meta/patch', patch: { briefDate: Date.now() } })
-      void generateRound(DEFAULT_SETTINGS, 'Opening round from the brief')
+      void generateRound({ ...DEFAULT_SETTINGS, timeOfDay: openingLight(get().brief) }, 'Opening round from the brief')
     },
     generateRound,
     toggleSelect: (sid) => d({ type: 'still/select', id: sid }),

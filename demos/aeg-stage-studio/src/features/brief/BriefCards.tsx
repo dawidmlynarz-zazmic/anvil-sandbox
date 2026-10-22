@@ -11,7 +11,7 @@ import { Textarea } from '@anvil/components/ui/textarea'
 import { Chip } from '@anvil/components/anvil/chip'
 import { KeyValueList, KeyValueRow } from '@anvil/components/anvil/key-value-row'
 import { DaylightTimeline } from '~/components/local/DaylightTimeline/DaylightTimeline'
-import { parseClock, parseLength } from '~/lib/time'
+import { setTimes, SUNSET } from '~/services/light'
 import { budgetBands } from '~/mocks/project'
 import { venues } from '~/mocks/venues'
 import { useProject } from '~/state/ProjectContext'
@@ -82,8 +82,7 @@ export function SlotCard() {
   const { slot } = brief
   const set = (key: keyof typeof slot) => (e: React.ChangeEvent<HTMLInputElement>) =>
     patchBrief({ slot: { ...slot, [key]: e.target.value } })
-  const start = parseClock(slot.time, 19 * 60 + 40)
-  const end = start + parseLength(slot.length, 75)
+  const { start, end } = setTimes(brief)
   return (
     <Card>
       <SectionHeader title="Performance time slot" section="slot">
@@ -96,7 +95,7 @@ export function SlotCard() {
           <Input label="Start time" hint="e.g. 7:40 pm" value={slot.time} onChange={set('time')} />
           <Input label="Length" hint="in minutes" value={slot.length} onChange={set('length')} />
         </div>
-        <DaylightTimeline start={start} end={end} sunset={19 * 60 + 14} />
+        <DaylightTimeline start={start} end={end} sunset={SUNSET} />
         <p className="text-muted-foreground type-text-xs-normal">
           Shows your set against the day’s light. Sunset is a placeholder until the real date and venue are set.
         </p>
@@ -117,7 +116,7 @@ export function VisualDirectionCard() {
   return (
     <Card>
       <SectionHeader title="Visual direction" section="visual">
-          A few words that steer the look. The agent turns them, and your {brief.referenceCount} reference images, into
+          A few words that steer the look. The agent turns them, and your {brief.referenceCount} reference image{brief.referenceCount === 1 ? '' : 's'}, into
           image and video prompts. Use the paperclip in the chat to add more references.
         </SectionHeader>
       <CardContent className="flex flex-col gap-4">

@@ -1,5 +1,6 @@
 import { initialBrief } from '~/mocks/project'
 import { venues } from '~/mocks/venues'
+import { slotNote } from './light'
 import type { Brief, BriefSection } from '~/state/types'
 
 /** The agent's brief interview for a new project: one question per part of the brief. */
@@ -9,6 +10,7 @@ export const QUESTIONS: { section: BriefSection | 'who'; ask: string; suggestion
     ask: 'Let’s set up a new show. Who is the artist, and which event is it for?',
     suggestions: ['[Artist D] · Stagecoach 2027'],
   },
+  // The venue suggestions are replaced with the named event's stages when the question is asked.
   { section: 'venue', ask: 'Which venue and stage?', suggestions: venues.slice(0, 3).map((v) => v.name) },
   {
     section: 'slot',
@@ -48,22 +50,27 @@ export function applyAnswer(
   switch (section) {
     case 'who': {
       const [artist = text, event = 'New show'] = text.split(/\s*[·,]\s*|\s+at\s+|\s+for\s+/i)
-      return { meta: { artist: artist.trim(), event: event.trim() }, summary: `Project set up for ${artist.trim()} · ${event.trim()}` }
+      return { meta: { artist: artist.trim(), event: event.trim() }, summary: `Project set up for ${artist.trim()} · ${event.trim()}.` }
     }
     case 'venue': {
       const venue = venues.find((v) => text.toLowerCase().includes(v.name.toLowerCase().split(' ')[0]!.toLowerCase())) ?? venues[0]!
-      return { patch: { venueId: venue.id }, summary: `Venue: ${venue.name}. I loaded its specs.` }
+      return {
+        patch: { venueId: venue.id },
+        summary: `Venue: ${venue.name} (${venue.kind.toLowerCase()}). Its technical specs will come from AEG’s venue library; for now they show as placeholders.`,
+      }
     }
     case 'slot': {
       const day = cap(DAYS.exec(text)?.[1]?.toLowerCase() ?? brief.slot.day)
       const time = /(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i.exec(text.replace(DAYS, ''))?.[1]?.trim() ?? brief.slot.time
       const length = /(\d+)\s*(?:min|minutes)/i.exec(text)?.[1]
       const slot = { ...brief.slot, day, time, length: length ? `${length} min` : brief.slot.length }
-      return { patch: { slot }, summary: `Slot: ${slot.day}, ${slot.time}, ${slot.length}. The timeline shows how much of it is daylight.` }
+      const note = slotNote({ ...brief, slot })
+      return { patch: { slot: { ...slot, note } }, summary: `Slot: ${slot.day}, ${slot.time}, ${slot.length}. ${note}, so I’ll light the concepts for that. The timeline in the brief shows it.` }
     }
     case 'visual': {
       const keywords = text.split(/,|\band\b/).map((k) => cap(k.trim())).filter(Boolean).slice(0, 5)
-      return { patch: { keywords }, summary: `Visual direction: ${keywords.join(', ')}.` }
+      const said = keywords.join(', ').toLowerCase()
+      return { patch: { keywords }, summary: `Visual direction: ${said.charAt(0).toUpperCase()}${said.slice(1)}.` }
     }
     case 'constraints': {
       const none = /^(nothing|none|no thanks)/i.test(text)
