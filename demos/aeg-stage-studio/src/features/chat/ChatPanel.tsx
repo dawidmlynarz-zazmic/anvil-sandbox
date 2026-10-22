@@ -5,6 +5,9 @@ import { ChatShell, ChatShellComposer, ChatShellHeader, ChatShellThread } from '
 import { MessageRow } from '@anvil/components/agent/message-row'
 import { PromptInput } from '@anvil/components/agent/prompt-input'
 import { QuickReply, QuickReplyGroup } from '@anvil/components/agent/quick-reply'
+import { ClarifyingAnswers } from '@anvil/components/agent/clarifying-question'
+import { answeredQuestions, profileQuestions } from '~/services/interview'
+import { ProfileQuestions } from '~/components/local/ProfileQuestions/ProfileQuestions'
 import { Attachment, AttachmentContent, AttachmentDescription, AttachmentMedia, AttachmentTitle } from '@anvil/components/ui/attachment'
 import { FileTextIcon, Icon } from '@anvil/components/ui/icon'
 import { moodArt } from '~/mocks/art'
@@ -291,7 +294,11 @@ export function ChatPanel() {
                     </Attachment>
                   </div>
                 )}
-                {turn.text}
+                {typeof turn.profile === 'object' ? (
+                  <ClarifyingAnswers questions={answeredQuestions(latest.meta.event, turn.profile)} answers={turn.profile} />
+                ) : (
+                  turn.text
+                )}
               </MessageRow>
             ) : (
               <MessageRow
@@ -300,7 +307,13 @@ export function ChatPanel() {
                 status={turn.pending && !turn.thinking ? 'streaming' : 'complete'}
                 thinking={<Reasoning turn={turn} />}
                 widget={
-                  turn.suggestions && i === turns.length - 1 && !turn.pending ? (
+                  // The opening questions: one card that sets up stage, time slot and look at once.
+                  turn.profile === 'ask' && !latest.profiled ? (
+                    <ProfileQuestions
+                      questions={profileQuestions(latest.meta.event)}
+                      onSubmit={(answers) => void live.current.answerProfile(answers)}
+                    />
+                  ) : turn.suggestions && i === turns.length - 1 && !turn.pending ? (
                     <QuickReplyGroup>
                       {turn.suggestions.map((s) => (
                         <QuickReply key={s} onClick={() => void send(s)}>

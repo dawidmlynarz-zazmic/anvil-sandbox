@@ -18,3 +18,34 @@ export function parseLength(text: string, fallback: number) {
   const value = Number(m[1])
   return /h/i.test(text) && !/min/i.test(text) ? Math.round(value * 60) : value
 }
+
+// Show dates are calendar days ("2027-04-17"), handled in local time so they never shift across time zones.
+const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+
+export const fromISODate = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y!, (m ?? 1) - 1, d ?? 1)
+}
+
+export const toISODate = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+
+/** "Saturday 17 April 2027". */
+export const formatShowDate = (iso: string) =>
+  fromISODate(iso).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
+/** "Saturday". */
+export const weekdayOf = (iso: string) => fromISODate(iso).toLocaleDateString('en-GB', { weekday: 'long' })
+
+/**
+ * The first given weekday in the event's season: "Saturday" for "Stagecoach 2027" → a Saturday in late April 2027
+ * (festival season). Without a year in the event, the next one from today.
+ */
+export function showDateFor(weekday: string, event: string) {
+  const target = WEEKDAYS.indexOf(weekday.toLowerCase())
+  const year = /\b(20\d\d)\b/.exec(event)?.[1]
+  const date = year ? new Date(Number(year), 3, 19) : new Date()
+  if (target < 0) return toISODate(date)
+  while (date.getDay() !== target) date.setDate(date.getDate() + 1)
+  return toISODate(date)
+}

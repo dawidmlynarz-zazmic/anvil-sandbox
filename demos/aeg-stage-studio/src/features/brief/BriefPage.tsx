@@ -11,7 +11,7 @@ import { useProject } from '~/state/ProjectContext'
 import { briefReadiness } from '~/state/readiness'
 import { reveal } from '~/lib/reveal'
 import type { BriefSection } from '~/state/types'
-import { ConstraintsCard, SetlistCard, ShowCard, SlotCard, VenueCard, VisualDirectionCard } from './BriefCards'
+import { ConstraintsCard, SetlistCard, SlotCard, VenueCard, VisualDirectionCard } from './BriefCards'
 
 const SECTIONS: { key: BriefSection; label: string; Card: () => React.ReactNode }[] = [
   { key: 'venue', label: 'Venue', Card: VenueCard },
@@ -35,7 +35,6 @@ export function BriefPage() {
   const changed = !!currentRound && currentRound.briefRevision < briefRevision
   // One readiness rule for the checklist, the footer, the rail and the agent.
   const readiness = briefReadiness(p)
-  const who = readiness.items[0]!
 
   // When the agent fills in one more section, bring it into view, so what it talks about is on screen.
   const shownKeys = visible.map((s) => s.key).join(',')
@@ -76,6 +75,7 @@ export function BriefPage() {
                   {readiness.items.map((item) => (
                     <CheckRow key={item.key} status={item.done ? 'included' : 'pending'}>
                       {item.label}
+                      {item.optional && <span className="text-muted-foreground"> · optional</span>}
                     </CheckRow>
                   ))}
                 </div>
@@ -89,7 +89,6 @@ export function BriefPage() {
             </Card>
           )}
 
-          {setup && formOpen && !who.done && <ShowCard />}
 
           {visible.map(({ key, Card: Section }) => (
             <div key={key} id={`brief-${key}`} className="scroll-mt-4">

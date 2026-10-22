@@ -21,7 +21,7 @@ export const clipKey = (stillId: string, song: number) => `${stillId}|${song}`
 
 export interface ProjectMeta {
   id: string
-  /** The artist, e.g. "[Artist A]". */
+  /** The artist, e.g. "Marisol Vey" (fictional names in this demo). */
   artist: string
   /** The event, e.g. "Coachella 2027". */
   event: string
@@ -41,6 +41,8 @@ export interface ProjectState {
   phase: 'setup' | 'loop'
   /** Which interview question the agent is on, during setup. */
   setupStep: number
+  /** The opening questions (stage, time, look) have been answered or skipped. */
+  profiled?: boolean
   brief: Brief
   briefRevision: number
   provenance: Record<BriefSection, Provenance>
@@ -69,6 +71,7 @@ export type Action =
   | { type: 'meta/patch'; patch: Partial<ProjectMeta> }
   | { type: 'phase/set'; phase: ProjectState['phase'] }
   | { type: 'setup/step'; step: number }
+  | { type: 'setup/profiled' }
   | { type: 'brief/patch'; patch: Partial<Brief>; source: 'agent' | 'you' }
   | { type: 'brief/reveal'; sections: BriefSection[] }
   | { type: 'round/start'; round: Round }
@@ -110,10 +113,10 @@ export const clock = () => new Date().toLocaleTimeString([], { hour: '2-digit', 
 const ALL_SECTIONS: BriefSection[] = ['venue', 'slot', 'visual', 'constraints', 'moments']
 
 /** A blank project, ready for the agent's brief interview. */
-export function newProject(id: string, opening: ChatTurn[]): ProjectState {
+export function newProject(id: string, opening: ChatTurn[], show?: { artist: string; event: string }): ProjectState {
   const now = Date.now()
   return {
-    meta: { id, artist: 'New project', event: 'Brief in progress', createdAt: now, updatedAt: now, briefDate: now },
+    meta: { id, artist: show?.artist || 'New project', event: show?.event || 'Brief in progress', createdAt: now, updatedAt: now, briefDate: now },
     phase: 'setup',
     setupStep: 0,
     // A new project starts empty: no keywords, moments or no-gos until someone actually sets them.
@@ -164,6 +167,8 @@ function step(state: ProjectState, action: Action): ProjectState {
       return { ...state, phase: action.phase }
     case 'setup/step':
       return { ...state, setupStep: action.step }
+    case 'setup/profiled':
+      return { ...state, profiled: true }
     case 'brief/patch': {
       const provenance = { ...state.provenance }
       for (const key of Object.keys(action.patch) as (keyof Brief)[]) provenance[SECTION_OF[key]] = action.source

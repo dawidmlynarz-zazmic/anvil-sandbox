@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
-import { Icon, MessageSquareIcon, MoonIcon, PanelRightIcon, SunIcon } from '@anvil/components/ui/icon'
+import { Icon, MoonIcon, PanelRightIcon, SunIcon } from '@anvil/components/ui/icon'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@anvil/components/ui/resizable'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@anvil/components/ui/sidebar'
 import { ChatPanel } from '~/features/chat/ChatPanel'
@@ -26,9 +26,10 @@ const readChatWidth = () => {
   }
 }
 
+/** Three plain states, next to the project's name: being worked on, with the artist, or signed off. */
 const STATUS_BADGE = {
-  'awaiting-artist': { tone: 'warning', text: 'Waiting for the artist' },
-  feedback: { tone: 'info', text: 'Artist replied' },
+  progress: { tone: 'warning', text: 'In progress' },
+  review: { tone: 'agent', text: 'In review' },
   approved: { tone: 'success', text: 'Approved' },
 } as const
 
@@ -37,14 +38,13 @@ const STATUS_BADGE = {
  * The projects list starts collapsed to icons so the work keeps its room.
  */
 export function AppShell() {
-  const { meta, status, phase } = useProject()
+  const { meta, status } = useProject()
   const { pathname } = useLocation()
   // Previewing as the artist: show only what the artist would see (no agent, no progress rail, no internal status).
   const [params] = useSearchParams()
   const asArtist = pathname.endsWith('/review') && params.get('as') === 'artist'
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
-  // Narrow windows start with the work only; the agent and the progress rail open from the header.
-  const [chatOpen, setChatOpen] = useState(() => window.innerWidth >= 1024)
+  // The agent is always open (it's how you work with the project); only the progress rail can be hidden.
   const [railOpen, setRailOpen] = useState(() => window.innerWidth >= 1280)
   const first = useRef(true)
   const [chatWidth, setChatWidth] = useState(readChatWidth)
@@ -80,7 +80,7 @@ export function AppShell() {
     }
   }
 
-  const badge = phase === 'setup' ? { tone: 'agent' as const, text: 'Setting up' } : status === 'draft' ? null : STATUS_BADGE[status]
+  const badge = STATUS_BADGE[status === 'approved' ? 'approved' : status === 'awaiting-artist' || status === 'feedback' ? 'review' : 'progress']
 
   return (
     <SidebarProvider defaultOpen={false} className="h-svh min-h-0 min-w-3xl">
@@ -88,28 +88,15 @@ export function AppShell() {
       <SidebarInset className="h-svh min-h-0 min-w-0">
         <header className="border-border flex h-14 shrink-0 items-center gap-2 border-b px-3">
           <SidebarTrigger aria-label="Show or hide projects" />
-          <Button
-            variant="ghost"
-            intent="neutral"
-            size="icon-sm"
-            aria-label={chatOpen ? 'Hide the agent' : 'Show the agent'}
-            aria-pressed={chatOpen}
-            onClick={() => setChatOpen((o) => !o)}
-          >
-            <Icon icon={MessageSquareIcon} />
-          </Button>
-          <div className="ms-1 flex min-w-0 flex-col">
-            <span className="truncate type-text-sm-semibold">
-              {meta.artist} · {meta.event}
-            </span>
-            <span className="text-muted-foreground type-text-xs-normal">AEG Presents · on Gemini Enterprise Agent Platform</span>
-          </div>
-          <div className="flex-1" />
-          {badge && !asArtist && (
-            <Badge tone={badge.tone} variant="subtle">
+          <span className="ms-1 min-w-0 truncate type-text-sm-semibold">
+            {meta.artist} · {meta.event}
+          </span>
+          {!asArtist && (
+            <Badge tone={badge.tone} variant="subtle" shape="pill" indicator className="shrink-0">
               {badge.text}
             </Badge>
           )}
+          <div className="flex-1" />
           <AboutDemo />
           <InviteDialog />
           <Button
@@ -135,7 +122,7 @@ export function AppShell() {
         <div className="flex min-h-0 flex-1">
           {/* Drag the line between the agent and the work to give either more room; the width is remembered. */}
           <ResizablePanelGroup orientation="horizontal" className="min-w-0 flex-1" onLayoutChanged={saveChatWidth}>
-            {chatOpen && !asArtist && (
+            {!asArtist && (
               <>
                 <ResizablePanel
                   id="chat"

@@ -13,7 +13,8 @@ import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
 import { GUARDRAIL } from '~/mocks/copy'
 import { clipKey, useProject } from '~/state/ProjectContext'
-import { useStore } from '~/state/store'
+import { useState } from 'react'
+import { NewProjectDialog } from '~/app/NewProjectDialog'
 import { revealTop } from '~/lib/reveal'
 import { StillImage } from '~/components/StillImage'
 
@@ -21,7 +22,7 @@ import { StillImage } from '~/components/StillImage'
 export function HandoffPage() {
   const navigate = useNavigate()
   const { brief, rounds, motionStills, clips, status, review, versions, sentVersion, daysSinceBrief, artistRating, approvedStill, exported, exportPackage, path } = useProject()
-  const { createProject } = useStore()
+  const [creating, setCreating] = useState(false)
   const approved = status === 'approved'
   // One design goes to production: the approved one (older saved projects fall back to the first sent).
   const all = rounds.flatMap((r) => r.stills)
@@ -53,6 +54,7 @@ export function HandoffPage() {
 
   return (
     <section aria-labelledby="handoff-title" className="flex h-full min-w-0 flex-col">
+      <NewProjectDialog open={creating} onOpenChange={setCreating} />
       <div className="step-scroll relative min-h-0 flex-1 overflow-y-auto p-6">
         <div className={`${STEP_CONTENT} gap-6`}>
           <div className="flex flex-col gap-2">
@@ -76,7 +78,7 @@ export function HandoffPage() {
               tone="success"
               role="status"
               action={
-                <Button size="xs" variant="outline" intent="neutral" onClick={() => navigate(`/p/${createProject()}/brief`)}>
+                <Button size="xs" variant="outline" intent="neutral" onClick={() => setCreating(true)}>
                   <Icon icon={PlusIcon} />
                   Start the next show
                 </Button>

@@ -2,7 +2,7 @@ import type { Brief } from '~/state/types'
 
 export const project = {
   organization: 'AEG Presents',
-  artist: '[Artist]',
+  artist: 'Marisol Vey',
   event: 'Coachella 2027',
   /** The brief was written nine days before the demo. */
   briefDate: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000),
@@ -12,6 +12,7 @@ export const initialBrief: Brief = {
   venueId: 'coachella-stage',
   slot: {
     day: 'Saturday',
+    date: '2027-04-17',
     time: '7:10 pm',
     length: '75 min',
     note: 'Golden hour → night by song 12',

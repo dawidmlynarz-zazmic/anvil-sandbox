@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, useNavigate, useParams } from 'react-router-dom'
 import { FolderIcon, FolderOpenIcon, Icon, PlusIcon, RotateCcwIcon } from '@anvil/components/ui/icon'
 import {
@@ -12,32 +13,28 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@anvil/components/ui/sidebar'
-import { IconTile } from '@anvil/components/anvil/icon-tile'
-import { ImageIcon } from '@anvil/components/ui/icon'
 import { projectStatusLabel } from '~/state/project'
 import { useStore } from '~/state/store'
+import { NewProjectDialog } from './NewProjectDialog'
 
 /** Every project, most recent first, like a chat history. Collapses to icons. */
 export function ProjectsSidebar() {
-  const { list, createProject, resetDemo } = useStore()
+  const { list, resetDemo } = useStore()
+  const [creating, setCreating] = useState(false)
   const { projectId } = useParams()
   const navigate = useNavigate()
 
   return (
     <Sidebar collapsible="icon">
+      <NewProjectDialog open={creating} onOpenChange={setCreating} />
       <SidebarHeader>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <div className="flex items-center gap-2 px-1 py-1 group-data-[collapsible=icon]:px-0">
-              <IconTile icon={ImageIcon} tone="agent" size="sm" />
-              <span className="truncate type-text-sm-semibold group-data-[collapsible=icon]:hidden">Stage Studio</span>
-            </div>
+          {/* The product name; hidden when the panel is collapsed to icons. */}
+          <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
+            <span className="block truncate px-2 py-1 type-text-sm-semibold">Stage Studio</span>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="New project"
-              onClick={() => navigate(`/p/${createProject()}/brief`)}
-            >
+            <SidebarMenuButton tooltip="New project" onClick={() => setCreating(true)}>
               <Icon icon={PlusIcon} />
               <span>New project</span>
             </SidebarMenuButton>

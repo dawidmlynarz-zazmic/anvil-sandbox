@@ -1,17 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
 import { artistFeedback, artistPraise } from '~/mocks/review'
-import { applyAnswer, DONE_TEXT, QUESTIONS } from '~/services/interview'
+import { applyAnswer, DONE_TEXT, profileQuestions, QUESTIONS, SLOT_TIMES } from '~/services/interview'
 import { generation } from '~/services/generation'
 import { listing, take, tweaksFrom } from '~/services/changes'
 import { openingLight } from '~/services/light'
 import { describeTweaks, planRound } from '~/services/rounds'
-import { venuesFor } from '~/mocks/venues'
 import { shapeFor, stageArt } from '~/mocks/art'
 import { motionThinking, roundThinking } from '~/services/reasoning'
 import { clipKey, type Action, type ProjectState, type Settings } from './project'
 import { briefReadiness } from './readiness'
 import { useStore } from './store'
-import { CROWD_LABEL, TIME_LABEL, VIEW_LABEL, type Brief, type BriefSection, type ChatTurn, type MotionClip, type Annotation, type ReviewComment, type Round, type Still, type StillSpec, type Thinking } from './types'
+import { CROWD_LABEL, TIME_LABEL, VIEW_LABEL, type Brief, type ChatTurn, type MotionClip, type Annotation, type ReviewComment, type Round, type Still, type StillSpec, type Thinking } from './types'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export { clipKey }
@@ -27,10 +26,10 @@ interface ProjectApi extends ProjectState {
   patchBrief: (patch: Partial<Brief>, source?: 'agent' | 'you') => void
   /** Setup: the answer to the agent's current interview question. */
   answerSetup: (text: string) => Promise<void>
+  /** Setup: the answers to the opening card (question id → option, or null when skipped). */
+  answerProfile: (answers: Record<string, string | null>) => Promise<void>
   /** Setup: skip the interview and show the whole brief form. */
   revealBrief: () => void
-  /** Setup in the form: the artist and the event. */
-  setShow: (artist: string, event: string) => void
   /** Setup → loop: generates round 1 from the brief. */
   startProject: () => void
   /**
@@ -169,39 +168,81 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     }
   }
 
+  /** The next chat question that's still open (key moments, then the optional no-gos), from `from` on. */
+  const nextQuestion = (from: number) => {
+    const now = briefReadiness(get())
+    const index = QUESTIONS.findIndex((q, i) => i >= from && !now.items.find((it) => it.key === q.section)?.done)
+    return { index, question: index >= 0 ? QUESTIONS[index] : undefined, left: now.left.map((i) => i.label.toLowerCase()) }
+  }
+  const closing = (left: string[]) => (left.length ? `Still missing in the brief: ${listing(left)}.` : DONE_TEXT)
+
+  const answerProfile: ProjectApi['answerProfile'] = async (answers) => {
+    const s = get()
+    const questions = profileQuestions(s.meta.event)
+    // The card becomes your reply: the answers, as a message from you.
+    const asked = s.messages.find((m) => m.role === 'assistant' && m.profile === 'ask')
+    if (asked) updateMessage(asked.id, { profile: undefined })
+    d({ type: 'chat/add', turn: { id: store.nextId(), role: 'user', text: '', profile: answers } })
+    const replyId = say('assistant', '', true)
+    const thinking: Thinking = { title: 'Setting up the brief', reasoning: 'You answered the opening questions. I’ll fill in the stage, the time slot and the look, and suggest anything you skipped.', steps: [], tools: [] }
+    updateMessage(replyId, { thinking })
+    await sleep(900)
+    let brief = s.brief
+    const said: string[] = []
+    const suggested: { what: string; pick: string }[] = []
+    const NOUN = { venue: 'the stage', slot: 'the time slot', visual: 'the look' } as const
+    for (const q of questions) {
+      const value = answers[q.id] ?? q.options[0]!.value
+      if (!answers[q.id]) suggested.push({ what: NOUN[q.id], pick: q.id === 'venue' ? q.options[0]!.value : q.options[0]!.label.toLowerCase() })
+      // A rough time ("Sunset into dark") becomes a start time and length the agent picks; you can change both in the brief.
+      const text = q.id === 'slot' ? (SLOT_TIMES[value]?.text ?? value) : value
+      const result = applyAnswer(q.id, text, brief, s.meta.event)
+      if (result.patch) {
+        brief = { ...brief, ...result.patch }
+        d({ type: 'brief/patch', patch: result.patch, source: 'agent' })
+      }
+      said.push(result.summary.split('. ')[0]!.replace(/\.$/, ''))
+    }
+    d({ type: 'brief/reveal', sections: ['venue', 'slot', 'visual'] })
+    d({ type: 'setup/profiled' })
+    const { index, question, left } = nextQuestion(0)
+    d({ type: 'setup/step', step: index >= 0 ? index : QUESTIONS.length })
+    updateMessage(replyId, {
+      pending: false,
+      thinking: { ...thinking, steps: said, seconds: 1 },
+      text: `${said.join('. ')}. I picked the start time from “${SLOT_TIMES[answers.slot ?? 'sunset']?.label.toLowerCase()}”; change it in the brief if you know the exact slot.${suggested.length ? ` You skipped ${listing(suggested.map((x) => x.what))}, so I suggested ${listing(suggested.map((x) => x.pick))}.` : ''} ${question ? question.ask : closing(left)}`,
+      suggestions: question?.suggestions,
+    })
+  }
+
   const answerSetup: ProjectApi['answerSetup'] = async (text) => {
     const s = get()
-    const question = QUESTIONS[s.setupStep]
     say('user', text)
+    // The opening card comes first: it sets up most of the brief in one go.
+    if (!s.profiled && s.messages.some((m) => m.profile === 'ask')) {
+      say('assistant', 'Answer the three questions above first, or skip them and I’ll suggest something. Then we’ll pick the key moments.')
+      return
+    }
+    const question = QUESTIONS[s.setupStep]
     if (!question) {
       say('assistant', 'The brief is complete. Start the project when you’re ready, or tell me what to change.')
       return
     }
-    const result = applyAnswer(question.section, text, s.brief)
+    const result = applyAnswer(question.section, text, s.brief, s.meta.event)
     const replyId = say('assistant', '', true)
-    const thinking = { title: 'Updating the brief', reasoning: `You answered the question about ${question.section === 'who' ? 'the artist and event' : `the ${question.section}`}.`, steps: ['Read your answer', result.summary], tools: [] }
+    const thinking = { title: 'Updating the brief', reasoning: `You answered the question about the ${question.section}.`, steps: ['Read your answer', result.summary], tools: [] }
     updateMessage(replyId, { thinking })
     await sleep(900)
-    if (result.meta) d({ type: 'meta/patch', patch: result.meta })
     if (result.patch) d({ type: 'brief/patch', patch: result.patch, source: 'agent' })
-    if (question.section !== 'who') d({ type: 'brief/reveal', sections: [question.section as BriefSection] })
+    d({ type: 'brief/reveal', sections: [question.section] })
     // Skip questions already answered in the form, so the agent never asks for what's there.
-    const now = briefReadiness({ ...get(), setupStep: s.setupStep + 1 })
-    const nextIndex = QUESTIONS.findIndex((q, i) => i > s.setupStep && !now.items.find((it) => it.key === q.section)?.done)
-    const next = nextIndex >= 0 ? QUESTIONS[nextIndex] : undefined
-    // Suggest the stages of the event the user named (Stagecoach's, not Coachella's).
-    const nextSuggestions = next?.section === 'venue' ? venuesFor(result.meta?.event ?? s.meta.event).map((v) => v.name) : next?.suggestions
-    d({ type: 'setup/step', step: nextIndex >= 0 ? nextIndex : QUESTIONS.length })
-    const missing = now.left.map((i) => i.label.toLowerCase())
+    const { index, question: next, left } = nextQuestion(s.setupStep + 1)
+    d({ type: 'setup/step', step: index >= 0 ? index : QUESTIONS.length })
     updateMessage(replyId, {
       pending: false,
       thinking: { ...thinking, seconds: 1 },
-      text: next
-        ? `${result.summary} ${next.ask}`
-        : missing.length
-          ? `${result.summary} Still missing in the brief: ${listing(missing)}.`
-          : `${result.summary} ${DONE_TEXT}`,
-      suggestions: nextSuggestions,
+      text: `${result.summary} ${next ? next.ask : closing(left)}`,
+      suggestions: next?.suggestions,
     })
   }
 
@@ -446,6 +487,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     toggleDismissed,
     patchBrief: (patch, source = 'you') => d({ type: 'brief/patch', patch, source }),
     answerSetup,
+    answerProfile,
     revealBrief: () => {
       d({ type: 'brief/reveal', sections: ['venue', 'slot', 'visual', 'constraints', 'moments'] })
       // Close the open question: say what's left, so the chat and the form agree.
@@ -455,7 +497,6 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       const left = briefReadiness({ ...s, provenance: shown }).left.map((i) => i.label.toLowerCase())
       say('assistant', left.length ? `Sure, use the form in the brief. Still to set: ${listing(left)}. You can keep answering here too.` : 'The brief is complete. Start the project when you’re ready.')
     },
-    setShow: (artist, event) => d({ type: 'meta/patch', patch: { artist: artist || 'New project', event: event || 'Brief in progress' } }),
     startProject: () => {
       d({ type: 'brief/reveal', sections: ['venue', 'slot', 'visual', 'constraints', 'moments'] })
       d({ type: 'phase/set', phase: 'loop' })

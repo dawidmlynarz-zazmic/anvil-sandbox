@@ -67,6 +67,36 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 - Story: `src/components/local/ConceptCard/ConceptCard.stories.tsx`
 - Recommendation: add to Anvil as a generated-asset card (it isn't stage-specific)
 
+## profile-questions
+- Type: extension of `agent/clarifying-question` (two more answer types)
+- Needed for: the chat's opening questions on a new brief
+- Closest Anvil option checked: `agent/clarifying-question` (option buttons only: no dropdown for a long list like
+  every stage, no free-text answer) and `agent/question-set` (chips, all questions at once)
+- Proposed API: on each question, `kind: 'options' | 'select'` and `allowOther` (a "describe your own" field under
+  the options); everything else as Clarifying Question (steps, Back, Skip, Submit, number keys,
+  `ClarifyingAnswers` for the reply)
+- Built from: the same parts as Clarifying Question (`anvil/shell` header and footer, `anvil/icon-tile`, `ui/progress`,
+  `ui/button` + `ui/kbd` options) plus `ui/select` and `ui/input-group`
+- States covered: options, dropdown, options + own answer, answered, skipped, last step with Submit
+- Accessibility notes: the card is named by the question; the dropdown is named by the question; the own-answer field
+  has a label; number keys pick options except while typing
+- Story: none yet (used in `ChatPanel.tsx`)
+- Recommendation: add `kind` and `allowOther` to Anvil's Clarifying Question rather than a new component
+
+## tag-input
+- Type: new component
+- Needed for: `/brief` (Visual direction keywords)
+- Closest Anvil option checked: `anvil/chip` (the tag itself, with `onRemove`) next to `ui/input-group` with an Add
+  button: it needed a separate field and button, and tags sat outside the field
+- Proposed API: `label`, `value` + `onValueChange` (string[]), `placeholder`, `hint`; a comma or Enter adds a tag,
+  pasted "a, b, c" adds three, Backspace in an empty field removes the last
+- Built from: `anvil/chip` (outline, sm) inside a box styled like `ui/input` (same inset ring, hover and focus ring)
+- States covered: empty with placeholder, tags with typing, focus
+- Accessibility notes: the label names the text field; the tag list is named with its count; each tag's remove button
+  is named “Remove <tag>”; the hint is linked with `aria-describedby`
+- Story: none yet (used in `BriefCards.tsx`)
+- Recommendation: add to Anvil as `ui/tag-input` (or a `multiple` mode for Input)
+
 ## Anvil issues found
 - `MessageAction` used as a `PopoverTrigger asChild` works, but needs a `TooltipProvider` above it (the app provides one).
 - `ui/sidebar` `SidebarMenuButton size="lg"` sets `p-0!` when collapsed (`collapsible="icon"`), so anything smaller than a

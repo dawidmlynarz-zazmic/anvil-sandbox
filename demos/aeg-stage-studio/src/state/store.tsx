@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from 'react'
 import { seedProjects } from '~/mocks/seeds'
-import { QUESTIONS } from '~/services/interview'
 import { newProject, projectReducer, settle, type Action, type ProjectState } from './project'
+import type { ChatTurn } from './types'
 
 // All projects live here. Each project's own state is changed through `projectReducer`.
 // The store is kept in sessionStorage, so a reload keeps the demo where it was; close the tab to reset.
@@ -30,10 +30,19 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
 
 /** The demo opens on a brand-new project (the first use case), with the three samples further down the list. */
 const FIRST_PROJECT = 'new-show'
+/** The show the demo starts with (fictional: real artists would put words in real people's mouths). */
+const FIRST_SHOW = { artist: 'Juniper Cole', event: 'Stagecoach 2027' }
+
+/** A new project opens with the agent's opening questions (Anvil Clarifying Question), not a blank chat. */
+const opening = (id: number, show: { artist: string; event: string }): ChatTurn => ({
+  id,
+  role: 'assistant',
+  text: `Let’s set up the brief for ${show.artist} at ${show.event}. Three quick questions to start; skip any and I’ll suggest something.`,
+  profile: 'ask',
+})
 
 function seeded(): StoreState {
-  const first = QUESTIONS[0]!
-  const blank = newProject(FIRST_PROJECT, [{ id: 900, role: 'assistant', text: first.ask, suggestions: first.suggestions }])
+  const blank = newProject(FIRST_PROJECT, [opening(900, FIRST_SHOW)], FIRST_SHOW)
   return { projects: Object.fromEntries([...seedProjects(), blank].map((p) => [p.meta.id, p])) }
 }
 
@@ -56,8 +65,8 @@ interface StoreApi {
   dispatchIn: (id: string, action: Action) => void
   /** A message or comment id that's unique across every project. */
   nextId: () => number
-  /** Starts a new project with the agent's first interview question, and returns its id. */
-  createProject: () => string
+  /** Starts a new project for an artist and event, with the agent's opening questions, and returns its id. */
+  createProject: (show: { artist: string; event: string }) => string
   /** Drops all changes: back to a new, empty project plus the three samples. */
   resetDemo: () => void
   /** Projects, most recently active first. */
@@ -88,13 +97,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const dispatchIn = useCallback((id: string, action: Action) => dispatch({ type: 'in', id, action }), [])
   const nextId = useCallback(() => counter.current++, [])
 
-  const createProject = useCallback(() => {
+  const createProject = useCallback((show: { artist: string; event: string }) => {
     const id = `p${Date.now().toString(36)}`
-    const first = QUESTIONS[0]!
-    dispatch({
-      type: 'create',
-      project: newProject(id, [{ id: counter.current++, role: 'assistant', text: first.ask, suggestions: first.suggestions }]),
-    })
+    dispatch({ type: 'create', project: newProject(id, [opening(counter.current++, show)], show) })
     return id
   }, [])
 

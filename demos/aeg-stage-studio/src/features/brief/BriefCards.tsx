@@ -2,78 +2,43 @@ import { useState } from 'react'
 import { Badge } from '@anvil/components/ui/badge'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@anvil/components/ui/card'
 import { Button } from '@anvil/components/ui/button'
-import { Icon, PlusIcon, SparklesIcon, UserIcon, XIcon } from '@anvil/components/ui/icon'
+import { CircleCheckIcon, CircleDashedIcon, Icon, PlusIcon, XIcon } from '@anvil/components/ui/icon'
+import { Calendar } from '@anvil/components/ui/calendar'
+import { DatePicker, DatePickerContent, DatePickerTrigger } from '@anvil/components/ui/date-picker'
 import { Input } from '@anvil/components/ui/input'
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@anvil/components/ui/input-group'
 import { Label } from '@anvil/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@anvil/components/ui/select'
 import { Textarea } from '@anvil/components/ui/textarea'
-import { Chip } from '@anvil/components/anvil/chip'
 import { KeyValueList, KeyValueRow } from '@anvil/components/anvil/key-value-row'
 import { DaylightTimeline } from '~/components/local/DaylightTimeline/DaylightTimeline'
 import { setTimes, SUNSET } from '~/services/light'
+import { fromISODate, toISODate, weekdayOf } from '~/lib/time'
 import { budgetBands } from '~/mocks/project'
 import { venues } from '~/mocks/venues'
+import { TagInput } from '~/components/local/TagInput/TagInput'
 import { useProject } from '~/state/ProjectContext'
+import { briefReadiness } from '~/state/readiness'
 import type { BriefSection } from '~/state/types'
 
-/** Title + explainer shared by the brief cards, with who last set the section: the agent or you. */
+/**
+ * Title + explainer shared by the brief cards. The badge matches the section's line in “Still to cover” (same rule,
+ * same tick or dashed circle), and says who filled it in when that's known.
+ */
 function SectionHeader({ title, section, children }: { title: string; section: BriefSection; children: React.ReactNode }) {
-  const { provenance, brief } = useProject()
-  // Shown in the form but not set by anyone yet: say so, rather than crediting the agent.
-  const empty = (section === 'visual' && !brief.keywords.length) || (section === 'moments' && !brief.moments.length)
+  const p = useProject()
+  const done = briefReadiness(p).items.find((i) => i.key === section)?.done ?? false
+  const by = p.provenance[section] === 'agent' ? ' by the agent' : p.provenance[section] === 'you' ? ' by you' : ''
   return (
     <CardHeader>
       <CardTitle>{title}</CardTitle>
       <CardAction>
-        {provenance[section] === 'blank' || empty ? (
-          <Badge tone={empty ? 'warning' : 'neutral'} variant="subtle" size="sm">
-            {empty ? 'Not set yet' : 'Default, check it'}
-          </Badge>
-        ) : provenance[section] === 'agent' ? (
-          <Badge tone="agent" variant="subtle" size="sm">
-            <Icon icon={SparklesIcon} />
-            From the agent
-          </Badge>
-        ) : (
-          <Badge tone="neutral" variant="outline" size="sm">
-            <Icon icon={UserIcon} />
-            Edited by you
-          </Badge>
-        )}
+        <Badge tone={done ? 'success' : 'neutral'} variant={done ? 'subtle' : 'outline'} size="sm">
+          <Icon icon={done ? CircleCheckIcon : CircleDashedIcon} />
+          {done ? `Filled${by}` : 'To fill'}
+        </Badge>
       </CardAction>
       <CardDescription>{children}</CardDescription>
     </CardHeader>
-  )
-}
-
-/** The artist and the event, for a brief filled in with the form instead of the agent's questions. */
-export function ShowCard() {
-  const { setShow } = useProject()
-  const [artist, setArtist] = useState('')
-  const [event, setEvent] = useState('')
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Artist and event</CardTitle>
-        <CardDescription>Who the show is for. This names the project.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          className="grid grid-cols-1 items-end gap-3 @md:grid-cols-[1fr_1fr_auto]"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (artist.trim()) setShow(artist.trim(), event.trim())
-          }}
-        >
-          <Input label="Artist" placeholder="e.g. [Artist D]" value={artist} onChange={(e) => setArtist(e.target.value)} />
-          <Input label="Event" placeholder="e.g. Stagecoach 2027" value={event} onChange={(e) => setEvent(e.target.value)} />
-          <Button type="submit" variant="outline" intent="neutral" disabled={!artist.trim()}>
-            Save
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
   )
 }
 
@@ -116,6 +81,8 @@ export function VenueCard() {
 export function SlotCard() {
   const { brief, patchBrief } = useProject()
   const { slot } = brief
+  const [picking, setPicking] = useState(false)
+  const date = slot.date ? fromISODate(slot.date) : undefined
   const set = (key: keyof typeof slot) => (e: React.ChangeEvent<HTMLInputElement>) =>
     patchBrief({ slot: { ...slot, [key]: e.target.value } })
   const { start, end } = setTimes(brief)
@@ -126,8 +93,29 @@ export function SlotCard() {
         concept.
       </SectionHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="grid grid-cols-3 gap-3">
-          <Input label="Day" value={slot.day} onChange={set('day')} />
+        <div className="grid grid-cols-1 items-start gap-3 @md:grid-cols-[1.3fr_1fr_1fr]">
+          {/* The show date: picked from a calendar. Start time and length stay plain fields. */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="slot-date">Date</Label>
+            <DatePicker open={picking} onOpenChange={setPicking}>
+              <DatePickerTrigger id="slot-date" className="w-full" placeholder="Pick the show date">
+                {date?.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+              </DatePickerTrigger>
+              <DatePickerContent>
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  defaultMonth={date}
+                  onSelect={(next) => {
+                    if (!next) return
+                    const iso = toISODate(next)
+                    patchBrief({ slot: { ...slot, date: iso, day: weekdayOf(iso) } })
+                    setPicking(false)
+                  }}
+                />
+              </DatePickerContent>
+            </DatePicker>
+          </div>
           <Input label="Start time" hint="e.g. 7:40 pm" value={slot.time} onChange={set('time')} />
           <Input label="Length" hint="in minutes" value={slot.length} onChange={set('length')} />
         </div>
@@ -142,51 +130,21 @@ export function SlotCard() {
 
 export function VisualDirectionCard() {
   const { brief, patchBrief } = useProject()
-  const [draft, setDraft] = useState('')
-  const add = () => {
-    const word = draft.trim()
-    if (!word || brief.keywords.includes(word)) return
-    patchBrief({ keywords: [...brief.keywords, word] })
-    setDraft('')
-  }
   return (
     <Card>
       <SectionHeader title="Visual direction" section="visual">
-          A few words that steer the look. The agent turns them, and your {brief.referenceCount} reference image{brief.referenceCount === 1 ? '' : 's'}, into
-          image and video prompts. Use the paperclip in the chat to add more references.
-        </SectionHeader>
-      <CardContent className="flex flex-col gap-4">
-        <ul className="flex flex-wrap gap-2" aria-label="Keywords">
-          {brief.keywords.map((word) => (
-            <li key={word}>
-              <Chip
-                variant="outline"
-                removeLabel={`Remove ${word}`}
-                onRemove={() => patchBrief({ keywords: brief.keywords.filter((k) => k !== word) })}
-              >
-                {word}
-              </Chip>
-            </li>
-          ))}
-        </ul>
-        <form
-          className="flex flex-col gap-1.5"
-          onSubmit={(e) => {
-            e.preventDefault()
-            add()
-          }}
-        >
-          <Label htmlFor="keyword">Add a keyword</Label>
-          <InputGroup>
-            <InputGroupInput id="keyword" placeholder="e.g. brutalist, neon, haze" value={draft} onChange={(e) => setDraft(e.target.value)} />
-            <InputGroupAddon align="inline-end">
-              <InputGroupButton type="submit" disabled={!draft.trim()}>
-                <Icon icon={PlusIcon} />
-                Add
-              </InputGroupButton>
-            </InputGroupAddon>
-          </InputGroup>
-        </form>
+        A few words that steer the look. The agent turns them, and your {brief.referenceCount} reference image
+        {brief.referenceCount === 1 ? '' : 's'}, into image and video prompts. Use the paperclip in the chat to add more
+        references.
+      </SectionHeader>
+      <CardContent>
+        <TagInput
+          label="Keywords"
+          placeholder="e.g. brutalist, neon, haze"
+          hint="Separate keywords with commas."
+          value={brief.keywords}
+          onValueChange={(keywords) => patchBrief({ keywords })}
+        />
       </CardContent>
     </Card>
   )

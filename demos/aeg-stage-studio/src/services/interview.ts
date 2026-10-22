@@ -1,36 +1,85 @@
 import { initialBrief } from '~/mocks/project'
-import { venues } from '~/mocks/venues'
+import { venues, venuesFor } from '~/mocks/venues'
 import { slotNote } from './light'
+import { formatShowDate, showDateFor, weekdayOf } from '~/lib/time'
 import type { Brief, BriefSection } from '~/state/types'
 
-/** The agent's brief interview for a new project: one question per part of the brief. */
-export const QUESTIONS: { section: BriefSection | 'who'; ask: string; suggestions: string[] }[] = [
-  {
-    section: 'who',
-    ask: 'Let’s set up a new show. Who is the artist, and which event is it for?',
-    suggestions: ['[Artist D] · Stagecoach 2027'],
-  },
-  // The venue suggestions are replaced with the named event's stages when the question is asked.
-  { section: 'venue', ask: 'Which venue and stage?', suggestions: venues.slice(0, 3).map((v) => v.name) },
-  {
-    section: 'slot',
-    ask: 'When do they play, and for how long? I’ll match the set to the light at that time.',
-    suggestions: ['Saturday 7:10 pm, 75 min', 'Friday 9:00 pm, 90 min'],
-  },
-  {
-    section: 'visual',
-    ask: 'What should the stage feel like? Describe the look in a few words, or attach a mood board.',
-    suggestions: ['Warm desert haze, monolithic, kinetic light'],
-  },
-  {
-    section: 'constraints',
-    ask: 'Is there anything the artist never wants to see, or venue rules I should respect?',
-    suggestions: ['No strobe above 3 Hz', 'Nothing beyond the venue rules'],
-  },
+// A new project's brief, in two parts.
+// 1. The opening card (Anvil Clarifying Question): three choices that set up most of the brief at once. Each has a
+//    sensible default the agent suggests if you skip it.
+// 2. Then, one at a time in the chat, what can't be a fixed choice: the key moments (required; the agent can
+//    suggest them from the setlist) and the artist's no-gos (optional).
+// Artist and event are project details, set when the project is created. The show date, budget band and venue rules
+// are filled in by the agent and editable in the brief.
+
+export interface ProfileQuestion {
+  id: 'venue' | 'slot' | 'visual'
+  title: string
+  /** `select`: a dropdown (long lists, like every stage). `options`: a few choices to click. */
+  kind: 'select' | 'options'
+  options: { value: string; label: string }[]
+  /** Also lets you type your own answer (options only). */
+  allowOther?: boolean
+}
+
+/** Roughly when the set plays; the agent turns it into a start time and length you can change in the brief. */
+export const SLOT_TIMES: Record<string, { text: string; label: string }> = {
+  daytime: { text: 'Saturday 4:30 pm, 60 min', label: 'Daytime' },
+  sunset: { text: 'Saturday 7:10 pm, 75 min', label: 'Sunset into dark' },
+  'after-dark': { text: 'Saturday 9:00 pm, 90 min', label: 'After dark' },
+}
+
+/** The opening questions for an event: the stage (every stage, the event's own first), roughly when, and the look. */
+export function profileQuestions(event: string): ProfileQuestion[] {
+  const own = venuesFor(event)
+  const ordered = [...own, ...venues.filter((v) => !own.includes(v))]
+  return [
+    {
+      id: 'venue',
+      title: 'Which stage?',
+      kind: 'select',
+      options: ordered.map((v) => ({ value: v.name, label: `${v.name} · ${v.kind.toLowerCase()}${v.event ? ` (${v.event})` : ''}` })),
+    },
+    {
+      id: 'slot',
+      title: 'Roughly when do they play?',
+      kind: 'options',
+      options: ['sunset', 'after-dark', 'daytime'].map((value) => ({ value, label: SLOT_TIMES[value]!.label })),
+    },
+    {
+      id: 'visual',
+      title: 'What should the stage feel like?',
+      kind: 'options',
+      allowOther: true,
+      options: [
+        { value: 'Warm desert haze, monolithic, kinetic light', label: 'Warm desert haze, monolithic, kinetic light' },
+        { value: 'Neon, chrome, high energy', label: 'Neon and chrome, high energy' },
+        { value: 'Minimal, monochrome, single beam', label: 'Minimal and monochrome, a single beam' },
+      ],
+    },
+  ]
+}
+
+/** The questions with any typed-in answer added as an option, so the answer summary can show it. */
+export function answeredQuestions(event: string, answers: Record<string, string | null>) {
+  return profileQuestions(event).map((q) => {
+    const a = answers[q.id]
+    return a && !q.options.some((o) => o.value === a) ? { ...q, options: [...q.options, { value: a, label: a }] } : q
+  })
+}
+
+/** The questions asked one at a time in the chat, after the opening card. */
+export const QUESTIONS: { section: BriefSection; ask: string; suggestions: string[]; optional?: boolean }[] = [
   {
     section: 'moments',
     ask: 'Which songs are the key moments, where the stage should do something memorable? List them like “3 Opening, 14 Crowd split”, or let me suggest some from the setlist.',
     suggestions: ['Suggest from the setlist'],
+  },
+  {
+    section: 'constraints',
+    optional: true,
+    ask: 'Last one, optional: is there anything the artist never wants to see? I’ve already loaded the venue’s rules.',
+    suggestions: ['No strobe above 3 Hz', 'Nothing beyond the venue rules'],
   },
 ]
 
@@ -42,16 +91,14 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /** Turns one answer into a brief change. Returns what changed in words, for the agent's reply. */
 export function applyAnswer(
-  section: BriefSection | 'who',
+  section: BriefSection,
   answer: string,
   brief: Brief,
+  /** The event named earlier ("Stagecoach 2027"), to place a weekday on a real date. */
+  event = '',
 ): { patch?: Partial<Brief>; meta?: { artist: string; event: string }; summary: string } {
   const text = answer.trim()
   switch (section) {
-    case 'who': {
-      const [artist = text, event = 'New show'] = text.split(/\s*[·,]\s*|\s+at\s+|\s+for\s+/i)
-      return { meta: { artist: artist.trim(), event: event.trim() }, summary: `Project set up for ${artist.trim()} · ${event.trim()}.` }
-    }
     case 'venue': {
       const venue = venues.find((v) => text.toLowerCase().includes(v.name.toLowerCase().split(' ')[0]!.toLowerCase())) ?? venues[0]!
       return {
@@ -60,12 +107,17 @@ export function applyAnswer(
       }
     }
     case 'slot': {
-      const day = cap(DAYS.exec(text)?.[1]?.toLowerCase() ?? brief.slot.day)
+      const named = DAYS.exec(text)?.[1]
+      const date = named ? showDateFor(named, event) : brief.slot.date
+      const day = date ? weekdayOf(date) : cap(brief.slot.day)
       const time = /(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i.exec(text.replace(DAYS, ''))?.[1]?.trim() ?? brief.slot.time
       const length = /(\d+)\s*(?:min|minutes)/i.exec(text)?.[1]
-      const slot = { ...brief.slot, day, time, length: length ? `${length} min` : brief.slot.length }
+      const slot = { ...brief.slot, day, date, time, length: length ? `${length} min` : brief.slot.length }
       const note = slotNote({ ...brief, slot })
-      return { patch: { slot: { ...slot, note } }, summary: `Slot: ${slot.day}, ${slot.time}, ${slot.length}. ${note}, so I’ll light the concepts for that. The timeline in the brief shows it.` }
+      return {
+        patch: { slot: { ...slot, note } },
+        summary: `Slot: ${date ? formatShowDate(date) : day}, ${slot.time}, ${slot.length}. ${note}, so I’ll light the concepts for that. Change the date or time in the brief if it’s not right.`,
+      }
     }
     case 'visual': {
       const keywords = text.split(/,|\band\b/).map((k) => cap(k.trim())).filter(Boolean).slice(0, 5)

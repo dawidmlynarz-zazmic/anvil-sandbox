@@ -17,7 +17,8 @@ export interface SetlistMoment {
 
 export interface Brief {
   venueId: string
-  slot: { day: string; time: string; length: string; note: string }
+  /** `date` is the show day ("2027-04-17"); `day` is its weekday, kept for older saved briefs. */
+  slot: { day: string; date?: string; time: string; length: string; note: string }
   keywords: string[]
   referenceCount: number
   constraints: { budget: string; venueRules: string; noGo: string }
@@ -157,6 +158,11 @@ export interface ChatTurn {
   suggestions?: string[]
   /** Shows the mood board and setlist the user attached to this turn. */
   attachments?: boolean
+  /**
+   * The brief's opening questions. On the agent's turn, `'ask'` shows the Clarifying Question card; on the user's turn,
+   * the answers given (question id → chosen option, or null when skipped).
+   */
+  profile?: 'ask' | Record<string, string | null>
 }
 
 export interface StillComment {

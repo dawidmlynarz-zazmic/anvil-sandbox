@@ -60,7 +60,7 @@ const nightCam: Settings = { timeOfDay: 'night', crowd: 'full', view: 'livestrea
 /** In round 1: concepts are back, nothing chosen yet. The live demo starts here. */
 function coachella(): ProjectState {
   const id = 'coachella'
-  const p = base(id, '[Artist A]', 'Coachella 2027', initialBrief, 9)
+  const p = base(id, 'Marisol Vey', 'Coachella 2027', initialBrief, 9)
   return {
     ...p,
     rounds: rounds(id, [golden]),
@@ -78,7 +78,7 @@ function o2(): ProjectState {
   const brief: Brief = {
     ...initialBrief,
     venueId: 'the-o2',
-    slot: { day: 'Friday', time: '9:00 pm', length: '90 min', note: 'Indoor arena, full dark' },
+    slot: { day: 'Friday', date: '2027-06-11', time: '9:00 pm', length: '90 min', note: 'Indoor arena, full dark' },
     keywords: ['Chrome', 'Cold neon', 'Brutalist'],
     moments: [
       { number: 2, title: 'Cold open', intent: 'Single white beam, then the wall lights up' },
@@ -87,7 +87,7 @@ function o2(): ProjectState {
       { number: 15, title: 'Encore', intent: 'Ceiling rig lowers over the crowd' },
     ],
   }
-  const p = base(id, '[Artist B]', 'The O2 residency 2027', brief, 16)
+  const p = base(id, 'The Velvet Static', 'The O2 residency 2027', brief, 16)
   const r = rounds(id, [night, nightCam])
   const chosen = r[1]!.stills[2]!
   const review = artistFeedback([chosen], brief.moments, brief.moments.map((m) => m.number)).map((c, i) => ({ ...c, number: i + 1, time: '10:40' }))
@@ -125,7 +125,7 @@ function arena(): ProjectState {
   const brief: Brief = {
     ...initialBrief,
     venueId: 'crypto-arena',
-    slot: { day: 'Thursday', time: '8:30 pm', length: '100 min', note: 'Indoor arena, full dark' },
+    slot: { day: 'Thursday', date: '2027-09-16', time: '8:30 pm', length: '100 min', note: 'Indoor arena, full dark' },
     keywords: ['Monochrome', 'Halo', 'Minimal'],
     moments: [
       { number: 1, title: 'Entrance', intent: 'Halo descends as the artist walks on' },
@@ -134,7 +134,7 @@ function arena(): ProjectState {
       { number: 13, title: 'Finale', intent: 'Full white wash, halo flares' },
     ],
   }
-  const p = base(id, '[Artist C]', 'Crypto.com Arena tour 2027', brief, 21)
+  const p = base(id, 'Ren Halloway', 'Crypto.com Arena tour 2027', brief, 21)
   const r = rounds(id, [night, night, nightCam])
   const chosen = r[2]!.stills[3]!
   const review = artistFeedback([chosen], brief.moments, brief.moments.map((m) => m.number)).map((c, i) => ({
