@@ -9,6 +9,8 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 const anvil = path.resolve(dirname, process.env.ANVIL_PATH ?? '../../../anvil-ui', 'src')
 
 export default defineConfig({
+  // Local dev serves from /. The GitHub Pages build sets BASE_PATH to the demo's folder on the site.
+  base: process.env.BASE_PATH ?? '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: { '~': path.resolve(dirname, 'src'), '@anvil': anvil, '@': anvil },

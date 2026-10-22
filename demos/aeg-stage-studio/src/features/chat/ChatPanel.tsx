@@ -25,8 +25,8 @@ const PLACEHOLDER: Record<string, string> = {
   handoff: 'Ask about the package or the decision log',
 }
 
-/** The step in a project URL: /p/:id/<step>. */
-const stepOf = (pathname: string) => pathname.split('/')[3] || 'brief'
+/** The step in a project URL: …/p/:id/<step> (the app may be served from a sub-folder). */
+const stepOf = (pathname: string) => /\/p\/[^/]+\/([a-z]+)/.exec(pathname)?.[1] ?? 'brief'
 
 /** A question, not an instruction: it gets an answer and never changes anything. */
 const isQuestion = (text: string) =>

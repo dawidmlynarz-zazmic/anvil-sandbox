@@ -1,0 +1,87 @@
+# Builds the demos and publishes them to GitHub Pages:
+#   https://<owner>.github.io/anvil-sandbox/            a list of demos
+#   https://<owner>.github.io/anvil-sandbox/aeg-stage-studio/
+#
+# Optional password screen: add a repository secret DEMO_PASSWORD and re-run this workflow. Only its SHA-256 goes into
+# the build. It keeps casual visitors out; it is not access control (the site and the source are public).
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  # The Anvil commit the demos were built and tested against. Update it deliberately.
+  ANVIL_REF: e29e4e7eb4d6d97cb86c670e0e77910757a52786
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out Anvil
+        uses: actions/checkout@v4
+        with:
+          repository: dawidmlynarz-zazmic/anvil-ui
+          ref: ${{ env.ANVIL_REF }}
+          path: anvil-ui
+
+      # The demos read Anvil from a sibling folder (../anvil-ui), as in local development.
+      - name: Put Anvil next to the repo
+        run: mv anvil-ui ../anvil-ui
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Anvil's dependencies
+        working-directory: ../anvil-ui
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Install the demos' dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Stage Studio
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/aeg-stage-studio/
+          DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
+        run: |
+          if [ -n "$DEMO_PASSWORD" ]; then
+            export VITE_DEMO_GATE="$(printf '%s' "$DEMO_PASSWORD" | sha256sum | cut -d' ' -f1)"
+          fi
+          pnpm --filter aeg-stage-studio build
+
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp site/index.html _site/
+          cp -r demos/aeg-stage-studio/dist _site/aeg-stage-studio
+          # Pages serves 404.html for any unknown path: make deep links into the demo (…/p/<id>/stills) load the app.
+          cp _site/aeg-stage-studio/index.html _site/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}aeg-stage-studio/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
