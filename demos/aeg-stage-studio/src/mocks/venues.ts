@@ -1,11 +1,12 @@
-import type { Venue } from '~/state/types'
+import type { Venue, VenueLimits } from '~/state/types'
 
 // AEG venues and festival stages. City, capacity, year and description are as published on aegworldwide.com;
-// festival stage names are the festivals' own. Technical specs are samples until AEG supplies the real ones.
+// festival stage names are the festivals' own. Technical limits are samples (plausible, not real) until AEG supplies
+// the venue library; the app labels them as samples wherever they appear. Only the Coachella Stage has a 3D model.
 
-const ARENA_SPEC = { stageWidth: '18 m (end stage)', ledWall: '16 × 9 m main wall', rigging: '60 t across 40 points', model3d: '3D model loaded' }
-const MAIN_STAGE_SPEC = { stageWidth: '24 m', ledWall: '20 × 10 m main wall, two side screens', rigging: '40 t roof load', model3d: '3D model loaded' }
-const TENT_SPEC = { stageWidth: '16 m', ledWall: '12 × 6 m', rigging: '15 t across 12 points', model3d: 'Not modelled yet' }
+const ARENA: VenueLimits = { stageWidth: 18, trim: 22, rigging: 60, led: [16, 9] }
+const MAIN_STAGE: VenueLimits = { stageWidth: 24, trim: 18, rigging: 30, led: [20, 10], gusts: 13 }
+const TENT: VenueLimits = { stageWidth: 16, trim: 12, rigging: 15, led: [12, 6] }
 
 const AEG = 'aegworldwide.com'
 const AEG_MUSIC = 'aegworldwide.com · Music (Goldenvoice festivals)'
@@ -19,12 +20,13 @@ export const venues: Venue[] = [
     city: 'Indio, California',
     about: 'The main stage of “the iconic Coachella Valley Music & Arts Festival”, produced by Goldenvoice.',
     source: AEG_MUSIC,
-    specs: MAIN_STAGE_SPEC,
+    limits: MAIN_STAGE,
+    modelled: true,
   },
-  { id: 'outdoor-theatre', name: 'Outdoor Theatre', kind: 'Festival stage', event: 'Coachella', city: 'Indio, California', source: AEG_MUSIC, specs: { ...MAIN_STAGE_SPEC, stageWidth: '20 m' } },
-  { id: 'sahara', name: 'Sahara', kind: 'Festival tent', event: 'Coachella', covered: true, city: 'Indio, California', source: AEG_MUSIC, specs: TENT_SPEC },
-  { id: 'mojave', name: 'Mojave', kind: 'Festival tent', event: 'Coachella', covered: true, city: 'Indio, California', source: AEG_MUSIC, specs: TENT_SPEC },
-  { id: 'gobi', name: 'Gobi', kind: 'Festival tent', event: 'Coachella', covered: true, city: 'Indio, California', source: AEG_MUSIC, specs: TENT_SPEC },
+  { id: 'outdoor-theatre', name: 'Outdoor Theatre', kind: 'Festival stage', event: 'Coachella', city: 'Indio, California', source: AEG_MUSIC, limits: { ...MAIN_STAGE, stageWidth: 20, trim: 16, rigging: 24 }, modelled: false },
+  { id: 'sahara', name: 'Sahara', kind: 'Festival tent', event: 'Coachella', covered: true, city: 'Indio, California', source: AEG_MUSIC, limits: TENT, modelled: false },
+  { id: 'mojave', name: 'Mojave', kind: 'Festival tent', event: 'Coachella', covered: true, city: 'Indio, California', source: AEG_MUSIC, limits: TENT, modelled: false },
+  { id: 'gobi', name: 'Gobi', kind: 'Festival tent', event: 'Coachella', covered: true, city: 'Indio, California', source: AEG_MUSIC, limits: TENT, modelled: false },
   {
     id: 'mane-stage',
     name: 'Mane Stage',
@@ -33,9 +35,10 @@ export const venues: Venue[] = [
     city: 'Indio, California',
     about: 'The main stage of Stagecoach, Goldenvoice’s country music festival.',
     source: AEG_MUSIC,
-    specs: MAIN_STAGE_SPEC,
+    limits: MAIN_STAGE,
+    modelled: false,
   },
-  { id: 'palomino', name: 'Palomino', kind: 'Festival tent', event: 'Stagecoach', covered: true, city: 'Indio, California', source: AEG_MUSIC, specs: TENT_SPEC },
+  { id: 'palomino', name: 'Palomino', kind: 'Festival tent', event: 'Stagecoach', covered: true, city: 'Indio, California', source: AEG_MUSIC, limits: TENT, modelled: false },
   {
     id: 'great-oak',
     name: 'Great Oak Stage',
@@ -44,7 +47,8 @@ export const venues: Venue[] = [
     city: 'Hyde Park, London',
     about: 'The main stage of British Summer Time Hyde Park, presented by AEG Presents.',
     source: 'aegworldwide.com · Music (AEG Presents festivals)',
-    specs: MAIN_STAGE_SPEC,
+    limits: { ...MAIN_STAGE, gusts: 11 },
+    modelled: false,
   },
   {
     id: 'crypto-arena',
@@ -56,7 +60,8 @@ export const venues: Venue[] = [
     opened: '1999 (as STAPLES Center)',
     about: '“The world’s premier sports and entertainment center”, hosting over 250 events a year.',
     source: AEG,
-    specs: ARENA_SPEC,
+    limits: ARENA,
+    modelled: false,
   },
   {
     id: 'the-o2',
@@ -68,7 +73,8 @@ export const venues: Venue[] = [
     opened: '2007',
     about: '“The world’s most popular music and entertainment venue”, with over 300 events a year.',
     source: AEG,
-    specs: ARENA_SPEC,
+    limits: ARENA,
+    modelled: false,
   },
   {
     id: 't-mobile-arena',
@@ -80,7 +86,8 @@ export const venues: Venue[] = [
     opened: '2016',
     about: '“A state-of-the-art, multipurpose event center from AEG and MGM Resorts International.”',
     source: AEG,
-    specs: ARENA_SPEC,
+    limits: ARENA,
+    modelled: false,
   },
   {
     id: 'uber-arena',
@@ -92,7 +99,8 @@ export const venues: Venue[] = [
     opened: '2008',
     about: '“One of the most successful multipurpose arenas in Europe.”',
     source: AEG,
-    specs: ARENA_SPEC,
+    limits: ARENA,
+    modelled: false,
   },
   {
     id: 'accor-arena',
@@ -104,7 +112,8 @@ export const venues: Venue[] = [
     opened: '1984',
     about: '“Paris’ premier entertainment venue.”',
     source: AEG,
-    specs: ARENA_SPEC,
+    limits: ARENA,
+    modelled: false,
   },
 ]
 

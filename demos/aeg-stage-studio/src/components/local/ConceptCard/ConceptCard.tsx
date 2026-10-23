@@ -192,7 +192,7 @@ export function ConceptCard({
               <PopoverContent align="end" className="w-80">
                 <PopoverHeader>
                   <PopoverTitle>Brief and venue check</PopoverTitle>
-                  <PopoverDescription>The agent checks every version against the venue’s limits, the no-go list and the budget.</PopoverDescription>
+                  <PopoverDescription>The agent checks every image against the venue’s limits (sample specs), the no-go list and the budget.</PopoverDescription>
                 </PopoverHeader>
                 <ul className="flex flex-col gap-2">
                   {checks.map((c) => (

@@ -17,6 +17,7 @@ import { genById, gensFor, kitStatus, lookFor, MOMENT_STATUS, momentStatus } fro
 import { TIME_LABEL, type SetlistMoment } from '~/state/types'
 import { SendDialog } from './SendDialog'
 import { ShowPreview } from './ShowPreview'
+import { SetChecks } from './SetChecks'
 
 /** One key moment on the board: its look (or latest image) in the light it plays in, and where it stands. */
 function MomentCard({ moment, canRemove }: { moment: SetlistMoment; canRemove: boolean }) {
@@ -210,8 +211,9 @@ export function ShowPage() {
               )}
             </CardHeader>
             {p.set && (
-              <CardContent className="flex flex-col gap-2">
+              <CardContent className="flex flex-col gap-4">
                 {setSrc ? <img src={setSrc} alt={`The set: ${p.set.title}`} className="aspect-[21/9] w-full rounded-lg object-cover" /> : <div className="bg-muted aspect-[21/9] w-full animate-pulse rounded-lg" />}
+                {setSource && <SetChecks spec={setSource.spec} brief={p.brief} reworked={setSource.reworked} locked />}
                 {offSet > 0 && (
                   <p className="text-warning-medium type-text-xs-medium">
                     {offSet === 1 ? '1 moment has a look' : `${offSet} moments have looks`} with another structure. Open {offSet === 1 ? 'it' : 'them'} to restage on the set.

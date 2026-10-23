@@ -95,7 +95,8 @@ Stills and Motion screens below are replaced by the Show board and the Moment pa
 | Pinboard | `ui/button` xs per pin | | No |
 | Contact sheet | local `ContactSheet` | | **Yes** (see candidates) |
 | Compare 2–4 | `ui/dialog` | | No |
-| Lock the set | `ui/alert` `tone="agent"` with action | | No |
+| Lock the set | `ui/alert` `tone="agent"` with action, opening `ui/dialog` with the set checks | | No |
+| Set checks (footprint and venue checks) | `anvil/key-value-row` + `anvil/check-row` (included · pending · excluded) + `ui/badge` | | No |
 | Motion | `ui/card` + local `ClipPlayer` + `anvil/key-value-row` + `ui/input` | | Yes (ClipPlayer) |
 | Previous / next moment | `ui/button` `size="icon-sm"` | | No |
 | Explore / Assets | `ui/tabs` `variant="line"` | in the URL (`?tab=assets`) | No |

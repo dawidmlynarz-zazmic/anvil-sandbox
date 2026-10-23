@@ -18,8 +18,23 @@ export interface Venue {
   about?: string
   /** Where the facts come from. */
   source: string
-  /** Sample technical specs, labelled as samples until AEG supplies the real ones. */
-  specs: { stageWidth: string; ledWall: string; rigging: string; model3d: string }
+  /** Technical limits the set is checked against. Samples, labelled as such, until AEG supplies the real ones. */
+  limits: VenueLimits
+  /** Whether the venue's 3D model is loaded (one venue is modelled for the pilot). */
+  modelled: boolean
+}
+
+export interface VenueLimits {
+  /** Usable stage width, metres. */
+  stageWidth: number
+  /** Maximum trim height (to the underside of the roof or grid), metres. */
+  trim: number
+  /** Total load the roof or grid can fly, tonnes. */
+  rigging: number
+  /** The venue's main LED wall, width × height in metres. */
+  led: [number, number]
+  /** Open air only: the evening gusts expected in the slot's season, m/s. */
+  gusts?: number
 }
 
 /** A key moment: one song where the stage does something memorable. The unit the show is designed in. */

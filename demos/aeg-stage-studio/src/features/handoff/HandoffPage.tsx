@@ -18,6 +18,7 @@ import { NewProjectDialog } from '~/app/NewProjectDialog'
 import { revealTop } from '~/lib/reveal'
 import { StillImage } from '~/components/StillImage'
 import { genById, kitStatus, lookFor } from '~/state/show'
+import { SetChecks } from '~/features/show/SetChecks'
 
 /** The end of the loop: everything production needs, once the artist has approved. */
 export function HandoffPage() {
@@ -125,8 +126,12 @@ export function HandoffPage() {
               </CardDescription>
             </CardHeader>
             {setSource && (
-              <CardContent>
+              <CardContent className="flex flex-col gap-4">
                 <StillImage still={setSource} alt={`The set: ${set?.title}`} className="aspect-[21/9] w-full rounded-lg object-cover" />
+                <SetChecks spec={setSource.spec} brief={p.brief} reworked={setSource.reworked} locked />
+                <p className="text-muted-foreground type-text-xs-normal">
+                  Estimates from sample venue specs. Production confirms them with the venue’s real specs and a structural engineer.
+                </p>
               </CardContent>
             )}
           </Card>
@@ -249,6 +254,7 @@ export function HandoffPage() {
                   Asset kits ({kitAssets} assets across {withKits} of {looks.length} moments)
                 </CheckRow>
                 <CheckRow>Provenance for every image and clip</CheckRow>
+                <CheckRow status="pending">Venue checks: confirm against real specs and a structural engineer</CheckRow>
                 <CheckRow>Cue sheet by song</CheckRow>
                 <CheckRow>Prompt and decision log</CheckRow>
                 <CheckRow status={exported ? 'included' : 'pending'}>Export to [production team’s tools]</CheckRow>

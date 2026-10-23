@@ -20,12 +20,13 @@ import type { ChatTurn } from '~/state/types'
 import { lowerFirst } from '~/services/shapes'
 import { clipKey, useProject } from '~/state/ProjectContext'
 import { looksChosen } from '~/state/project'
+import { footprint, issues, venueChecks } from '~/services/venueCheck'
 import { genById, gensFor, lookFor, MOMENT_STATUS, momentStatus } from '~/state/show'
 
 const PLACEHOLDER: Record<string, string> = {
   setup: 'Answer the question, or use a suggestion',
   brief: 'Describe the show, or ask me to change the brief…',
-  show: 'Ask about the show, e.g. “which moments need a look?”',
+  show: 'Ask about the show, e.g. “will the set hold in the wind?”',
   m: 'Change the open image, e.g. “narrower, warmer”',
   review: 'Ask about the review, e.g. “what’s comment 2?”',
   handoff: 'Ask about the package or the decision log',
@@ -158,6 +159,26 @@ export function ChatPanel() {
       } else {
         void reply('Reading your request', 'Nothing is open on this moment yet.', ['Checked the moment'], 'Nothing is explored here yet. Explore four directions first, then tell me what to change.')
       }
+      return
+    }
+
+    if (step === 'show' && /\b(wind|gusts?|rig|rigging|weight|heavy|fit|fits|trim|height|venue|checks?|sightlines?|build)\b/i.test(value)) {
+      say('user', value)
+      const source = project.set ? genById(project, project.set.fromId) : undefined
+      if (!source) {
+        void reply('Checking the set', 'The set isn’t locked, so there’s no structure to check yet.', ['Looked for the set'], 'The set isn’t locked yet. Every image has its own check on its badge; lock the set from a look and I’ll check it against the venue.')
+        return
+      }
+      const checks = venueChecks(source.spec, project.brief, source.reworked)
+      const fp = footprint(source.spec)
+      const flagged = issues(checks)
+      const wind = checks.find((c) => c.label === 'Wind')
+      void reply(
+        'Checking the set against the venue',
+        'You asked about the set in the venue, so I’ll check its footprint against the venue’s limits. The limits are sample specs.',
+        ['Estimated the footprint', ...checks.map((c) => `${c.label}: ${c.status === 'pass' ? 'passes' : c.status === 'warn' ? 'needs a plan' : 'fails'}`)],
+        `The set is ${fp.width} m wide, ${fp.height} m tall and ${fp.weight} t (${fp.flown} t flown). ${flagged.length ? `${checks.length - flagged.length} of ${checks.length} checks pass. ${flagged.map((c) => `${c.label}: ${c.detail}`).join(' ')}` : `Every check passes.${wind ? ` Wind: ${lowerFirst(wind.detail)}` : ''}`}${!wind && /wind|gust/i.test(value) ? ' It’s under a roof, so wind doesn’t apply.' : ''} These are estimates from sample specs; production confirms them with the venue.`,
+      )
       return
     }
 

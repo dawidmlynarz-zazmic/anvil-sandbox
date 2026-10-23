@@ -39,6 +39,7 @@ import { TIME_LABEL, type Generation } from '~/state/types'
 import { CompareDialog } from './CompareDialog'
 import { MotionCard } from './MotionCard'
 import { AssetKit } from './AssetKit'
+import { LockSetDialog } from './LockSetDialog'
 import { ProvenanceButton } from '~/components/ProvenanceButton'
 import { ofGeneration } from '~/services/provenance'
 
@@ -273,16 +274,11 @@ export function MomentPage() {
                     <Alert
                       tone="agent"
                       role="status"
-                      action={
-                        <Button size="xs" variant="outline" intent="neutral" onClick={() => p.lockSet(focus.id)}>
-                          <Icon icon={LockIcon} />
-                          Lock the set from #{focus.n}
-                        </Button>
-                      }
+                      action={<LockSetDialog gen={focus} />}
                     >
                       <Icon icon={LockIcon} />
                       <AlertTitle>Happy with this structure?</AlertTitle>
-                      <AlertDescription>Lock the set from #{focus.n}. Every moment then shares it, and only the look changes from song to song.</AlertDescription>
+                      <AlertDescription>Lock the set from #{focus.n}. Every moment then shares it, and only the look changes from song to song. You’ll see how it sits in the venue first.</AlertDescription>
                     </Alert>
                   )}
 

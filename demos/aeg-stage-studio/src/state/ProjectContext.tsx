@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
 import { artistFeedback, artistPraise } from '~/mocks/review'
-import { isCovered } from '~/mocks/venues'
+import { isCovered, venueOf } from '~/mocks/venues'
+import { issues, venueChecks } from '~/services/venueCheck'
 import { applyAnswer, DONE_TEXT, draftMoments, profileQuestions, QUESTIONS, SLOT_TIMES } from '~/services/interview'
 import { generation } from '~/services/generation'
 import { listing, take, tweaksFrom } from '~/services/changes'
@@ -328,10 +329,16 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       if (!s.clips[clipKey(genId, g.song)]) void renderClip(g.song, g)
     }
     const off = s.moments.filter((m) => m.number !== g.song && lookFor(s, m.number) && !matchesSet(lookFor(s, m.number)!.spec, set)).map((m) => m.number)
-    d({ type: 'version/add', summary: `Set locked from song ${g.song} #${g.n} · ${g.title}`, author: 'You' })
+    const checks = venueChecks(g.spec, s.brief, g.reworked)
+    const flagged = issues(checks)
+    const venue = venueOf(s.brief.venueId).name
+    const checked = flagged.length
+      ? ` Against ${venue} (sample specs), ${checks.length - flagged.length} of ${checks.length} checks pass; ${listing(flagged.map((c) => `${c.label.toLowerCase()}: ${lowerFirst(c.detail.replace(/\.$/, ''))}`))}. Production will need a plan for ${flagged.length === 1 ? 'it' : 'them'}.`
+      : ` It passes every check against ${venue} (sample specs).`
+    d({ type: 'version/add', summary: `Set locked from song ${g.song} #${g.n} · ${g.title}${flagged.length ? ` (${flagged.length} to resolve)` : ''}`, author: 'You' })
     say(
       'assistant',
-      `${alsoLook ? `#${g.n} is the look for ${momentName(g.song)}, and its clip is rendering. ` : ''}The set is locked from #${g.n}: ${lowerFirst(g.title)}${describeTweaks({ width: set.width, lift: set.lift }) ? `, ${describeTweaks({ width: set.width, lift: set.lift })}` : ''}. From now on, new images for every moment keep this structure and vary the look: light, colour and haze.${off.length ? ` ${capitalise(songs(off))} ${off.length === 1 ? 'has a look' : 'have looks'} with another structure; ask for more like ${off.length === 1 ? 'it' : 'them'} to restage on the set.` : ''}`,
+      `${alsoLook ? `#${g.n} is the look for ${momentName(g.song)}, and its clip is rendering. ` : ''}The set is locked from #${g.n}: ${lowerFirst(g.title)}${describeTweaks({ width: set.width, lift: set.lift }) ? `, ${describeTweaks({ width: set.width, lift: set.lift })}` : ''}. From now on, new images for every moment keep this structure and vary the look: light, colour and haze.${checked}${off.length ? ` ${capitalise(songs(off))} ${off.length === 1 ? 'has a look' : 'have looks'} with another structure; ask for more like ${off.length === 1 ? 'it' : 'them'} to restage on the set.` : ''}`,
     )
   }
 
@@ -406,7 +413,22 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
   return {
     say,
     updateMessage,
-    patchBrief: (patch, source = 'you') => d({ type: 'brief/patch', patch, source }),
+    patchBrief: (patch, source = 'you') => {
+      const s = get()
+      d({ type: 'brief/patch', patch, source })
+      // A new venue under a locked set: say straight away how the set sits there.
+      const from = s.set ? genById(s, s.set.fromId) : undefined
+      if (!patch.venueId || patch.venueId === s.brief.venueId || !from) return
+      const brief = { ...s.brief, ...patch }
+      const flagged = issues(venueChecks(from.spec, brief, from.reworked))
+      const venue = venueOf(patch.venueId).name
+      say(
+        'assistant',
+        flagged.length
+          ? `The venue is now ${venue}. The locked set doesn’t fit as it is (sample specs): ${listing(flagged.map((c) => `${c.label.toLowerCase()}, ${lowerFirst(c.detail.replace(/\.$/, ''))}`))}. Unlock the set on the show board and change its look${flagged[0]!.fix ? ` (try “${flagged[0]!.fix}”)` : ''}, then lock it again.`
+          : `The venue is now ${venue}. The locked set still passes every check there (sample specs).`,
+      )
+    },
     answerSetup: async (text) => {
       const s = get()
       say('user', text)

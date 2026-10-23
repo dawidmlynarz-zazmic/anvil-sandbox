@@ -17,7 +17,7 @@ const RULES: Rule[] = [
   { test: /\b(narrow(er)?|thinner|slimmer|smaller|less wide|lighter|airier|less boxy)\b/i, apply: (t) => ({ ...t, width: scale(t, 0.75) }), says: 'a narrower centrepiece' },
   { test: /\b(wider|broader|bigger|larger|more massive|heavier)\b/i, apply: (t) => ({ ...t, width: scale(t, 1.25) }), says: 'a wider centrepiece' },
   { test: /\b(higher|taller|raise[ds]?|lift(ed)?)\b/i, apply: (t) => ({ ...t, lift: clamp((t.lift ?? 0) + 3, -4, 8) }), says: 'the centrepiece raised' },
-  { test: /\b(lower(ed)?|shorter)\b/i, apply: (t) => ({ ...t, lift: clamp((t.lift ?? 0) - 2.5, -4, 8) }), says: 'the centrepiece lowered' },
+  { test: /\b(lower(ed)?|shorter)\b/i, apply: (t) => ({ ...t, lift: clamp((t.lift ?? 0) - 3.5, -4, 8) }), says: 'the centrepiece lowered' },
   { test: /\bgold(en)?\b/i, apply: (t) => ({ ...t, palette: 'gold' }), says: 'a gold palette' },
   { test: /\b(warm(er)?|amber|less pink|desert|sunset tones?)\b/i, apply: (t) => (t.palette === 'gold' ? t : { ...t, palette: 'warm' }), says: 'a warmer palette' },
   { test: /\b(cool(er)?|cold(er)?|blue|icy|ice)\b/i, apply: (t) => ({ ...t, palette: 'cool' }), says: 'a cooler palette' },

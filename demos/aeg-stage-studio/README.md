@@ -35,6 +35,9 @@ The show is designed one key moment (a song) at a time, on one shared set. See `
   kit from its look: angles, light states and motion variants, each with its provenance (LED loops and performer
   stand-ins are listed as coming with the pilot models).
 - **Preview the show** (on the show board) plays every moment's clip in setlist order.
+- **Venue checks**: every design's footprint (size, weight, flown load, wind area) is checked against the venue's
+  sample limits: stage width, trim, rigging, sightlines, no-gos and, for open-air stages, evening gusts. The checks show
+  on each image's badge, before locking the set, on the show board and in Handoff (`src/services/venueCheck.ts`).
 - **Review**: the artist comments per moment (on the look or the clip) and approves the show once. **Request changes**
   starts new looks for the moments they commented on.
 - **Handoff**: the set, each moment's look, clip and asset kit, the cue sheet, the decision log, rights and the package.

@@ -14,6 +14,7 @@ import { setTimes, SUNSET } from '~/services/light'
 import { fromISODate, toISODate, weekdayOf } from '~/lib/time'
 import { budgetBands } from '~/mocks/project'
 import { venueOf, venues } from '~/mocks/venues'
+import { limitRows } from '~/services/venueCheck'
 import { TagInput } from '~/components/local/TagInput/TagInput'
 import { useProject } from '~/state/ProjectContext'
 import { briefReadiness } from '~/state/readiness'
@@ -81,12 +82,15 @@ export function VenueCard() {
             </Badge>
           </div>
           <KeyValueList>
-            <KeyValueRow label="Stage width">{venue.specs.stageWidth}</KeyValueRow>
-            <KeyValueRow label="LED wall">{venue.specs.ledWall}</KeyValueRow>
-            <KeyValueRow label="Rigging limits">{venue.specs.rigging}</KeyValueRow>
-            <KeyValueRow label="3D stage model">{venue.specs.model3d}</KeyValueRow>
+            {limitRows(venue).map((r) => (
+              <KeyValueRow key={r.label} label={r.label}>
+                {r.value}
+              </KeyValueRow>
+            ))}
           </KeyValueList>
-          <p className="text-muted-foreground type-text-xs-normal">Sample values until AEG’s venue library is connected.</p>
+          <p className="text-muted-foreground type-text-xs-normal">
+            Sample values until AEG’s venue library is connected. The agent checks every design against them{venue.limits.gusts ? ', including the wind' : ''}.
+          </p>
         </section>
       </CardContent>
     </Card>
