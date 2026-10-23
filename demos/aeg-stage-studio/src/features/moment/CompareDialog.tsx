@@ -3,6 +3,7 @@ import { Button } from '@anvil/components/ui/button'
 import { Dialog, DialogBody, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@anvil/components/ui/dialog'
 import { CheckIcon, Icon, PinIcon } from '@anvil/components/ui/icon'
 import { StillImage } from '~/components/StillImage'
+import { MODEL } from '~/components/ModelBadge'
 import type { Generation } from '~/state/types'
 
 /** Two to four images side by side, in the same view, to decide between them. */
@@ -34,7 +35,7 @@ export function CompareDialog({
             {items.map((g) => (
               <li key={g.id}>
                 <figure className="flex flex-col gap-2">
-                  <StillImage still={g} alt={`#${g.n} · ${g.title}, ${g.caption}`} className="aspect-video w-full rounded-lg object-cover" />
+                  <StillImage still={g} alt={`#${g.n} · ${g.title}, ${g.caption}`} model={MODEL.still} className="aspect-video w-full rounded-lg object-cover" />
                   <figcaption className="flex items-center justify-between gap-2">
                     <span className="flex min-w-0 flex-col">
                       <span className="flex items-center gap-1.5 type-text-sm-semibold">

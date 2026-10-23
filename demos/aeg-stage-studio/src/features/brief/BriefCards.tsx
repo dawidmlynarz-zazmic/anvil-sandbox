@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Badge } from '@anvil/components/ui/badge'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@anvil/components/ui/card'
-import { CircleCheckIcon, CircleDashedIcon, Icon } from '@anvil/components/ui/icon'
+import { ChevronRightIcon, CircleCheckIcon, CircleDashedIcon, Icon } from '@anvil/components/ui/icon'
+import { Button } from '@anvil/components/ui/button'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@anvil/components/ui/collapsible'
 import { Calendar } from '@anvil/components/ui/calendar'
 import { DatePicker, DatePickerContent, DatePickerTrigger } from '@anvil/components/ui/date-picker'
 import { Input } from '@anvil/components/ui/input'
@@ -48,8 +50,7 @@ export function VenueCard() {
   return (
     <Card>
       <SectionHeader title="Venue" section="venue">
-          Where the show happens. The agent checks every image against the venue’s limits, so designs only use what the
-          stage can really hold.
+          Every design is checked against its limits.
         </SectionHeader>
       <CardContent className="flex flex-col gap-4">
         <Select value={brief.venueId} onValueChange={(venueId) => patchBrief({ venueId })}>
@@ -64,34 +65,44 @@ export function VenueCard() {
             ))}
           </SelectContent>
         </Select>
-        <section aria-label="About the venue" className="flex flex-col gap-2">
-          {venue.about && <p className="type-text-sm-normal">{venue.about}</p>}
-          <KeyValueList>
-            <KeyValueRow label="City">{venue.city}</KeyValueRow>
-            {venue.capacity && <KeyValueRow label="Capacity">{venue.capacity}</KeyValueRow>}
-            {venue.opened && <KeyValueRow label="Opened">{venue.opened}</KeyValueRow>}
-            <KeyValueRow label="Roof">{venue.covered ? 'Covered: lit as night all show' : 'Open air: the sun sets during some slots'}</KeyValueRow>
-          </KeyValueList>
-          <p className="text-muted-foreground type-text-xs-normal">Source: {venue.source}</p>
-        </section>
-        <section aria-label="Technical specs" className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <span className="type-text-sm-semibold">Technical specs</span>
-            <Badge tone="warning" variant="outline" size="xs">
-              Sample
-            </Badge>
-          </div>
-          <KeyValueList>
-            {limitRows(venue).map((r) => (
-              <KeyValueRow key={r.label} label={r.label}>
-                {r.value}
-              </KeyValueRow>
-            ))}
-          </KeyValueList>
-          <p className="text-muted-foreground type-text-xs-normal">
-            Sample values until AEG’s venue library is connected. The agent checks every design against them{venue.limits.gusts ? ', including the wind' : ''}.
-          </p>
-        </section>
+        <Collapsible className="flex flex-col gap-3">
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" intent="neutral" size="sm" className="group -ms-2 self-start">
+              <Icon icon={ChevronRightIcon} className="transition-transform group-data-[state=open]:rotate-90" />
+              About {venue.name} and its specs
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="flex flex-col gap-4">
+            <section aria-label="About the venue" className="flex flex-col gap-2">
+              {venue.about && <p className="type-text-sm-normal">{venue.about}</p>}
+              <KeyValueList>
+                <KeyValueRow label="City">{venue.city}</KeyValueRow>
+                {venue.capacity && <KeyValueRow label="Capacity">{venue.capacity}</KeyValueRow>}
+                {venue.opened && <KeyValueRow label="Opened">{venue.opened}</KeyValueRow>}
+                <KeyValueRow label="Roof">{venue.covered ? 'Covered: lit as night all show' : 'Open air: the sun sets during some slots'}</KeyValueRow>
+              </KeyValueList>
+              <p className="text-muted-foreground type-text-xs-normal">Source: {venue.source}</p>
+            </section>
+            <section aria-label="Technical specs" className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="type-text-sm-semibold">Technical specs</span>
+                <Badge tone="warning" variant="outline" size="xs">
+                  Sample
+                </Badge>
+              </div>
+              <KeyValueList>
+                {limitRows(venue).map((r) => (
+                  <KeyValueRow key={r.label} label={r.label}>
+                    {r.value}
+                  </KeyValueRow>
+                ))}
+              </KeyValueList>
+              <p className="text-muted-foreground type-text-xs-normal">
+                Sample values until AEG’s venue library is connected. The agent checks every design against them{venue.limits.gusts ? ', including the wind' : ''}.
+              </p>
+            </section>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   )
@@ -108,7 +119,7 @@ export function SlotCard() {
   return (
     <Card>
       <SectionHeader title="Performance time slot" section="slot">
-        When the artist plays. The time sets how much daylight each key moment has, which drives its lighting.
+        Sets how much daylight each key moment has.
       </SectionHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="grid grid-cols-1 items-start gap-3 @md:grid-cols-[1.3fr_1fr_1fr]">
@@ -151,9 +162,7 @@ export function VisualDirectionCard() {
   return (
     <Card>
       <SectionHeader title="Visual direction" section="visual">
-        A few words that steer the look of every moment. The agent turns them, and your {brief.referenceCount} reference image
-        {brief.referenceCount === 1 ? '' : 's'}, into image and video prompts. Use the paperclip in the chat to add more
-        references.
+        Steers every image and clip, with your {brief.referenceCount} reference image{brief.referenceCount === 1 ? '' : 's'}.
       </SectionHeader>
       <CardContent>
         <TagInput
@@ -175,7 +184,7 @@ export function ConstraintsCard() {
   return (
     <Card>
       <SectionHeader title="Constraints" section="constraints">
-          The limits every image must stay inside. If one would break a limit, the agent flags it.
+          The no-gos and budget every design stays inside.
         </SectionHeader>
       <CardContent className="flex flex-col gap-4">
         <Select value={constraints.budget} onValueChange={(v) => set('budget', v)}>

@@ -30,7 +30,7 @@ export function BriefPage() {
   const setup = phase === 'setup'
   const visible = SECTIONS.filter((s) => provenance[s.key] !== 'pending')
   const formOpen = SECTIONS.every((s) => provenance[s.key] !== 'pending')
-  // One readiness rule for the checklist, the footer, the rail and the agent.
+  // One readiness rule for the checklist, the footer, the header steps and the agent.
   const readiness = briefReadiness(p)
 
   // When the agent fills in one more section, bring it into view, so what it talks about is on screen.
@@ -54,8 +54,8 @@ export function BriefPage() {
             </h1>
             <p className="text-muted-foreground type-text-sm-normal">
               {setup
-                ? 'The agent is asking you about the show in the chat. Each answer fills in a part of this brief. You can also fill it in yourself.'
-                : 'The reference for every moment. Edit it here or ask the agent in the chat. Changes apply to images made from now on.'}
+                ? 'Answer the agent in the chat, or fill it in here.'
+                : 'Changes apply to images made from now on.'}
             </p>
           </div>
 
@@ -113,7 +113,7 @@ export function BriefPage() {
         <StepFooter
         >
           <Button onClick={() => navigate(path('show'))}>
-            Go to the show
+            Generate show
             <Icon icon={ArrowRightIcon} />
           </Button>
         </StepFooter>

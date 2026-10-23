@@ -3,6 +3,7 @@ import { Button } from '@anvil/components/ui/button'
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@anvil/components/ui/dialog'
 import { Icon, PlayIcon } from '@anvil/components/ui/icon'
 import { ClipPlayer } from '~/components/local/ClipPlayer/ClipPlayer'
+import { MODEL } from '~/components/ModelBadge'
 import { ClipTile } from '~/components/local/ClipTile/ClipTile'
 import { clipFrame, useMomentThumb } from '~/components/clipFrame'
 import { clipKey, useProject } from '~/state/ProjectContext'
@@ -26,6 +27,7 @@ function Player({ scene, index, count, onEnded }: { scene: Scene; index: number;
   const poster = useMomentThumb(scene.look, p.brief, scene.moment.number, scene.clip.poster)
   return (
     <ClipPlayer
+      model={MODEL.motion}
       autoPlay
       onEnded={onEnded}
       poster={poster}

@@ -357,7 +357,7 @@ export function ChatPanel() {
             </MessageScrollerItem>
           ))}
         </ChatShellThread>
-        <ChatShellComposer disclaimer="The agent can make mistakes. Check venue specs before anything is built.">
+        <ChatShellComposer disclaimer="Powered by Gemini. The agent can make mistakes.">
           <PromptInput
             aria-label="Message the stage agent"
             placeholder={latest.phase === 'setup' ? PLACEHOLDER.setup : (PLACEHOLDER[stepOf(pathname)] ?? PLACEHOLDER.brief)}

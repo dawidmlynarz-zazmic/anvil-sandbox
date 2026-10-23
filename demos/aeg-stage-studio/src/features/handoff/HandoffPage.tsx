@@ -15,9 +15,9 @@ import { NewProjectDialog } from '~/app/NewProjectDialog'
 import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
 import { StillImage } from '~/components/StillImage'
+import { MODEL } from '~/components/ModelBadge'
 import { SetChecks } from '~/features/show/SetChecks'
 import { revealTop } from '~/lib/reveal'
-import { GUARDRAIL } from '~/mocks/copy'
 import { venueOf } from '~/mocks/venues'
 import { MOVE_TITLE, moveOf } from '~/services/generation'
 import { PILOT_ONLY } from '~/services/kit'
@@ -138,7 +138,7 @@ export function HandoffPage() {
               </Badge>
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
-              Everything production needs to build the approved show, organised for each trade. {GUARDRAIL}
+              Everything production needs to build the approved show, organised for each trade.
             </p>
           </div>
 
@@ -178,7 +178,6 @@ export function HandoffPage() {
                 <h2 id="value-title" className="type-text-base-semibold">
                   Value to prove
                 </h2>
-                <p className="text-muted-foreground type-text-xs-normal">The pilot’s three measures. “Today” is AEG’s current process, to be filled in with the production team.</p>
                 <WidgetMetricGroup>
                   <WidgetMetricCard label="Reviews with the artist" value={sends} period={`${generations.length} images explored · today: [typical rounds]`} />
                   <WidgetMetricCard label="Days to approved show" value={daysSinceBrief} period="Today: [typical weeks]" />
@@ -192,39 +191,17 @@ export function HandoffPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Credits</CardTitle>
-                  <CardDescription>Who made which decisions. The agent explored; people chose.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <KeyValueList>
-                    <KeyValueRow label="Creative direction">
-                      AEG Presents creative team: chose {rows.length} looks, {set ? 'locked the set, ' : ''}
-                      {yours ? `asked for ${yours} of the ${generations.length} images, ` : ''}sent {sends} {sends === 1 ? 'review' : 'reviews'} to the artist
-                    </KeyValueRow>
-                    <KeyValueRow label="Artist">
-                      {meta.artist}: commented on the show and approved it{artistRating ? `, rated ${artistRating}/5` : ''}; owns every output
-                    </KeyValueRow>
-                    <KeyValueRow label="Stage agent">
-                      Explored {generations.length - yours} images, drafted the prompts, built {withKits} {withKits === 1 ? 'kit' : 'kits'} and checked every design against
-                      the venue
-                    </KeyValueRow>
-                  </KeyValueList>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
                   <CardTitle>The show</CardTitle>
                   <CardDescription>
                     {set && setSource ? `${set.title}, locked from song ${setSource.song} #${setSource.n}, with a look for every key moment.` : 'Each key moment with its look.'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
-                  {setSource && <StillImage still={setSource} alt={`The set: ${set?.title}`} className="aspect-[21/9] w-full rounded-lg object-cover" />}
+                  {setSource && <StillImage still={setSource} alt={`The set: ${set?.title}`} model={MODEL.still} className="aspect-[21/9] w-full rounded-lg object-cover" />}
                   <ul className="grid grid-cols-2 gap-4">
                     {rows.map(({ moment, look, clip, kit }) => (
                       <li key={moment.number} className="flex flex-col gap-1">
-                        <StillImage still={look} alt={`Song ${moment.number} · ${moment.title}: #${look.n}`} className="aspect-video w-full rounded-lg object-cover" />
+                        <StillImage still={look} alt={`Song ${moment.number} · ${moment.title}: #${look.n}`} model={MODEL.still} className="aspect-video w-full rounded-lg object-cover" />
                         <span className="type-text-sm-semibold">
                           Song {moment.number} · {moment.title}
                         </span>
@@ -266,7 +243,7 @@ export function HandoffPage() {
               <CardContent className="flex flex-col gap-5">
                 {setSource ? (
                   <>
-                    <StillImage still={setSource} alt={`The set: ${set?.title}`} className="aspect-[21/9] w-full rounded-lg object-cover" />
+                    <StillImage still={setSource} alt={`The set: ${set?.title}`} model={MODEL.still} className="aspect-[21/9] w-full rounded-lg object-cover" />
                     <SetChecks spec={setSource.spec} brief={p.brief} reworked={setSource.reworked} locked />
                   </>
                 ) : (
@@ -307,7 +284,7 @@ export function HandoffPage() {
                         <KeyValueRow label="Cue">{row.clip?.cue.lighting ?? 'No clip yet'}</KeyValueRow>
                         <KeyValueRow label="Look">{row.look.caption}</KeyValueRow>
                       </KeyValueList>
-                      <Thumbs look={row.look} assets={of(row, 'light')} empty="No light states yet: build the kit on the moment’s Assets tab." />
+                      <Thumbs look={row.look} assets={of(row, 'light')} empty="No light states yet: build the kit on the moment’s Look and assets tab." />
                     </MomentRow>
                   ))}
                 </ul>
@@ -359,7 +336,7 @@ export function HandoffPage() {
                       <KeyValueList>
                         <KeyValueRow label="Move">{row.clip ? `${MOVE_TITLE[moveOf(row.clip)]}, 8 s` : 'No clip yet'}</KeyValueRow>
                       </KeyValueList>
-                      <Thumbs look={row.look} assets={of(row, 'angle')} empty="No angles yet: build the kit on the moment’s Assets tab." />
+                      <Thumbs look={row.look} assets={of(row, 'angle')} empty="No angles yet: build the kit on the moment’s Look and assets tab." />
                     </MomentRow>
                   ))}
                 </ul>
@@ -369,6 +346,29 @@ export function HandoffPage() {
 
           {trade === 'rights' && (
             <div className="grid grid-cols-1 items-start gap-4 @xl:grid-cols-2">
+              <div className="@xl:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Credits</CardTitle>
+                    <CardDescription>Who made which decisions. The agent explored; people chose.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <KeyValueList>
+                      <KeyValueRow label="Creative direction">
+                        AEG Presents creative team: chose {rows.length} looks, {set ? 'locked the set, ' : ''}
+                        {yours ? `asked for ${yours} of the ${generations.length} images, ` : ''}sent {sends} {sends === 1 ? 'review' : 'reviews'} to the artist
+                      </KeyValueRow>
+                      <KeyValueRow label="Artist">
+                        {meta.artist}: commented on the show and approved it{artistRating ? `, rated ${artistRating}/5` : ''}; owns every output
+                      </KeyValueRow>
+                      <KeyValueRow label="Stage agent">
+                        Explored {generations.length - yours} images, drafted the prompts, built {withKits} {withKits === 1 ? 'kit' : 'kits'} and checked every design against
+                        the venue
+                      </KeyValueRow>
+                    </KeyValueList>
+                  </CardContent>
+                </Card>
+              </div>
               <Card>
                 <CardHeader>
                   <CardTitle>Rights and provenance</CardTitle>

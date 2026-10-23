@@ -17,7 +17,7 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 - Type: new component
 - Needed for: the Motion card on a moment page, and `/review`
 - Closest Anvil option checked: `agent/widget-media` (audio player: play, waveform, duration) and `ui/slider` — no video preview with a scrubber and a before/after comparison
-- Proposed API: `poster`, `comparePoster`, `compare`, `seconds`, `label`, `busy`, `renderFrame(t, variant)` (draws the frame live, e.g. a 3D scene), `compareLabels`, `autoPlay` and `onEnded` (play clips in sequence, as the show preview does)
+- Proposed API: `poster`, `comparePoster`, `compare`, `seconds`, `label`, `busy`, `renderFrame(t, variant)` (draws the frame live, e.g. a 3D scene), `compareLabels`, `autoPlay` and `onEnded` (play clips in sequence, as the show preview does), `model` (names the model over the clip)
 - Built from: `ui/button`, `ui/slider`, tokens only
 - States covered: default, compare, busy
 - Accessibility notes: frame is `role="img"` with `label`; Play/Pause/Replay button changes its name; scrubber has `aria-label`; time is an `<output>`
@@ -65,6 +65,8 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
   is labelled with the pin number or “whole concept”; pins are numbered buttons; the
   brief-check badge is a button with its result in its name; variations are buttons named “Use variation N”
 - Story: `src/components/local/ConceptCard/ConceptCard.stories.tsx`
+- Since the reduction audit: `mediaBadge` (e.g. the model, over the image), `titleBadge`, `compareInMenu` (compare
+  with the previous version from the menu, for a leaner card) and `menuItems` (e.g. Provenance)
 - Since Phase 1: also the focus panel on a moment page, numbered as a series (`versionPrefix="#"`, `selectLabel="Pin"`,
   `regenerateLabel="Another take"`, `applyHint`, and `children` for lineage under the image)
 - Recommendation: add to Anvil as a generated-asset card (it isn't stage-specific)
@@ -106,13 +108,12 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
   status per image), `agent/image-generation-card` (one image per card, too big for 20+ images) and local `ClipTile`
   (one selection, no pin or compare)
 - Proposed API: group `title`, `meta`, `pending` (placeholder count); tile `label`, `caption`, `src`, `alt`,
-  `focused`, `pinned`, `comparing`, `compareFull`, `chosen` (a badge, e.g. “Look”), `dismissed`, `onOpen`,
-  `onTogglePin`, `onToggleCompare`
-- Built from: `ui/badge`, `ui/checkbox`, `ui/button` (icon-xs), `ui/skeleton`, tokens only
-- States covered: default, focused, pinned, ticked for compare (and full at four), chosen, set aside, rendering
+  `focused`, `pinned`, `chosen` (a badge, e.g. “Look”), `dismissed`, `onOpen`, `onTogglePin`. Pins double as the
+  comparison set (the separate compare tick was removed in the reduction audit)
+- Built from: `ui/badge`, `ui/button` (icon-xs), `ui/skeleton`, tokens only
+- States covered: default, focused, pinned, chosen, set aside, rendering
 - Accessibility notes: each image is a button named with its number, caption and state (`aria-pressed` when open);
-  the compare tick and the pin are named per image (“Compare #6”, “Pin #6” / “Unpin #6”); each batch is a named
-  section with a heading
+  the pin is named per image (“Pin #6” / “Unpin #6”); each batch is a named section with a heading
 - Story: `src/components/local/ContactSheet/ContactSheet.stories.tsx`
 - Recommendation: add to Anvil as a generated-asset grid; it pairs with `concept-card` (the focus view)
 

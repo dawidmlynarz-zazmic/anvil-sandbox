@@ -1,5 +1,6 @@
 // ANVIL-CANDIDATE: see docs/anvil-upgrade-candidates.md#clip-player
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Icon, PauseIcon, PlayIcon, RotateCcwIcon } from '@anvil/components/ui/icon'
 import { Slider } from '@anvil/components/ui/slider'
@@ -26,12 +27,14 @@ export interface ClipPlayerProps extends Omit<React.ComponentProps<'div'>, 'chil
   autoPlay?: boolean
   /** Called when the clip plays through to the end (not when scrubbed there). */
   onEnded?: () => void
+  /** Names the model that made the clip, over its bottom-left corner, e.g. “Veo 3.1”. */
+  model?: string
 }
 
 const clock = (s: number) => `0:${String(Math.floor(s)).padStart(2, '0')}`
 
 /** A video preview with play, a scrubber and a time readout. Today it animates a still; swap the poster for a <video> later. */
-export function ClipPlayer({ poster, comparePoster, compare = false, seconds = 8, label, busy, renderFrame, compareLabels, autoPlay, onEnded, className, ...props }: ClipPlayerProps) {
+export function ClipPlayer({ poster, comparePoster, compare = false, seconds = 8, label, busy, renderFrame, compareLabels, autoPlay, onEnded, model, className, ...props }: ClipPlayerProps) {
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(!!autoPlay)
   const last = useRef(0)
@@ -111,6 +114,11 @@ export function ClipPlayer({ poster, comparePoster, compare = false, seconds = 8
           </div>
         )}
         <span className="text-foreground-inverse absolute end-3 bottom-2 type-text-2xs-medium opacity-80">{SYNTHID_SHORT}</span>
+        {model && (
+          <Badge tone="neutral" size="xs" className="pointer-events-none absolute start-2 bottom-2 opacity-75">
+            {model}
+          </Badge>
+        )}
       </div>
       <div className="flex items-center gap-3">
         <Button
