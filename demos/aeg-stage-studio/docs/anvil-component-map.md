@@ -121,8 +121,16 @@ Stills and Motion screens below are replaced by the Show board and the Moment pa
 | Per-moment rows for a trade | `ui/card`, `anvil/key-value-row`, kit thumbnails | | No |
 | Decision log | `anvil/timeline` | | No |
 
-## Progress rail
+## Header (after the reduction audit)
+
+The progress rail was removed; its parts live where they're used.
 
 | Element | Anvil component | Props | Gap? |
 | --- | --- | --- | --- |
-| So far (running metrics) | `anvil/key-value-row` | | No |
+| Steps with a status dot | `ui/button` `variant="ghost"` `asChild` (NavLink), `aria-current="page"` | | No |
+| Model on generated media | `ui/badge` `tone="neutral"` `size="xs"`, 75% opacity, over the corner | | No |
+| Running numbers | One line of text on the show board | | No |
+| Explore (split button) | `ui/button-group` + `ui/dropdown-menu` | | No |
+| Set checks summary | `ui/badge` in a `ui/popover` trigger | | No |
+| Add a key moment | `ui/dialog` with `ui/input` | | No |
+| Venue details | `ui/collapsible` | | No |

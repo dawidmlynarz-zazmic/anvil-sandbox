@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
-import { Icon, MoonIcon, PanelRightIcon, SunIcon } from '@anvil/components/ui/icon'
+import { Icon, MoonIcon, SunIcon } from '@anvil/components/ui/icon'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@anvil/components/ui/resizable'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@anvil/components/ui/sidebar'
 import { ChatPanel } from '~/features/chat/ChatPanel'
@@ -10,7 +10,7 @@ import { statusBadge } from '~/state/project'
 import { useProject } from '~/state/ProjectContext'
 import { AboutDemo } from './AboutDemo'
 import { InviteDialog } from './InviteDialog'
-import { LoopRail } from './LoopRail'
+import { StepNav } from './StepNav'
 import { ProjectsSidebar } from './ProjectsSidebar'
 
 const CHAT_WIDTH_KEY = 'stage-studio:chat-width'
@@ -28,18 +28,18 @@ const readChatWidth = () => {
 
 
 /**
- * Projects (collapsible, like a chat history) · the project's conversation · the step's work · the loop.
+ * Projects (collapsible, like a chat history) · the project's conversation · the step's work. The steps are in the
+ * header.
  * The projects list starts collapsed to icons so the work keeps its room.
  */
 export function AppShell() {
   const { meta, status } = useProject()
   const { pathname } = useLocation()
-  // Previewing as the artist: show only what the artist would see (no agent, no progress rail, no internal status).
+  // Previewing as the artist: show only what the artist would see (no agent, no steps, no internal status).
   const [params] = useSearchParams()
   const asArtist = pathname.endsWith('/review') && params.get('as') === 'artist'
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
-  // The agent is always open (it's how you work with the project); only the progress rail can be hidden.
-  const [railOpen, setRailOpen] = useState(() => window.innerWidth >= 1280)
+  // The agent is always open: it's how you work with the project.
   const first = useRef(true)
   const [chatWidth, setChatWidth] = useState(readChatWidth)
   const chatPixels = useRef(chatWidth)
@@ -86,11 +86,12 @@ export function AppShell() {
             {meta.artist} · {meta.event}
           </span>
           {!asArtist && (
-            <Badge tone={badge.tone} variant="subtle" shape="pill" indicator className="shrink-0">
+            <Badge tone={badge.tone} variant="subtle" shape="pill" indicator className="hidden shrink-0 xl:inline-flex">
               {badge.text}
             </Badge>
           )}
-          <div className="flex-1" />
+          {/* Keeps its own width; the project name truncates first. */}
+          <div className="flex flex-1 justify-center">{!asArtist && <StepNav />}</div>
           <AboutDemo />
           <InviteDialog />
           <Button
@@ -101,16 +102,6 @@ export function AppShell() {
             onClick={toggleTheme}
           >
             <Icon icon={dark ? SunIcon : MoonIcon} />
-          </Button>
-          <Button
-            variant="ghost"
-            intent="neutral"
-            size="icon-sm"
-            aria-label={railOpen ? 'Hide progress' : 'Show progress'}
-            aria-pressed={railOpen}
-            onClick={() => setRailOpen((o) => !o)}
-          >
-            <Icon icon={PanelRightIcon} />
           </Button>
         </header>
         <div className="flex min-h-0 flex-1">
@@ -137,7 +128,6 @@ export function AppShell() {
               </main>
             </ResizablePanel>
           </ResizablePanelGroup>
-          {railOpen && !asArtist && <LoopRail />}
         </div>
       </SidebarInset>
     </SidebarProvider>

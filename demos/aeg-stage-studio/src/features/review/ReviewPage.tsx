@@ -20,7 +20,7 @@ import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
 import { clipFrame, useMomentThumb } from '~/components/clipFrame'
 import { StillImage, useStillUrl } from '~/components/StillImage'
-import { SYNTHID_SHORT } from '~/mocks/copy'
+import { ModelBadge, MODEL } from '~/components/ModelBadge'
 import { clipKey, useProject } from '~/state/ProjectContext'
 import { genById, lookFor } from '~/state/show'
 import type { Brief, Generation, MotionClip, ReviewComment } from '~/state/types'
@@ -29,13 +29,18 @@ import { ApproveButton, ArtistApproveDialog, RequestChangesDialog } from './Revi
 /** A look's 3D render with the artist's numbered pins on it. */
 function PinnedLook({ look, ...props }: Omit<React.ComponentProps<typeof PinnedImage>, 'src'> & { look: Generation }) {
   const src = useStillUrl(look)
-  return <PinnedImage src={src} {...props} />
+  return (
+    <div className="relative">
+      <PinnedImage src={src} {...props} />
+      <ModelBadge model={MODEL.still} />
+    </div>
+  )
 }
 
 /** A moment's clip as the artist saw it: live 3D, over that song's 3D still while the scene loads. */
 function ReviewClip({ look, clip, brief }: { look: Generation; clip: MotionClip; brief: Brief }) {
   const poster = useMomentThumb(look, brief, clip.momentNumber, clip.poster)
-  return <ClipPlayer poster={poster} renderFrame={clipFrame(look, clip, brief)?.render} label={`Song ${clip.momentNumber}, clip version ${clip.version}`} />
+  return <ClipPlayer model={MODEL.motion} poster={poster} renderFrame={clipFrame(look, clip, brief)?.render} label={`Song ${clip.momentNumber}, clip version ${clip.version}`} />
 }
 
 export function ReviewPage() {
@@ -47,7 +52,7 @@ export function ReviewPage() {
   const [songParam, setSong] = useState<number | undefined>()
   const [activeId, setActiveId] = useState<string | null>(null)
   // Artist preview: the presenter plays the artist (pins comments, approves with a rating). It's in the URL, so the
-  // app shell can hide everything the artist wouldn't see (the agent, the progress rail).
+  // app shell can hide everything the artist wouldn't see (the agent, the steps).
   const [params, setParams] = useSearchParams()
   const artistView = params.get('as') === 'artist'
   const setArtistView = (on: boolean) =>
@@ -133,8 +138,8 @@ export function ReviewPage() {
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
               {artistView
-                ? 'Your show, moment by moment: the stage’s look and its motion for each key song. Pin a comment on any look, comment on a clip, or approve the show.'
-                : 'What the artist saw, moment by moment, and what they said. Click a comment to see where it points. Then approve the show, or request changes to the moments they commented on.'}
+                ? 'Your show, moment by moment. Pin a comment on a look, comment on a clip, or approve the show.'
+                : 'What the artist saw and said, moment by moment.'}
             </p>
           </div>
 
@@ -201,18 +206,6 @@ export function ReviewPage() {
 
           {(!waiting || artistView) && (
             <>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge tone="neutral" variant="outline">Artist owns outputs</Badge>
-                <Badge tone="neutral" variant="outline">{SYNTHID_SHORT}</Badge>
-                {/* Legal follow-ups are AEG's internal notes: not part of what the artist sees. */}
-                {!artistView && (
-                  <>
-                    <Badge tone="warning" variant="outline">C2PA: confirm per model</Badge>
-                    <Badge tone="warning" variant="outline">Indemnity: GA models · legal to confirm</Badge>
-                  </>
-                )}
-              </div>
-
               <Tabs value={String(song)} onValueChange={(v) => pick(Number(v))}>
                 <TabsList variant="line" aria-label="Key moments" className="max-w-full overflow-x-auto">
                   {moments.map((m) => {

@@ -27,13 +27,14 @@ The show is designed one key moment (a song) at a time, on one shared set. See `
 - **Brief**: the agent asks three questions in one card (stage, roughly when, the look), then any no-gos. Venues are
   real AEG venues and festival stages, with the facts aegworldwide.com publishes; technical specs are labelled samples.
   **Build the show** drafts the key moments from the setlist and starts exploring the first.
-- **Show board** (`/show`): the set, every key moment in setlist order (its light, look and status), running metrics,
-  and **Send the show to the artist** once every moment has a look.
-- **Moment page** (`/m/:song`): explore in batches (new directions, more like this, other angles, other light), pin,
-  compare any two to four, change an image in words or with pinned notes (each change is a new image, with its
-  lineage), choose the look, lock the set from it, and check the moment's clip. The **Assets** tab builds the moment's
-  kit from its look: angles, light states and motion variants, each with its provenance (LED loops and performer
-  stand-ins are listed as coming with the pilot models).
+- **Show board** (`/show`): one line of running numbers, the set (its venue checks behind a badge), every key moment
+  in setlist order (its look, one status and one line of detail), and **Send the show to the artist** once every
+  moment has a look.
+- **Moment page** (`/m/:song`), two tabs. **Explore**: new directions, or more like / other angles / other light of the
+  open image from one menu; pin what you like (pins are the comparison set); change an image in words or with pinned
+  notes (each change is a new image; its lineage and provenance are in the card's menu); choose the look and lock the
+  set. **Look and assets**: the moment's clip (cues, plain-word edits) and its asset kit (angles, light states, motion
+  variants, each with provenance; LED loops and performer stand-ins come with the pilot models).
 - **Preview the show** (on the show board) plays every moment's clip in setlist order.
 - **Venue checks**: every design's footprint (size, weight, flown load, wind area) is checked against the venue's
   sample limits: stage width, trim, rigging, sightlines, no-gos and, for open-air stages, evening gusts. The checks show
@@ -42,7 +43,10 @@ The show is designed one key moment (a song) at a time, on one shared set. See `
   starts new looks for the moments they commented on.
 - **Handoff**, organised by trade: an overview with the value to prove and the credits (who decided what), then
   staging and rigging, lighting, video and LED, camera, and rights with the decision log.
-- The progress rail shows the loop, each key moment, and a running **So far** (looks, images, kits, reviews, days).
+- The steps (Brief · Show · Review · Handoff) are in the header, each with a status dot. Generated media carries a
+  small badge naming its model: Nano Banana Pro on stills, Veo 3.1 on clips.
+- The screens were simplified after a UX reduction audit (23 Oct 2026): one place per fact, three regions (agent,
+  work, projects), detail one click away.
 - State is kept in `sessionStorage` (key `stage-studio:v3`): a reload keeps the demo where it was; a new tab starts fresh.
 
 ## Concept images

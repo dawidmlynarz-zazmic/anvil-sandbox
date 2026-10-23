@@ -24,6 +24,7 @@ import {
   ThumbsDownIcon,
   UndoIcon,
   XIcon,
+  type LucideIcon,
 } from '@anvil/components/ui/icon'
 import { Checkbox } from '@anvil/components/ui/checkbox'
 import { Dialog, DialogBody, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@anvil/components/ui/dialog'
@@ -96,6 +97,14 @@ export interface ConceptCardProps {
   regenerateLabel?: string
   /** Under “Apply changes”: what applying makes. Default: “Makes v4. v3 is kept.” */
   applyHint?: string
+  /** Shown over the image's bottom-left corner, e.g. the model that made it. */
+  mediaBadge?: ReactNode
+  /** Shown after the version in the title, e.g. a “Look” badge. */
+  titleBadge?: ReactNode
+  /** Compare with the previous version from the menu instead of a line under the image (a leaner card). */
+  compareInMenu?: boolean
+  /** More items for the “More actions” menu, before “Not this direction”. */
+  menuItems?: { label: string; icon: LucideIcon; onSelect: () => void }[]
   /** Extra content under the image, e.g. lineage or a call to action. */
   children?: ReactNode
   className?: string
@@ -136,11 +145,16 @@ export function ConceptCard({
   selectLabel = 'Select',
   regenerateLabel = 'Regenerate this concept',
   applyHint,
+  mediaBadge,
+  titleBadge,
+  compareInMenu,
+  menuItems = [],
   children,
   className,
 }: ConceptCardProps) {
   const v = (n: number) => `${versionPrefix}${n}`
   const [annotating, setAnnotating] = useState(false)
+  const [comparing, setComparing] = useState(false)
   const [pin, setPin] = useState<{ x: number; y: number } | null>(null)
   const [text, setText] = useState('')
   const cardRef = useRef<HTMLDivElement>(null)
@@ -176,6 +190,7 @@ export function ConceptCard({
           <Badge tone="neutral" variant="outline" size="xs">
             {v(version)}
           </Badge>
+          {titleBadge}
         </CardTitle>
         {rationale && <CardDescription>{rationale}</CardDescription>}
         {checks && (
@@ -220,6 +235,7 @@ export function ConceptCard({
             onPlace={annotating && editable ? (x, y) => setPin({ x, y }) : undefined}
             className="rounded-lg"
           />
+          {mediaBadge}
           {busy && (
             <div className="bg-background/70 absolute inset-0 flex items-center justify-center gap-2 type-text-sm-medium" role="status">
               <Spinner />
@@ -228,7 +244,19 @@ export function ConceptCard({
           )}
         </div>
 
-        {(previous || (version > 1 && versionPrefix === 'v')) && (
+        {previous && compareInMenu && (
+          <CompareVersions
+            title={title}
+            prefix={versionPrefix}
+            version={version}
+            current={{ src: mediaSrc, alt: mediaAlt }}
+            previous={previous}
+            change={change}
+            open={comparing}
+            onOpenChange={setComparing}
+          />
+        )}
+        {!compareInMenu && (previous || (version > 1 && versionPrefix === 'v')) && (
           <div className="flex items-center justify-between gap-2">
             <p className="text-muted-foreground flex min-w-0 items-center gap-1.5 type-text-xs-normal">
               <Icon icon={HistoryIcon} size="xs" />
@@ -385,7 +413,7 @@ export function ConceptCard({
           {editable && onMoreLikeThis && (
             <Button variant="ghost" intent="neutral" size="sm" onClick={onMoreLikeThis} disabled={!!variants}>
               <Icon icon={LayersIcon} />
-              {/* Icon-only when the card is narrow (two columns beside chat and rail); still named for screen readers. */}
+              {/* Icon-only when the card is narrow (beside the agent on a narrow window); still named for screen readers. */}
               <span className="sr-only @sm/card:not-sr-only">More like this</span>
             </Button>
           )}
@@ -407,6 +435,18 @@ export function ConceptCard({
                     Revert to {v(previous.version)}
                   </DropdownMenuItem>
                 )}
+                {previous && compareInMenu && (
+                  <DropdownMenuItem onSelect={() => setComparing(true)}>
+                    <Icon icon={ColumnsIcon} />
+                    Compare with {v(previous.version)}
+                  </DropdownMenuItem>
+                )}
+                {menuItems.map((item) => (
+                  <DropdownMenuItem key={item.label} onSelect={item.onSelect}>
+                    <Icon icon={item.icon} />
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={onToggleDismissed}>
                   <Icon icon={dismissed ? UndoIcon : ThumbsDownIcon} />
@@ -430,7 +470,12 @@ function CompareVersions({
   previous,
   change,
   onRevert,
+  open,
+  onOpenChange,
 }: {
+  /** Controlled from outside (e.g. a menu item): no trigger button is rendered. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   title: string
   prefix: string
   version: number
@@ -442,13 +487,15 @@ function CompareVersions({
   const changes = previous.changes ?? []
   const pins = changes.flatMap((c) => (c.x !== undefined && c.y !== undefined ? [{ id: String(c.number), number: c.number, x: c.x, y: c.y }] : []))
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" intent="neutral" size="xs">
-          <Icon icon={ColumnsIcon} />
-          Compare with {prefix}{previous.version}
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open === undefined && (
+        <DialogTrigger asChild>
+          <Button variant="ghost" intent="neutral" size="xs">
+            <Icon icon={ColumnsIcon} />
+            Compare with {prefix}{previous.version}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-5xl">
         <DialogHeader>
           <DialogTitle>

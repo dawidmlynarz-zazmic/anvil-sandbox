@@ -2,7 +2,6 @@
 import type { ReactNode } from 'react'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
-import { Checkbox } from '@anvil/components/ui/checkbox'
 import { CheckIcon, Icon, PinIcon, PinOffIcon } from '@anvil/components/ui/icon'
 import { Skeleton } from '@anvil/components/ui/skeleton'
 import { cn } from '@anvil/lib/utils'
@@ -36,25 +35,21 @@ export interface ContactSheetTileProps {
   alt: string
   /** The image open in the focus panel. */
   focused?: boolean
+  /** Pinned: kept in view, and part of the comparison. */
   pinned?: boolean
-  /** Ticked for comparing. */
-  comparing?: boolean
-  /** Comparing is full (four ticked): unticked tiles can't be added. */
-  compareFull?: boolean
   /** Shown with a tick: e.g. “Look”. */
   chosen?: string
   /** Set aside: greyed out. */
   dismissed?: boolean
   onOpen: () => void
   onTogglePin: () => void
-  onToggleCompare: () => void
 }
 
 /**
- * One image on a contact sheet. Click it to open it; pin it to keep it in view; tick it to compare. Built for many
- * images at once: small, scannable, with the image number and what's different about it.
+ * One image on a contact sheet. Click it to open it; pin it to keep it in view and compare it with the other pins. Built
+ * for many images at once: small, scannable, with the image number and what's different about it.
  */
-export function ContactSheetTile({ label, caption, src, alt, focused, pinned, comparing, compareFull, chosen, dismissed, onOpen, onTogglePin, onToggleCompare }: ContactSheetTileProps) {
+export function ContactSheetTile({ label, caption, src, alt, focused, pinned, chosen, dismissed, onOpen, onTogglePin }: ContactSheetTileProps) {
   return (
     <li className={cn('group/tile relative flex min-w-0 flex-col gap-1.5', dismissed && 'opacity-50')}>
       <button
@@ -81,7 +76,6 @@ export function ContactSheetTile({ label, caption, src, alt, focused, pinned, co
         </span>
       </button>
       <div className="flex items-center gap-1">
-        <Checkbox checked={!!comparing} disabled={!comparing && compareFull} onCheckedChange={onToggleCompare} aria-label={`Compare ${label}`} />
         <span className="text-muted-foreground min-w-0 flex-1 truncate type-text-xs-normal" title={caption}>
           {caption}
         </span>

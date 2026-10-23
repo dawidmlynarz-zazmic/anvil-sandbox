@@ -1,4 +1,5 @@
 import { cn } from '@anvil/lib/utils'
+import { ModelBadge } from './ModelBadge'
 import { useStageImage } from '~/scene/useStageImage'
 import { canRenderWebGL } from '~/scene/webgl'
 import type { StillSpec } from '~/state/types'
@@ -21,8 +22,22 @@ export function useStillUrl(still: Pictured | undefined) {
   return still && canRenderWebGL() ? undefined : still?.image
 }
 
-export function StillImage({ still, alt, className }: { still: Pictured; alt: string; className?: string }) {
+interface StillImageProps {
+  still: Pictured
+  alt: string
+  className?: string
+  /** Names the model that made it, over the image's corner. */
+  model?: string
+}
+
+export function StillImage({ still, alt, className, model }: StillImageProps) {
   const src = useStillUrl(still)
-  if (!src) return <div role="img" aria-label={`${alt} (rendering)`} className={cn('bg-muted aspect-video w-full animate-pulse', className)} />
-  return <img src={src} alt={alt} className={className} />
+  const image = src ? <img src={src} alt={alt} className={className} /> : <span role="img" aria-label={`${alt} (rendering)`} className={cn('bg-muted block aspect-video w-full animate-pulse', className)} />
+  if (!model) return image
+  return (
+    <span className="relative block">
+      {image}
+      <ModelBadge model={model} />
+    </span>
+  )
 }
