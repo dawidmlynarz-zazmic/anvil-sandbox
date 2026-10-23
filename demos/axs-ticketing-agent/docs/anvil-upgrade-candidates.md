@@ -114,7 +114,7 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 None blocking; each has a local workaround.
 
 - `Launcher` is popover-only (400 × 640): see `launcher-mobile`.
-- `OfferCard` vertical is a fixed 220px, so a price plus the button overflows when the price is long ("From £57.50 each"). Worked around with short price text. A wrapping price, or the button on its own row, would fix it.
+- `OfferCard` vertical is a fixed 220px, and `OfferCarousel` gives it a 13rem slide minus a 1rem gutter, so a 12rem card: the price and "View dates" clip when the price is long. `ShowCarousel` makes the slide 16rem (a 15rem, 240px card) and tells the card to fill it. A card that fills its slide, and a wider default slide, would fix it in Anvil.
 - `DrawerContent` sets `max-height`, `margin`, `bottom` and the corner radius with `data-[vaul-drawer-direction=bottom]:` selectors, so a `className` override needs `!`. The handle can't be turned off by a prop. It also always renders a portal to `body`, so it can't be contained in a device frame without those overrides.
 - `ChatShellThread` always opens at the end of the thread, so a tall `WelcomeState` opens scrolled past its heading on a phone. Worked around with `scrollToStart` while the thread is empty. A `defaultScrollPosition` prop on `ChatShellThread` would fix it.
 - `WelcomeState` with three `StarterPromptCard`s is about 1.4 screens tall on a phone (the top padding is `--space-3xl`), so the third starter is below the fold.
