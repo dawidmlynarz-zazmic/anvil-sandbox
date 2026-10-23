@@ -89,17 +89,16 @@ Stills and Motion screens below are replaced by the Show board and the Moment pa
 
 | Element | Anvil component | Props | Gap? |
 | --- | --- | --- | --- |
-| Focus panel | local `ConceptCard` | `versionPrefix="#"`, `selectLabel="Pin"` | **Yes** (see candidates) |
+| Focus panel | local `ConceptCard` | `versionPrefix="#"`, `compareInMenu`, `menuItems` | **Yes** (see candidates) |
 | Lineage (#2 → #6 → #12) | `ui/breadcrumb` | `BreadcrumbLink asChild` buttons | No |
 | Batch toolbar | `ui/button-group` + `ui/button` | outline, sm; icon-only when narrow | No |
-| Pinboard | `ui/button` xs per pin | | No |
 | Contact sheet | local `ContactSheet` | | **Yes** (see candidates) |
-| Compare 2–4 | `ui/dialog` | | No |
 | Lock the set | `ui/alert` `tone="agent"` with action, opening `ui/dialog` with the set checks | | No |
 | Set checks (footprint and venue checks) | `anvil/key-value-row` + `anvil/check-row` (included · pending · excluded) + `ui/badge` | | No |
 | Motion | `ui/card` + local `ClipPlayer` + `anvil/key-value-row` + `ui/input` | | Yes (ClipPlayer) |
 | Previous / next moment | `ui/button` `size="icon-sm"` | | No |
-| Explore / Assets | `ui/tabs` `variant="line"` | in the URL (`?tab=assets`) | No |
+| Explore / Asset kit | `ui/tabs` `variant="line"` | in the URL (`?tab=assets`) | No |
+| The look in motion, first on the page | `ui/card` + local `ClipPlayer` + `anvil/key-value-row` + `ui/input` | | Yes (ClipPlayer) |
 | Asset kit (stills, motion variants, pilot-only items) | `ui/card`, local `ClipPlayer` + `ClipTile`, `anvil/check-row` | | Yes (ClipPlayer, ClipTile) |
 | Kit out of date | `ui/alert` `tone="warning"` with action | | No |
 | Provenance on every image and asset | `ui/popover` + `anvil/key-value-row` + `anvil/check-row` | | No |

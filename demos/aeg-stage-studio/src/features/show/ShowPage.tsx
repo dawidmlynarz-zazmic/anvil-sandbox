@@ -27,13 +27,13 @@ function MomentCard({ moment, canRemove }: { moment: SetlistMoment; canRemove: b
   const look = lookFor(p, moment.number)
   const gens = gensFor(p, moment.number)
   const shown = look ?? gens.at(-1)
-  const thumb = useMomentThumb(shown, p.brief, moment.number)
+  const thumb = useMomentThumb(shown, p.brief, moment.number, p.moments.length)
   const status = momentStatus(p, moment.number)
   const clip = look ? p.clips[clipKey(look.id, moment.number)] : undefined
   const kit = kitStatus(p, moment.number)
   const pending = p.pending[moment.number]
   const meta = [
-    TIME_LABEL[momentLight(p.brief, moment.number)],
+    TIME_LABEL[momentLight(p.brief, moment.number, p.moments.length)],
     gens.length ? `${gens.length} ${gens.length === 1 ? 'image' : 'images'}` : '',
     clip ? (clip.status === 'ready' ? 'clip' : 'clip rendering') : '',
     kit === 'ready' ? 'kit' : kit === 'stale' ? 'kit out of date' : kit === 'building' ? 'kit building' : '',
@@ -64,7 +64,7 @@ function MomentCard({ moment, canRemove }: { moment: SetlistMoment; canRemove: b
               intent="neutral"
               size="icon-xs"
               aria-label={`Remove song ${moment.number}, ${moment.title}`}
-              onClick={() => p.setMoments(p.moments.filter((m) => m.number !== moment.number))}
+              onClick={() => p.removeMoment(moment.number)}
             >
               <Icon icon={XIcon} />
             </Button>
@@ -75,24 +75,21 @@ function MomentCard({ moment, canRemove }: { moment: SetlistMoment; canRemove: b
   )
 }
 
-/** Adds a key moment: a song number, a name, and what should happen. */
+/** Adds a key moment at the end of the show: a name and what should happen. It's numbered after the last one. */
 function AddMomentDialog() {
   const p = useProject()
   const formId = useId()
   const [open, setOpen] = useState(false)
-  const [number, setNumber] = useState('')
   const [title, setTitle] = useState('')
   const [intent, setIntent] = useState('')
-  const song = Number(number)
-  const taken = p.moments.some((m) => m.number === song)
-  const valid = Number.isInteger(song) && song > 0 && !taken && title.trim().length > 0
+  const valid = title.trim().length > 0
+  const nextNumber = (p.moments.at(-1)?.number ?? 0) + 1
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
         setOpen(next)
         if (next) {
-          setNumber('')
           setTitle('')
           setIntent('')
         }
@@ -106,7 +103,7 @@ function AddMomentDialog() {
       </DialogTrigger>
       <DialogContent aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle>Add a key moment</DialogTitle>
+          <DialogTitle>Add song {nextNumber}</DialogTitle>
         </DialogHeader>
         <DialogBody>
           <form
@@ -115,14 +112,11 @@ function AddMomentDialog() {
             onSubmit={(e) => {
               e.preventDefault()
               if (!valid) return
-              p.setMoments([...p.moments, { number: song, title: title.trim(), intent: intent.trim() || 'No direction yet' }])
+              p.addMoment(title.trim(), intent.trim() || 'No direction yet')
               setOpen(false)
             }}
           >
-            <div className="grid grid-cols-[6rem_1fr] gap-3">
-              <Input label="Song" inputMode="numeric" placeholder="e.g. 9" autoFocus value={number} onChange={(e) => setNumber(e.target.value)} aria-invalid={taken || undefined} hint={taken ? 'Already a key moment' : undefined} />
-              <Input label="Moment" placeholder="e.g. Sunset drop" value={title} onChange={(e) => setTitle(e.target.value)} />
-            </div>
+            <Input label="Moment" placeholder="e.g. Sunset drop" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
             <Input label="What should happen" placeholder="e.g. The LED wall peaks with the sun" value={intent} onChange={(e) => setIntent(e.target.value)} />
           </form>
         </DialogBody>

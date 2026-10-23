@@ -11,7 +11,7 @@ import { lowerFirst } from './shapes'
 export type PlannedAsset = Omit<Asset, 'id' | 'at'>
 
 /** What the kit holds, in order: angles, light states, motion variants. */
-export function planKit(look: Generation, song: number, brief: Brief, covered: boolean, mainMove: number): PlannedAsset[] {
+export function planKit(look: Generation, song: number, moments: number, brief: Brief, covered: boolean, mainMove: number): PlannedAsset[] {
   const of = `#${look.n} (${lowerFirst(look.title)}, ${look.caption.toLowerCase()})`
   const views = (Object.keys(VIEW_LABEL) as StageView[]).filter((v) => v !== look.spec.view)
   const angles: PlannedAsset[] = views.map((view) => ({
@@ -22,7 +22,7 @@ export function planKit(look: Generation, song: number, brief: Brief, covered: b
     prompt: `${of}, seen from ${VIEW_LABEL[view].toLowerCase()}. Keep the design, light and crowd exactly the same.`,
   }))
   const t = look.spec.tweaks ?? {}
-  const light = momentLight(brief, song)
+  const light = momentLight(brief, song, moments)
   const lights: PlannedAsset[] = covered
     ? [
         { title: 'Dimmed (house lights down)', tweaks: { ...t, brightness: 0.6 } },

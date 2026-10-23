@@ -132,17 +132,17 @@ export function applyAnswer(
 }
 
 const OPEN_AIR: SetlistMoment[] = [
-  { number: 3, title: 'Opening reveal', intent: 'Slow build from silhouette' },
-  { number: 7, title: 'Sunset drop', intent: 'LED wall peaks with the sun' },
-  { number: 14, title: 'Crowd split', intent: 'Stage opens in two halves' },
-  { number: 18, title: 'Finale', intent: 'Full-stage light wash' },
+  { number: 1, title: 'Opening reveal', intent: 'Slow build from silhouette' },
+  { number: 2, title: 'Sunset drop', intent: 'LED wall peaks with the sun' },
+  { number: 3, title: 'Crowd split', intent: 'Stage opens in two halves' },
+  { number: 4, title: 'Finale', intent: 'Full-stage light wash' },
 ]
 
 const AFTER_DARK: SetlistMoment[] = [
-  { number: 2, title: 'Cold open', intent: 'Single white beam, then the wall lights up' },
-  { number: 6, title: 'First drop', intent: 'Strobe-free pulse across the LED wall' },
-  { number: 11, title: 'Ballad', intent: 'Everything dims to one warm spot' },
-  { number: 15, title: 'Encore', intent: 'The rig lowers over the crowd' },
+  { number: 1, title: 'Cold open', intent: 'Single white beam, then the wall lights up' },
+  { number: 2, title: 'First drop', intent: 'Strobe-free pulse across the LED wall' },
+  { number: 3, title: 'Ballad', intent: 'Everything dims to one warm spot' },
+  { number: 4, title: 'Encore', intent: 'The rig lowers over the crowd' },
 ]
 
 /** Key moments the agent drafts from the setlist (mocked): sunset moments for an open-air set that sees the sun go down. */

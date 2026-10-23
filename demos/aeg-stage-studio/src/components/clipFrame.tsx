@@ -14,10 +14,10 @@ const LABEL: Record<TimeOfDay, string> = { daylight: 'Daylight', 'golden-hour': 
  * How a clip is drawn live: the look's 3D stage in the light its song plays in (from the brief's time slot; covered
  * venues are always night), with the camera move from its cue. A plain-words edit slows it.
  */
-export function clipFrame(look: Pictured | undefined, clip: MotionClip | undefined, brief: Brief) {
+export function clipFrame(look: Pictured | undefined, clip: MotionClip | undefined, brief: Brief, of: number) {
   if (!look || !clip || !canRenderWebGL()) return undefined
   const spec = look.spec
-  const main = momentLight(brief, clip.momentNumber)
+  const main = momentLight(brief, clip.momentNumber, of)
   const other = compareLight(brief, main)
   const cue = moveOf(clip)
   const pace = clip.edits.length ? 0.7 : 1
@@ -33,10 +33,10 @@ export function clipFrame(look: Pictured | undefined, clip: MotionClip | undefin
   }
 }
 
-/** A key moment's thumbnail: the look's 3D still in that song's light (undefined while it renders), or 2D art without WebGL. */
+/** A key moment's thumbnail (moment `song` of `of`): the look's 3D still in that moment's light (undefined while it renders), or 2D art without WebGL. */
 // eslint-disable-next-line react-refresh/only-export-components
-export function useMomentThumb(look: Pictured | undefined, brief: Brief, song: number, fallback?: string) {
-  const spec = look ? { ...look.spec, timeOfDay: momentLight(brief, song) } : undefined
+export function useMomentThumb(look: Pictured | undefined, brief: Brief, song: number, of: number, fallback?: string) {
+  const spec = look ? { ...look.spec, timeOfDay: momentLight(brief, song, of) } : undefined
   const rendered = useStageImage(spec)
   return rendered ?? (spec && canRenderWebGL() ? undefined : (fallback ?? look?.image))
 }

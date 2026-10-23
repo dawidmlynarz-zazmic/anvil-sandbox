@@ -28,7 +28,7 @@ function updated(at: number) {
 function ProjectCard({ p }: { p: ProjectState }) {
   const first = p.moments[0]
   const shown = (p.set && genById(p, p.set.fromId)) || genById(p, first ? p.looks[first.number] : undefined) || p.generations.at(-1)
-  const thumb = useMomentThumb(shown, p.brief, shown?.song ?? 0)
+  const thumb = useMomentThumb(shown, p.brief, shown?.song ?? 0, p.moments.length)
   const badge = statusBadge(p.status)
   const venue = venueOf(p.brief.venueId)
   const setup = p.phase === 'setup'

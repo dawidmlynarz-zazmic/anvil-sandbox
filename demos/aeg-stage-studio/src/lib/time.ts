@@ -11,6 +11,13 @@ export function parseClock(text: string, fallback: number) {
   return hours * 60 + minutes
 }
 
+/** Minutes after midnight → "7:54 pm". */
+export function formatClock(minutes: number) {
+  const h = Math.floor(minutes / 60) % 24
+  const m = Math.round(minutes % 60)
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`
+}
+
 /** "75 min", "90", "1.5 hours" → minutes. */
 export function parseLength(text: string, fallback: number) {
   const m = /(\d+(?:\.\d+)?)/.exec(text)

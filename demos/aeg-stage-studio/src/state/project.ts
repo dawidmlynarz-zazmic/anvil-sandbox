@@ -61,8 +61,6 @@ export interface ProjectState {
   generations: Generation[]
   /** Each moment's chosen look: song → generation id. */
   looks: Record<number, string>
-  /** Each moment's pinboard: the images you're keeping an eye on. */
-  pins: Record<number, string[]>
   /** The structure every moment shares, once locked. */
   set: ShowSet | null
   /** Batches being made, per moment. */
@@ -95,10 +93,10 @@ export type Action =
   | { type: 'brief/patch'; patch: Partial<Brief>; source: 'agent' | 'you' }
   | { type: 'brief/reveal'; sections: BriefSection[] }
   | { type: 'moments/set'; moments: SetlistMoment[] }
+  | { type: 'moments/remove'; song: number }
   | { type: 'gen/add'; gen: Generation }
   | { type: 'gen/patch'; id: string; patch: Partial<Generation> }
   | { type: 'pending/set'; song: number; pending: Pending | undefined }
-  | { type: 'pin/toggle'; song: number; id: string }
   | { type: 'look/set'; song: number; id: string }
   | { type: 'set/lock'; set: ShowSet | null }
   | { type: 'focus/set'; song: number; genId: string }
@@ -143,7 +141,6 @@ export function newProject(id: string, opening: ChatTurn[], show?: { artist: str
     moments: [],
     generations: [],
     looks: {},
-    pins: {},
     set: null,
     pending: {},
     clips: {},
@@ -190,16 +187,14 @@ function step(state: ProjectState, action: Action): ProjectState {
     }
     case 'moments/set':
       return { ...state, moments: [...action.moments].sort((a, b) => a.number - b.number) }
+    case 'moments/remove':
+      return removeMoment(state, action.song)
     case 'gen/add':
       return { ...state, generations: [...state.generations, action.gen] }
     case 'gen/patch':
       return { ...state, generations: state.generations.map((g) => (g.id === action.id ? { ...g, ...action.patch } : g)) }
     case 'pending/set':
       return { ...state, pending: { ...state.pending, [action.song]: action.pending } }
-    case 'pin/toggle': {
-      const list = state.pins[action.song] ?? []
-      return { ...state, pins: { ...state.pins, [action.song]: list.includes(action.id) ? list.filter((x) => x !== action.id) : [...list, action.id] } }
-    }
     case 'look/set':
       return { ...state, looks: { ...state.looks, [action.song]: action.id }, redo: state.redo.filter((s) => s !== action.song) }
     case 'set/lock':
@@ -252,6 +247,34 @@ function step(state: ProjectState, action: Action): ProjectState {
         sentVersion: action.sent ? number : state.sentVersion,
       }
     }
+  }
+}
+
+/**
+ * Removes a key moment and renumbers the ones after it, so the show always reads 1, 2, 3… Everything keyed by a
+ * moment's number (its images, look, kit, clips, comments) moves with it.
+ */
+function removeMoment(state: ProjectState, song: number): ProjectState {
+  const to = (n: number) => (n > song ? n - 1 : n)
+  const rekey = <T,>(record: Record<number, T>) =>
+    Object.fromEntries(Object.entries(record).flatMap(([k, v]) => (Number(k) === song ? [] : [[to(Number(k)), v]]))) as Record<number, T>
+  return {
+    ...state,
+    moments: state.moments.filter((m) => m.number !== song).map((m) => ({ ...m, number: to(m.number) })),
+    generations: state.generations.filter((g) => g.song !== song).map((g) => ({ ...g, song: to(g.song) })),
+    looks: rekey(state.looks),
+    pending: rekey(state.pending),
+    kits: rekey(state.kits),
+    kitPending: rekey(state.kitPending),
+    clips: Object.fromEntries(
+      Object.entries(state.clips).flatMap(([key, slot]) => {
+        const [genId, n] = key.split('|')
+        return Number(n) === song ? [] : [[clipKey(genId!, to(Number(n))), slot.status === 'ready' ? { ...slot, clip: { ...slot.clip, momentNumber: to(slot.clip.momentNumber) } } : slot]]
+      }),
+    ),
+    focus: state.focus && state.focus.song !== song ? { ...state.focus, song: to(state.focus.song) } : null,
+    review: state.review.filter((c) => c.song !== song).map((c) => ({ ...c, song: to(c.song) })),
+    redo: state.redo.filter((n) => n !== song).map(to),
   }
 }
 

@@ -1,8 +1,7 @@
 // ANVIL-CANDIDATE: see docs/anvil-upgrade-candidates.md#contact-sheet
 import type { ReactNode } from 'react'
 import { Badge } from '@anvil/components/ui/badge'
-import { Button } from '@anvil/components/ui/button'
-import { CheckIcon, Icon, PinIcon, PinOffIcon } from '@anvil/components/ui/icon'
+import { CheckIcon, Icon } from '@anvil/components/ui/icon'
 import { Skeleton } from '@anvil/components/ui/skeleton'
 import { cn } from '@anvil/lib/utils'
 
@@ -35,28 +34,25 @@ export interface ContactSheetTileProps {
   alt: string
   /** The image open in the focus panel. */
   focused?: boolean
-  /** Pinned: kept in view, and part of the comparison. */
-  pinned?: boolean
   /** Shown with a tick: e.g. “Look”. */
   chosen?: string
   /** Set aside: greyed out. */
   dismissed?: boolean
   onOpen: () => void
-  onTogglePin: () => void
 }
 
 /**
- * One image on a contact sheet. Click it to open it; pin it to keep it in view and compare it with the other pins. Built
- * for many images at once: small, scannable, with the image number and what's different about it.
+ * One image on a contact sheet: click it to open it. Built for many images at once: small, scannable, with the image
+ * number and what's different about it.
  */
-export function ContactSheetTile({ label, caption, src, alt, focused, pinned, chosen, dismissed, onOpen, onTogglePin }: ContactSheetTileProps) {
+export function ContactSheetTile({ label, caption, src, alt, focused, chosen, dismissed, onOpen }: ContactSheetTileProps) {
   return (
     <li className={cn('group/tile relative flex min-w-0 flex-col gap-1.5', dismissed && 'opacity-50')}>
       <button
         type="button"
         onClick={onOpen}
         aria-pressed={focused}
-        aria-label={`Open ${label}: ${caption}${chosen ? `, ${chosen.toLowerCase()}` : ''}${pinned ? ', pinned' : ''}`}
+        aria-label={`Open ${label}: ${caption}${chosen ? `, ${chosen.toLowerCase()}` : ''}`}
         className={cn(
           'bg-muted focus-visible:focus-ring relative block aspect-video w-full overflow-hidden rounded-md outline-none hover:ring-2 hover:ring-border-action',
           focused && 'ring-2 ring-border-action',
@@ -75,14 +71,9 @@ export function ContactSheetTile({ label, caption, src, alt, focused, pinned, ch
           )}
         </span>
       </button>
-      <div className="flex items-center gap-1">
-        <span className="text-muted-foreground min-w-0 flex-1 truncate type-text-xs-normal" title={caption}>
-          {caption}
-        </span>
-        <Button variant="ghost" intent="neutral" size="icon-xs" aria-pressed={pinned} aria-label={pinned ? `Unpin ${label}` : `Pin ${label}`} onClick={onTogglePin} disabled={dismissed && !pinned}>
-          <Icon icon={pinned ? PinOffIcon : PinIcon} className={cn(pinned && 'text-primary')} />
-        </Button>
-      </div>
+      <span className="text-muted-foreground truncate type-text-xs-normal" title={caption}>
+        {caption}
+      </span>
     </li>
   )
 }

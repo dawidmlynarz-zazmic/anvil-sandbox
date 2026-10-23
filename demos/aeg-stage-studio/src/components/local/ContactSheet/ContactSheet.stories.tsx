@@ -6,11 +6,9 @@ import { ContactSheetGroup, ContactSheetTile } from './ContactSheet'
 const SHAPES = ['arch', 'monolith', 'ribbons', 'halo'] as const
 const CAPTIONS = ['As designed', 'Slimmer, warm light', 'Cool light, in haze', 'Gold light, brighter']
 
-/** Two batches, with pinning and a chosen look. */
+/** Two batches, with one image open and a chosen look. */
 function Sheet({ pending = 0 }: { pending?: number }) {
   const [focused, setFocused] = useState('5')
-  const [pins, setPins] = useState(['2'])
-  const toggle = (list: string[], id: string) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
   const tile = (n: number) => {
     const id = String(n)
     return (
@@ -21,11 +19,9 @@ function Sheet({ pending = 0 }: { pending?: number }) {
         src={stageArt(`sheet-${n}`, SHAPES[n % 4]!, 'golden-hour')}
         alt={`#${n}`}
         focused={focused === id}
-        pinned={pins.includes(id)}
         chosen={n === 5 ? 'Look' : undefined}
         dismissed={n === 3}
         onOpen={() => setFocused(id)}
-        onTogglePin={() => setPins((p) => toggle(p, id))}
       />
     )
   }

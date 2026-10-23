@@ -31,10 +31,12 @@ The show is designed one key moment (a song) at a time, on one shared set. See `
   in setlist order (its look, one status and one line of detail), and **Send the show to the artist** once every
   moment has a look.
 - **Moment page** (`/m/:song`), two tabs. **Explore**: new directions, or more like / other angles / other light of the
-  open image from one menu; pin what you like (pins are the comparison set); change an image in words or with pinned
-  notes (each change is a new image; its lineage and provenance are in the card's menu); choose the look and lock the
-  set. **Look and assets**: the moment's clip (cues, plain-word edits) and its asset kit (angles, light states, motion
-  variants, each with provenance; LED loops and performer stand-ins come with the pilot models).
+  open image from one menu; change an image in words or with pinned notes (each change is a new image; its lineage,
+  provenance and compare-with-parent are in the card's menu); **Put #n into motion** makes it the moment's look and its
+  clip then leads the page (cues, plain-word edits); lock the set from it. **Asset kit**: angles, light states and
+  motion variants, each with provenance (LED loops and performer stand-ins come with the pilot models).
+- Key moments are numbered 1, 2, 3… in setlist order. Each one's light comes from where it falls in the set (the
+  moments are spread across the slot), so the first moments of a sunset set play in golden hour and the last at night.
 - **Preview the show** (on the show board) plays every moment's clip in setlist order.
 - **Venue checks**: every design's footprint (size, weight, flown load, wind area) is checked against the venue's
   sample limits: stage width, trim, rigging, sightlines, no-gos and, for open-air stages, evening gusts. The checks show
@@ -47,7 +49,7 @@ The show is designed one key moment (a song) at a time, on one shared set. See `
   small badge naming its model: Nano Banana Pro on stills, Veo 3.1 on clips.
 - The screens were simplified after a UX reduction audit (23 Oct 2026): one place per fact, three regions (agent,
   work, projects), detail one click away.
-- State is kept in `sessionStorage` (key `stage-studio:v3`): a reload keeps the demo where it was; a new tab starts fresh.
+- State is kept in `sessionStorage` (key `stage-studio:v4`): a reload keeps the demo where it was; a new tab starts fresh.
 
 ## Concept images
 
