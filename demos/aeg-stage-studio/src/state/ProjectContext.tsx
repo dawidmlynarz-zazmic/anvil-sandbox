@@ -307,7 +307,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     say(
       'assistant',
       [
-        `#${g.n} is the look for ${momentName(g.song)}${redo ? ', taking on the artist’s comments' : ''}. Its eight-second clip is rendering.`,
+        `You chose #${g.n} as the look for ${momentName(g.song)}${redo ? ', taking on the artist’s comments' : ''}. I’m rendering its eight-second clip.`,
         s.set ? '' : 'When you’re happy with its structure, lock the set from it: every other moment then keeps that structure and varies only the look.',
         next ? `${left === 1 ? 'One moment' : `${capitalise(String(left))} moments`} still need a look; next is ${momentName(next.number)}.` : 'Every moment has a look. Check the show board, then send the show to the artist.',
       ]
@@ -338,7 +338,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     d({ type: 'version/add', summary: `Set locked from song ${g.song} #${g.n} · ${g.title}${flagged.length ? ` (${flagged.length} to resolve)` : ''}`, author: 'You' })
     say(
       'assistant',
-      `${alsoLook ? `#${g.n} is the look for ${momentName(g.song)}, and its clip is rendering. ` : ''}The set is locked from #${g.n}: ${lowerFirst(g.title)}${describeTweaks({ width: set.width, lift: set.lift }) ? `, ${describeTweaks({ width: set.width, lift: set.lift })}` : ''}. From now on, new images for every moment keep this structure and vary the look: light, colour and haze.${checked}${off.length ? ` ${capitalise(songs(off))} ${off.length === 1 ? 'has a look' : 'have looks'} with another structure; ask for more like ${off.length === 1 ? 'it' : 'them'} to restage on the set.` : ''}`,
+      `${alsoLook ? `#${g.n} is now the look for ${momentName(g.song)}, and I’m rendering its clip. ` : ''}You locked the set from #${g.n}: ${lowerFirst(g.title)}${describeTweaks({ width: set.width, lift: set.lift }) ? `, ${describeTweaks({ width: set.width, lift: set.lift })}` : ''}. From now on, new images for every moment keep this structure and vary the look: light, colour and haze.${checked}${off.length ? ` ${capitalise(songs(off))} ${off.length === 1 ? 'has a look' : 'have looks'} with another structure; ask for more like ${off.length === 1 ? 'it' : 'them'} to restage on the set.` : ''}`,
     )
   }
 
@@ -539,7 +539,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     unlockSet: () => {
       d({ type: 'set/lock', set: null })
       d({ type: 'version/add', summary: 'Set unlocked', author: 'You' })
-      say('assistant', 'The set is unlocked. New images can change the structure again; lock it from a look when you’re ready.')
+      say('assistant', 'You unlocked the set. New images can change the structure again; lock it from a look when you’re ready.')
     },
     setFocus: (song, genId) => {
       const f = get().focus
@@ -624,7 +624,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       const open = s.review.filter((c) => !c.resolved).length
       say(
         'assistant',
-        `${rating ? `The artist approved the show and rated it ${rating}/5.` : 'The show is approved.'} The handoff package is ready: ${plural(s.moments.length, 'moment')}, each with its look, and ${plural(s.moments.filter((m) => { const l = lookFor(s, m.number); return l && s.clips[clipKey(l.id, m.number)]?.status === 'ready' }).length, 'clip')}.${open ? ` ${open === 1 ? '1 comment was' : `${open} comments were`} left open and ${open === 1 ? 'is' : 'are'} in the decision log.` : ''}`,
+        `${rating ? `The artist approved the show and rated it ${rating}/5.` : 'You approved the show for production.'} The handoff package is ready: ${plural(s.moments.length, 'moment')}, each with its look, and ${plural(s.moments.filter((m) => { const l = lookFor(s, m.number); return l && s.clips[clipKey(l.id, m.number)]?.status === 'ready' }).length, 'clip')}.${open ? ` ${open === 1 ? '1 comment was' : `${open} comments were`} left open and ${open === 1 ? 'is' : 'are'} in the decision log.` : ''}`,
       )
     },
     takeOverReview: () => {
@@ -687,6 +687,17 @@ export function ProjectScope({ id, children }: { id: string; children: ReactNode
         : null,
     [project, actions, id],
   )
+
+  // A clip that was rendering when the page reloaded was dropped (see settle): start it again, once per project open.
+  useEffect(() => {
+    const now = store.ref.current.projects[id]
+    if (!now) return
+    for (const m of now.moments) {
+      const look = lookFor(now, m.number)
+      if (look && !now.clips[clipKey(look.id, m.number)]) void actions.generateClip(m.number)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   // A reply that was on its way when the page reloaded: schedule it again.
   useEffect(() => {

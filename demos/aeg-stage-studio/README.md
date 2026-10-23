@@ -40,7 +40,9 @@ The show is designed one key moment (a song) at a time, on one shared set. See `
   on each image's badge, before locking the set, on the show board and in Handoff (`src/services/venueCheck.ts`).
 - **Review**: the artist comments per moment (on the look or the clip) and approves the show once. **Request changes**
   starts new looks for the moments they commented on.
-- **Handoff**: the set, each moment's look, clip and asset kit, the cue sheet, the decision log, rights and the package.
+- **Handoff**, organised by trade: an overview with the value to prove and the credits (who decided what), then
+  staging and rigging, lighting, video and LED, camera, and rights with the decision log.
+- The progress rail shows the loop, each key moment, and a running **So far** (looks, images, kits, reviews, days).
 - State is kept in `sessionStorage` (key `stage-studio:v3`): a reload keeps the demo where it was; a new tab starts fresh.
 
 ## Concept images

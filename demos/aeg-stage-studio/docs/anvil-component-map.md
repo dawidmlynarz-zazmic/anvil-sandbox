@@ -111,3 +111,18 @@ Stills and Motion screens below are replaced by the Show board and the Moment pa
 | A tab per moment, with open-comment count | `ui/tabs` `variant="line"` + `ui/badge` | | No |
 | Look with the artist's pins | local `PinnedImage` | | Yes |
 | Approve the show (one sign-off) | `ui/alert-dialog`; artist view `ui/dialog` + `agent/rating` | | No |
+
+## Handoff (`/handoff`), by trade
+
+| Element | Anvil component | Props | Gap? |
+| --- | --- | --- | --- |
+| A tab per trade | `ui/tabs` `variant="line"` | in the URL (`?trade=`) | No |
+| Credits (who decided what) | `ui/card` + `anvil/key-value-row` | | No |
+| Per-moment rows for a trade | `ui/card`, `anvil/key-value-row`, kit thumbnails | | No |
+| Decision log | `anvil/timeline` | | No |
+
+## Progress rail
+
+| Element | Anvil component | Props | Gap? |
+| --- | --- | --- | --- |
+| So far (running metrics) | `anvil/key-value-row` | | No |

@@ -56,7 +56,8 @@ function explore(p: ProjectState, song: number, kind: BatchKind, baseN?: number)
     existing,
     base: baseN ? existing.find((g) => g.n === baseN) : undefined,
   })
-  p.generations.push(...materialize(drafts, { project: p.meta.id, song, existing, author: 'agent' }))
+  // New directions are the agent exploring; “more like” a pick is someone asking.
+  p.generations.push(...materialize(drafts, { project: p.meta.id, song, existing, author: kind === 'more' ? 'you' : 'agent' }))
 }
 
 const gen = (p: ProjectState, song: number, n: number) => p.generations.find((g) => g.song === song && g.n === n)!
@@ -137,7 +138,7 @@ function o2(): ProjectState {
       [
         ['user', 'Cold, industrial residency look for The O2. Chrome and neon, nothing warm until the ballad.'],
         ['assistant', 'Loaded The O2. It’s under a roof, so every moment is lit as night. I drafted four key moments from the setlist.'],
-        ['assistant', 'The set is locked from song 2 #6: kinetic LED ribbons. New looks for the other moments keep that structure.'],
+        ['assistant', 'You locked the set from song 2 #6: kinetic LED ribbons. New looks for the other moments keep that structure.'],
         ['assistant', 'Sent to the artist: 4 moments, each with its look and clip.'],
         ['assistant', `The artist replied with ${review.length} comments. Open Review to go through them, then approve the show or request changes.`],
       ],

@@ -15,8 +15,8 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const between = (min: number, max: number) => min + Math.random() * (max - min)
 
 const CUES = [
-  { lighting: 'Low amber wash, rising to white on the downbeat', led: 'Slow desert horizon, dust particles', camera: 'Crane up from pit, 6 s' },
-  { lighting: 'Backlight sweep, magenta to deep blue', led: 'Sun disc setting behind the centrepiece', camera: 'Slow push-in on the artist' },
+  { lighting: 'Low wash, rising to full white on the downbeat', led: 'A slow horizon of light, drifting particles', camera: 'Crane up from the pit, 6 s' },
+  { lighting: 'Backlight sweep, colour fading to deep blue', led: 'A disc of light rising behind the centrepiece', camera: 'Slow push-in on the artist' },
   { lighting: 'Split-colour halves, mirrored', led: 'Two panels drifting apart', camera: 'Locked wide, front of house' },
 ]
 

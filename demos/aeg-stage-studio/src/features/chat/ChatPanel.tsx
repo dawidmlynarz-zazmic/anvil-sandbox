@@ -290,7 +290,7 @@ export function ChatPanel() {
   return (
     <aside aria-label="Stage agent" className="h-full w-full">
       <ChatShell surface="side-panel">
-        <ChatShellHeader title="Stage agent" subtitle={latest.phase === 'setup' ? 'Setting up the brief with you' : 'Works with you on every moment'} online />
+        <ChatShellHeader title="Stage agent" subtitle={latest.phase === 'setup' ? 'Setting up the brief with you' : 'Explores and checks; you decide'} online />
         <ChatShellThread>
           <FollowEnd
             signal={turns

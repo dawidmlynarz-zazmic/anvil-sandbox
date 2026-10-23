@@ -45,6 +45,9 @@ lineage and branching; Assets in Phase 2) → **Review** (the show, one approval
    footprint (size, weight, flown load, wind area) is estimated and checked on every image, before locking the set (a
    confirm step), on the show board, in Handoff and in the chat, with the change that would clear each issue. Changing
    the venue under a locked set says how it fits there. Sightlines from AXS seats stays on the roadmap.
-4. **Review, handoff, polish.** Handoff tabs per trade; running metrics everywhere; authorship copy pass; demo script.
+4. **Review, handoff, polish.** *Built 23 Oct 2026* (not yet committed). Handoff tabs per trade (overview with
+   credits, staging and rigging, lighting, video and LED, camera, rights and log); a running “So far” block in the
+   progress rail; authorship pass (people choose, lock, send and approve; the agent explores, builds and checks; the
+   agent's messages and the About panel say so); clips interrupted by a reload re-render on their own; demo script.
 
 Roadmap only (pitch slides): collaborator roles, per-trade sign-off, a guided mode for smaller acts, a portfolio view.

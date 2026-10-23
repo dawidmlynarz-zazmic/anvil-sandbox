@@ -5,7 +5,8 @@ import { CheckIcon, ClipboardCheckIcon, FileTextIcon, Icon, LayoutListIcon, Pack
 import { looksChosen } from '~/state/project'
 import { briefReadiness } from '~/state/readiness'
 import { useProject } from '~/state/ProjectContext'
-import { momentStatus } from '~/state/show'
+import { kitStatus, momentStatus } from '~/state/show'
+import { KeyValueList, KeyValueRow } from '@anvil/components/anvil/key-value-row'
 import { LOOP } from './routes'
 
 const ICONS: LucideIcon[] = [LayoutListIcon, ClipboardCheckIcon, PackageIcon]
@@ -69,6 +70,7 @@ export function LoopRail() {
   ]
 
   const sends = versions.filter((v) => v.summary.startsWith('Sent to the artist')).length
+  const kits = moments.filter((m) => kitStatus(p, m.number) === 'ready').length
 
   return (
     <aside aria-label="Project progress" className="border-border relative flex h-full w-64 shrink-0 flex-col gap-4 overflow-y-auto border-s p-4">
@@ -117,6 +119,27 @@ export function LoopRail() {
           })}
         </Timeline>
       </nav>
+
+      {!setup && (
+        <section aria-labelledby="sofar-title" className="flex flex-col gap-2">
+          <h2 id="sofar-title" className="type-text-sm-semibold">
+            So far
+          </h2>
+          {/* The pilot's measures as they build up, on every screen: not only at the end. */}
+          <KeyValueList>
+            <KeyValueRow label="Looks chosen">
+              {chosen} of {moments.length}
+            </KeyValueRow>
+            <KeyValueRow label="Images explored">{p.generations.length}</KeyValueRow>
+            <KeyValueRow label="Kits built">
+              {kits} of {moments.length}
+            </KeyValueRow>
+            <KeyValueRow label="Reviews">{sends}</KeyValueRow>
+            <KeyValueRow label="Days since the brief">{p.daysSinceBrief}</KeyValueRow>
+            {p.artistRating ? <KeyValueRow label="Artist rating">{p.artistRating}/5</KeyValueRow> : null}
+          </KeyValueList>
+        </section>
+      )}
 
       {versions.length > 0 && (
         <section aria-labelledby="history-title" className="flex flex-col gap-2">
