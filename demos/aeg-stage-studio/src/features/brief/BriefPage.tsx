@@ -2,11 +2,10 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@anvil/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anvil/components/ui/card'
-import { ArrowRightIcon, Icon, PencilIcon, ShieldCheckIcon, SparklesIcon } from '@anvil/components/ui/icon'
+import { ArrowRightIcon, Icon, PencilIcon, SparklesIcon } from '@anvil/components/ui/icon'
 import { CheckRow } from '@anvil/components/anvil/check-row'
 import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
-import { GUARDRAIL } from '~/mocks/copy'
 import { useProject } from '~/state/ProjectContext'
 import { briefReadiness } from '~/state/readiness'
 import { reveal } from '~/lib/reveal'
@@ -97,13 +96,7 @@ export function BriefPage() {
       </div>
       {setup ? (
         <StepFooter
-          note={
-            <>
-              <Icon icon={ShieldCheckIcon} size="xs" />
-              {GUARDRAIL}
-            </>
-          }
-          status={readiness.ready ? 'Brief ready · drafts the key moments and explores the first' : `${readiness.left.length} part${readiness.left.length === 1 ? '' : 's'} of the brief to go`}
+          note={readiness.ready ? 'Brief ready · drafts the key moments and explores the first' : `${readiness.left.length} part${readiness.left.length === 1 ? '' : 's'} of the brief to go`}
         >
           <Button
             disabled={!readiness.ready}
@@ -118,12 +111,6 @@ export function BriefPage() {
         </StepFooter>
       ) : (
         <StepFooter
-          note={
-            <>
-              <Icon icon={ShieldCheckIcon} size="xs" />
-              {GUARDRAIL}
-            </>
-          }
         >
           <Button onClick={() => navigate(path('show'))}>
             Go to the show
