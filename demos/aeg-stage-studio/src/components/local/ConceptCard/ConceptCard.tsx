@@ -88,6 +88,16 @@ export interface ConceptCardProps {
   onToggleDismissed?: () => void
   /** Looking back at an earlier round: select only, no edits. */
   readOnly?: boolean
+  /** How the version is written: “v” (v3, the default) or “#” (#12, for images numbered in a series). */
+  versionPrefix?: string
+  /** The footer toggle's label, e.g. “Select” (default) or “Pin”. */
+  selectLabel?: string
+  /** The menu item that makes a new take, e.g. “Regenerate this concept” (default) or “Another take”. */
+  regenerateLabel?: string
+  /** Under “Apply changes”: what applying makes. Default: “Makes v4. v3 is kept.” */
+  applyHint?: string
+  /** Extra content under the image, e.g. lineage or a call to action. */
+  children?: ReactNode
   className?: string
 }
 
@@ -122,8 +132,14 @@ export function ConceptCard({
   onRevert,
   onToggleDismissed,
   readOnly,
+  versionPrefix = 'v',
+  selectLabel = 'Select',
+  regenerateLabel = 'Regenerate this concept',
+  applyHint,
+  children,
   className,
 }: ConceptCardProps) {
+  const v = (n: number) => `${versionPrefix}${n}`
   const [annotating, setAnnotating] = useState(false)
   const [pin, setPin] = useState<{ x: number; y: number } | null>(null)
   const [text, setText] = useState('')
@@ -158,7 +174,7 @@ export function ConceptCard({
         <CardTitle className="flex items-center gap-2">
           {title}
           <Badge tone="neutral" variant="outline" size="xs">
-            v{version}
+            {v(version)}
           </Badge>
         </CardTitle>
         {rationale && <CardDescription>{rationale}</CardDescription>}
@@ -212,18 +228,19 @@ export function ConceptCard({
           )}
         </div>
 
-        {version > 1 && (
+        {(previous || (version > 1 && versionPrefix === 'v')) && (
           <div className="flex items-center justify-between gap-2">
             <p className="text-muted-foreground flex min-w-0 items-center gap-1.5 type-text-xs-normal">
               <Icon icon={HistoryIcon} size="xs" />
               <span className="truncate">
-                v{version}
+                {v(version)}
                 {change ? `: ${change}` : ''}
               </span>
             </p>
             {previous && (
               <CompareVersions
                 title={title}
+                prefix={versionPrefix}
                 version={version}
                 current={{ src: mediaSrc, alt: mediaAlt }}
                 previous={previous}
@@ -336,17 +353,18 @@ export function ConceptCard({
                   <Icon icon={SparklesIcon} />
                   Apply {annotations.length === 1 ? 'change' : `${annotations.length} changes`}
                 </Button>
-                <span className="text-muted-foreground type-text-xs-normal">Makes v{version + 1}. v{version} is kept.</span>
+                <span className="text-muted-foreground type-text-xs-normal">{applyHint ?? `Makes ${v(version + 1)}. ${v(version)} is kept.`}</span>
               </div>
             )}
           </section>
         )}
+        {children}
       </CardContent>
 
       <CardFooter className="flex items-center justify-between gap-2">
         <label className="flex shrink-0 items-center gap-2 type-text-sm-medium">
-          <Checkbox checked={selected} onCheckedChange={(v) => onSelectedChange(v === true)} disabled={dismissed} aria-label={`Select ${title}`} />
-          Select
+          <Checkbox checked={selected} onCheckedChange={(on) => onSelectedChange(on === true)} disabled={dismissed} aria-label={`${selectLabel} ${title}`} />
+          {selectLabel}
         </label>
         <div className="flex items-center gap-1">
           {editable && onAddAnnotation && (
@@ -381,12 +399,12 @@ export function ConceptCard({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem disabled={!editable} onSelect={onRegenerate}>
                   <Icon icon={RefreshCwIcon} />
-                  Regenerate this concept
+                  {regenerateLabel}
                 </DropdownMenuItem>
-                {previous && (
+                {previous && onRevert && (
                   <DropdownMenuItem disabled={!editable} onSelect={onRevert}>
                     <Icon icon={HistoryIcon} />
-                    Revert to v{previous.version}
+                    Revert to {v(previous.version)}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -406,6 +424,7 @@ export function ConceptCard({
 /** Both versions side by side, with what changed between them, and the choice to keep or revert. */
 function CompareVersions({
   title,
+  prefix,
   version,
   current,
   previous,
@@ -413,6 +432,7 @@ function CompareVersions({
   onRevert,
 }: {
   title: string
+  prefix: string
   version: number
   current: { src?: string; alt: string }
   previous: NonNullable<ConceptCardProps['previous']>
@@ -426,28 +446,28 @@ function CompareVersions({
       <DialogTrigger asChild>
         <Button variant="ghost" intent="neutral" size="xs">
           <Icon icon={ColumnsIcon} />
-          Compare with v{previous.version}
+          Compare with {prefix}{previous.version}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-5xl">
         <DialogHeader>
           <DialogTitle>
-            {title}: v{previous.version} and v{version}
+            {title}: {prefix}{previous.version} and {prefix}{version}
           </DialogTitle>
-          <DialogDescription>Both versions in the same view. Keep the new one, or go back to v{previous.version}.</DialogDescription>
+          <DialogDescription>Both in the same view, with what changed between them.</DialogDescription>
         </DialogHeader>
         <DialogBody>
           <div className="grid grid-cols-2 gap-4">
             <figure className="flex flex-col gap-2">
-              <PinnedImage src={previous.src} alt={`${title}, version ${previous.version}`} pins={pins} className="rounded-lg" />
+              <PinnedImage src={previous.src} alt={`${title}, ${prefix}${previous.version}`} pins={pins} className="rounded-lg" />
               <figcaption className="type-text-sm-semibold">
-                v{previous.version} · before
+                {prefix}{previous.version} · before
               </figcaption>
             </figure>
             <figure className="flex flex-col gap-2">
               <PinnedImage src={current.src} alt={current.alt} pins={[]} className="rounded-lg" />
               <figcaption className="type-text-sm-semibold">
-                v{version} · now
+                {prefix}{version} · now
               </figcaption>
             </figure>
           </div>
@@ -474,12 +494,12 @@ function CompareVersions({
             <DialogClose asChild>
               <Button variant="outline" intent="neutral" onClick={onRevert}>
                 <Icon icon={HistoryIcon} />
-                Revert to v{previous.version}
+                Revert to {prefix}{previous.version}
               </Button>
             </DialogClose>
           )}
           <DialogClose asChild>
-            <Button>Keep v{version}</Button>
+            <Button>Keep {prefix}{version}</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>

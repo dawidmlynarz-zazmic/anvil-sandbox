@@ -1,34 +1,33 @@
-import { venues } from '~/mocks/venues'
+import { venueOf } from '~/mocks/venues'
 import { slotNote } from './light'
-import { CROWD_LABEL, TIME_LABEL, VIEW_LABEL, type Brief, type Thinking, type StillsRequest } from '~/state/types'
+import { TIME_LABEL, type Brief, type SetlistMoment, type ShowSet, type Thinking, type TimeOfDay } from '~/state/types'
+import type { BatchKind } from './explore'
+import { lowerFirst } from './shapes'
 
-type Settings = Omit<StillsRequest, 'round'>
-
-/** The prompt Gemini would draft from the brief. Shown to the user so they can see what the image model was asked. */
-export function draftPrompt(brief: Brief, s: Settings) {
-  const venue = venues.find((v) => v.id === brief.venueId)?.name ?? 'the stage'
+/** The prompt Gemini would draft from the brief and the moment. Shown so the user can see what the image model was asked. */
+export function draftPrompt(brief: Brief, moment: SetlistMoment, light: TimeOfDay, set: ShowSet | null) {
   return [
-    `Concept still of the ${venue} stage.`,
+    `Concept still of the ${venueOf(brief.venueId).name} stage, song ${moment.number} (“${moment.title}”): ${moment.intent.toLowerCase()}.`,
     `Style: ${brief.keywords.join(', ').toLowerCase()}.`,
-    `Lighting: ${TIME_LABEL[s.timeOfDay].toLowerCase()}. Crowd: ${CROWD_LABEL[s.crowd].toLowerCase()}. Camera: ${VIEW_LABEL[s.view].toLowerCase()}.`,
-    `Avoid: ${brief.constraints.noGo.toLowerCase()}.`,
+    set ? `Keep the set: ${lowerFirst(set.title)}, same structure and size. Vary only the light, LED content and haze.` : 'Explore the stage structure freely.',
+    `Lighting: ${TIME_LABEL[light].toLowerCase()}.`,
+    `Avoid: ${brief.constraints.noGo.toLowerCase() || 'nothing listed'}.`,
   ].join('\n')
 }
 
-export function roundThinking(brief: Brief, s: Settings, round: number, pins: number): Thinking {
-  const venue = venues.find((v) => v.id === brief.venueId)?.name ?? 'the venue'
+const ASK: Record<BatchKind, string> = {
+  directions: 'new directions',
+  more: 'more like the image you picked',
+  angles: 'the same design from other camera positions',
+  light: 'the same design in other light',
+}
+
+export function batchThinking(brief: Brief, moment: SetlistMoment, light: TimeOfDay, set: ShowSet | null, kind: BatchKind, count: number, notes: string[] = []): Thinking {
   return {
-    title: `Planning round ${round}`,
-    reasoning: `You asked for ${brief.keywords.slice(0, 3).join(', ').toLowerCase()}. ${TIME_LABEL[s.timeOfDay]} matches your slot (${slotNote(brief).toLowerCase()}), so I’ll light every concept for that moment. ${pins ? `You selected ${pins} concept${pins > 1 ? 's' : ''}, so I’ll treat ${pins > 1 ? 'them' : 'it'} as the reference and vary the rest.` : 'Nothing is selected yet, so I’ll explore four different structures.'}`,
-    steps: [`Loaded ${venue} specs`, 'Checked the artist’s no-go list', 'Drafted four prompts from the brief'],
-    tools: [
-      {
-        name: 'generate_stills',
-        summary: 'Nano Banana Pro · 4 images',
-        input: draftPrompt(brief, s),
-        status: 'running',
-      },
-    ],
+    title: `Exploring song ${moment.number}`,
+    reasoning: `Song ${moment.number} (${moment.title}) plays in ${TIME_LABEL[light].toLowerCase()} (${slotNote(brief).toLowerCase()}). You asked for ${ASK[kind]}. ${set ? 'The set is locked, so I’ll keep its structure and vary the look.' : 'The set isn’t locked yet, so the structure can still change.'}`,
+    steps: [`Loaded ${venueOf(brief.venueId).name}`, 'Checked the artist’s no-go list', ...notes.map((n) => `Read the artist’s comment: “${n}”`), `Drafted ${count} prompts`],
+    tools: [{ name: 'generate_stills', summary: `Nano Banana Pro · ${count} images`, input: draftPrompt(brief, moment, light, set), status: 'running' }],
   }
 }
 
@@ -46,16 +45,16 @@ export function motionThinking(kind: 'generate' | 'edit', song: number, title: s
   return {
     title: edit ? `Editing song ${song}` : `Planning song ${song}`,
     reasoning: edit
-      ? `You asked to “${instruction}”. I’ll keep the stage, lighting and camera from the current clip and change only that, so the rest of the cue stays as the artist saw it.`
-      : `Song ${song} (${title}) needs its own clip. I’ll take the chosen concept, use the song’s cue from the brief, and render eight seconds at the matching time of day.`,
+      ? `You asked to “${instruction}”. I’ll keep the stage, lighting and camera from the current clip and change only that.`
+      : `Song ${song} (${title}) has a look now. I’ll put it in motion with the song’s cue and render eight seconds in the light the song plays in.`,
     steps: edit
       ? ['Read the current clip and its cue', 'Translated your words into an edit', 'Kept everything else unchanged']
-      : ['Read the cue for this song', 'Applied the chosen concept’s look', 'Drafted a motion prompt'],
+      : ['Read the cue for this song', 'Applied the chosen look', 'Drafted a motion prompt'],
     tools: [
       {
         name: edit ? 'edit_motion' : 'generate_motion',
         summary: edit ? 'Gemini Omni Flash (preview) · 8 s' : 'Veo 3.1 · 8 s',
-        input: edit ? `Edit the existing clip: ${instruction}\nKeep everything else the same.` : `Stage concept in motion for song ${song}, “${title}”.\n8 seconds, 16:9, cinematic, no strobe above 3 Hz.`,
+        input: edit ? `Edit the existing clip: ${instruction}\nKeep everything else the same.` : `Stage look in motion for song ${song}, “${title}”.\n8 seconds, 16:9, cinematic, no strobe above 3 Hz.`,
         status: 'running',
       },
     ],

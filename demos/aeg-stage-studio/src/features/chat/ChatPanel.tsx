@@ -17,13 +17,16 @@ import { briefThinking } from '~/services/reasoning'
 import { ThinkingPanel, ThinkingPanelContent, ThinkingPanelStep, ThinkingPanelSteps, ThinkingPanelTrigger } from '@anvil/components/agent/thinking-panel'
 import { ToolCallItem, ToolCallItemCode, ToolCallItemContent, ToolCallItemSection, ToolCallItemTrigger } from '@anvil/components/agent/tool-call-item'
 import type { ChatTurn } from '~/state/types'
+import { lowerFirst } from '~/services/shapes'
 import { clipKey, useProject } from '~/state/ProjectContext'
+import { looksChosen } from '~/state/project'
+import { genById, gensFor, lookFor, MOMENT_STATUS, momentStatus } from '~/state/show'
 
 const PLACEHOLDER: Record<string, string> = {
   setup: 'Answer the question, or use a suggestion',
   brief: 'Describe the show, or ask me to change the brief…',
-  stills: 'Feedback for the next round, or “B1: …” for one concept',
-  motion: 'Change the open clip, e.g. “slower camera move”',
+  show: 'Ask about the show, e.g. “which moments need a look?”',
+  m: 'Change the open image, e.g. “narrower, warmer”',
   review: 'Ask about the review, e.g. “what’s comment 2?”',
   handoff: 'Ask about the package or the decision log',
 }
@@ -124,45 +127,49 @@ export function ChatPanel() {
       return
     }
 
-    if (step === 'motion') {
-      const focus = project.motionFocus
-      const slot = focus ? project.clips[clipKey(focus.stillId, focus.song)] : undefined
-      if (focus && slot?.status === 'ready') {
-        say('user', value)
-        void project.editClip(focus.stillId, focus.song, value, false)
-        return
-      }
+    if (step === 'm') {
       say('user', value)
-      void reply('Reading your request', 'There is no rendered clip open, so there is nothing to edit yet.', ['Checked the open clip'], 'Pick a song whose clip is ready, then tell me what to change.')
+      const song = Number(/\/m\/(\d+)/.exec(window.location.pathname)?.[1])
+      const moment = project.moments.find((m) => m.number === song)
+      const focus = project.focus?.song === song ? genById(project, project.focus.genId) : undefined
+      const look = lookFor(project, song)
+      const clip = look ? project.clips[clipKey(look.id, song)] : undefined
+      if (!moment) return
+      if (isQuestion(value)) {
+        const all = gensFor(project, song)
+        const pins = project.pins[song]?.length ?? 0
+        void reply(
+          `Checking song ${song}`,
+          'You asked a question, so I’ll answer from this moment as it stands and change nothing.',
+          ['Read the moment’s images, pins and look'],
+          `Song ${song} · ${moment.title} has ${all.length} ${all.length === 1 ? 'image' : 'images'}${pins ? `, ${pins} pinned` : ''}${look ? `, and #${look.n} is its look` : ', and no look yet'}.${focus ? ` #${focus.n} is open: describe a change (“narrower, warmer”) and I’ll make it as a new image.` : ''}`,
+        )
+      } else if (/\b(kit|assets?)\b/i.test(value) && look) {
+        // “Build the kit” makes the moment's asset kit from its look.
+        void project.buildKit(song)
+      } else if (/\b(kit|assets?)\b/i.test(value)) {
+        void reply('Reading your request', 'The asset kit is made from the look, and this moment has none yet.', ['Checked the moment’s look'], 'Choose a look first; the asset kit is made from it.')
+      } else if (/\b(clip|camera|motion|pace|pacing|slower|faster|cut|beats?|push-in|crane)\b/i.test(value) && clip?.status === 'ready') {
+        // Words about motion change the moment's clip.
+        void project.editClip(song, value, false)
+      } else if (focus) {
+        // Anything else changes the open image, as a new image (#13 from #12).
+        void project.refine(focus.id, value.replace(/^\s*#\d+\s*[:,-]?\s*/, '') || value)
+      } else {
+        void reply('Reading your request', 'Nothing is open on this moment yet.', ['Checked the moment'], 'Nothing is explored here yet. Explore four directions first, then tell me what to change.')
+      }
       return
     }
 
-    if (step === 'stills') {
+    if (step === 'show') {
       say('user', value)
-      const latest = project.currentRound
-      const code = /\b([A-D])(\d+)\b/i.exec(value)
-      const target = code && latest?.stills.find((s) => s.concept === code[1]!.toUpperCase() && s.round === Number(code[2]))
-      if (target) {
-        // “B1: narrower, warmer” refines that concept, the same as describing the change on its card.
-        void project.refineStill(target.id, value.replace(/^\s*[A-D]\d+\s*[:,-]?\s*/i, '') || value)
-      } else if (isQuestion(value)) {
-        const round = project.currentRound
-        const picked = project.selected.length
-        void reply(
-          'Checking the round',
-          'You asked a question, so I’ll answer from the round as it stands and change nothing.',
-          ['Read the current round', 'Checked what is selected'],
-          `Round ${round?.number ?? 1} has four concepts${picked ? `, and ${picked} ${picked === 1 ? 'is' : 'are'} selected` : ''}. To change one, name it, e.g. “B1: narrower, warmer”. To steer the next round, tell me what should be different.`,
-        )
-      } else {
-        project.addFeedback(value)
-        void reply(
-          'Noting feedback',
-          'This is about the round as a whole, so I’ll keep it for the next round instead of tying it to one concept.',
-          ['Read your feedback', `Queued it for round ${project.rounds.length + 1}`],
-          `Noted for round ${project.rounds.length + 1}. Start a new round when you’re ready. To change one concept now, name it, e.g. “B1: narrower, warmer”.`,
-        )
-      }
+      const open = project.moments.filter((m) => momentStatus(project, m.number) !== 'chosen')
+      void reply(
+        'Checking the show',
+        isQuestion(value) ? 'You asked about the show, so here is where it stands.' : 'Changes happen one moment at a time, so I’ll point you to the right one.',
+        ['Read every moment’s status', 'Checked the set'],
+        `${looksChosen(project)} of ${project.moments.length} moments have a look${project.set ? `, and the set is locked (${lowerFirst(project.set.title)})` : '; the set isn’t locked yet'}.${open.length ? ` Still open: ${open.map((m) => `song ${m.number} (${MOMENT_STATUS[momentStatus(project, m.number)].text.toLowerCase()})`).join(', ')}.` : ' Every moment is ready to send.'} To change a look, open its moment and tell me there.`,
+      )
       return
     }
 
@@ -172,13 +179,13 @@ export function ChatPanel() {
       const n = /\b(\d+)\b/.exec(value)
       const comment = n ? project.review.find((c) => c.number === Number(n[1])) : undefined
       if (!project.review.length) {
-        void reply('Checking the review', 'There are no artist comments yet.', ['Looked for artist comments'], project.status === 'awaiting-artist' ? 'The artist hasn’t replied yet. I’ll post here as soon as they do.' : 'Nothing has been sent to the artist yet. Send from the Motion step.')
+        void reply('Checking the review', 'There are no artist comments yet.', ['Looked for artist comments'], project.status === 'awaiting-artist' ? 'The artist hasn’t replied yet. I’ll post here as soon as they do.' : 'Nothing has been sent to the artist yet. Send the show from the show board.')
       } else if (comment) {
         void reply(
           `Reading comment ${comment.number}`,
-          `Comment ${comment.number} is about ${comment.target.kind === 'clip' ? `the song ${comment.target.song} clip` : 'the concept image'}.`,
+          `Comment ${comment.number} is about the song ${comment.song} ${comment.target.kind === 'clip' ? 'clip' : 'look'}.`,
           ['Found the comment', 'Checked what it points at'],
-          `Comment ${comment.number}: “${comment.text}” I’d address it in the next round${comment.target.kind === 'clip' ? ' by editing that clip' : ''}. Tick it in Request changes to include it.`,
+          `Comment ${comment.number}: “${comment.text}” ${comment.target.kind === 'clip' ? 'Request changes with it and I’ll edit that clip.' : 'Request changes with it and I’ll explore new looks for that moment with it applied.'}`,
         )
       } else {
         void reply(
@@ -186,8 +193,8 @@ export function ChatPanel() {
           'You asked about the review, so here is where it stands.',
           ['Counted open comments', 'Checked what is ready to hand off'],
           open.length
-            ? `${open.length} of ${project.review.length} comments are open. The first: “${open[0]!.text}” Approve if they can wait, or request changes to start a new round with them.`
-            : 'All comments are resolved. You can approve for production.',
+            ? `${open.length} of ${project.review.length} comments are open. The first: “${open[0]!.text}” Approve the show if they can wait, or request changes to rework those moments.`
+            : 'All comments are resolved. You can approve the show.',
         )
       }
       return
@@ -210,16 +217,15 @@ export function ChatPanel() {
 
     // The brief: a question gets an answer; a short look ("warmer, more haze") becomes a keyword; "avoid …" a no-go.
     if (project.status === 'approved') {
-      void reply('Checking the brief', 'The design is approved, so the brief is locked.', ['Checked the project status'], 'The brief is locked because the artist approved the design. Start a new project for changes.')
+      void reply('Checking the brief', 'The show is approved, so the brief is locked.', ['Checked the project status'], 'The brief is locked because the artist approved the show. Start a new project for changes.')
       return
     }
     if (isQuestion(value)) {
-      const missing = [!brief.moments.length && 'key moments', !brief.keywords.length && 'a visual direction'].filter(Boolean)
       void reply(
         'Reading the brief',
         'You asked a question, so I’ll answer from the brief and change nothing.',
         ['Read the brief'],
-        `The brief has ${brief.keywords.length} visual keyword${brief.keywords.length === 1 ? '' : 's'} and ${brief.moments.length} key moment${brief.moments.length === 1 ? '' : 's'}.${missing.length ? ` Still missing: ${missing.join(' and ')}.` : ''} Tell me a look in a few words (“warmer, more haze”) or a no-go (“avoid red”) and I’ll add it.`,
+        `The brief has ${brief.keywords.length} visual keyword${brief.keywords.length === 1 ? '' : 's'}${brief.keywords.length ? '' : ', so the visual direction is still missing'}. The key moments live on the show board. Tell me a look in a few words (“warmer, more haze”) or a no-go (“avoid red”) and I’ll add it.`,
       )
       return
     }
@@ -245,7 +251,7 @@ export function ChatPanel() {
       updateMessage(replyId, {
         pending: false,
         thinking: { ...briefThinking(value, ''), steps: ['Read your message', `Added “${rule}” to the artist’s no-go list`], seconds: 2 },
-        text: `Added “${rule}” to the artist’s no-go list. No concept will use it.`,
+        text: `Added “${rule}” to the artist’s no-go list. The agent checks every image against it.`,
       })
       return
     }
@@ -263,7 +269,7 @@ export function ChatPanel() {
   return (
     <aside aria-label="Stage agent" className="h-full w-full">
       <ChatShell surface="side-panel">
-        <ChatShellHeader title="Stage agent" subtitle={latest.phase === 'setup' ? 'Setting up the brief with you' : 'Works with you through every round'} online />
+        <ChatShellHeader title="Stage agent" subtitle={latest.phase === 'setup' ? 'Setting up the brief with you' : 'Works with you on every moment'} online />
         <ChatShellThread>
           <FollowEnd
             signal={turns

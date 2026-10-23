@@ -22,7 +22,7 @@ export function setTimes(brief: Brief) {
   return { start, end: start + parseLength(brief.slot.length, 75) }
 }
 
-/** The light the set opens in: what round 1 shows. Covered venues are always night. */
+/** The light the set opens in. Covered venues are always night. */
 export function openingLight(brief: Brief): TimeOfDay {
   return isCovered(brief.venueId) ? 'night' : lightAt(setTimes(brief).start)
 }
@@ -30,7 +30,7 @@ export function openingLight(brief: Brief): TimeOfDay {
 /** Roughly when a song plays, from its number and the set's length. */
 function songMinute(brief: Brief, song: number) {
   const { start, end } = setTimes(brief)
-  const songs = Math.max(Math.round((end - start) / SONG_MINUTES), ...brief.moments.map((m) => m.number), 1)
+  const songs = Math.max(Math.round((end - start) / SONG_MINUTES), song, 1)
   return start + ((song - 0.5) / songs) * (end - start)
 }
 

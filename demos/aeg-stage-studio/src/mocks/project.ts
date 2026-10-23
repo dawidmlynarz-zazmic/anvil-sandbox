@@ -21,15 +21,9 @@ export const initialBrief: Brief = {
   referenceCount: 3,
   constraints: {
     budget: 'tier-2',
-    venueRules: '[Venue rules: rigging weight, pyro, haze limits]',
+    venueRules: 'Sample: haze allowed, no pyro, curfew 11 pm',
     noGo: 'No strobe above 3 Hz; no religious imagery',
   },
-  moments: [
-    { number: 3, title: 'Opening reveal', intent: 'Slow build from silhouette' },
-    { number: 7, title: 'Sunset drop', intent: 'LED wall peaks with the sun' },
-    { number: 14, title: 'Crowd split', intent: 'Stage opens in two halves' },
-    { number: 18, title: 'Finale', intent: 'Full-stage light wash' },
-  ],
 }
 
 export const moodBoard = ['mood-1', 'mood-2', 'mood-3']
@@ -52,7 +46,6 @@ export const openingMessages: ChatTurn[] = [
   {
     id: 2,
     role: 'assistant',
-    text: 'Thanks. I loaded the Coachella Stage specs and matched your slot to sunset, so the show runs from golden hour into night by song 12. I filled in the brief from your mood board and setlist. Two quick answers would sharpen the concepts:',
-    suggestions: ['Keep it symmetrical', 'Avoid red and green'],
+    text: 'Thanks. I loaded the Coachella Stage specs and matched your slot to sunset, so the show runs from golden hour into night by song 12. I filled in the brief from your mood board and drafted four key moments from the setlist.',
   },
 ]

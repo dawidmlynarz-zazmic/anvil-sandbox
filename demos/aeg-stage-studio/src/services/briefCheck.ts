@@ -1,6 +1,6 @@
-import type { Brief, ConceptShape, Still } from '~/state/types'
+import type { Brief, ConceptShape, StillSpec } from '~/state/types'
 import { lightAt, setTimes } from './light'
-import { isCovered } from '~/mocks/venues'
+import { isCovered, venueOf } from '~/mocks/venues'
 
 export interface CheckItem {
   label: string
@@ -8,46 +8,46 @@ export interface CheckItem {
   detail: string
 }
 
-// What the agent checks each concept against: the venue's limits, the artist's no-gos and the budget.
+type Checked = { spec: StillSpec; reworked?: boolean }
+
+// What the agent checks each image against: the venue's limits, the artist's no-gos and the budget.
 // Mocked: each direction has one known risk in its first design. A rework clears it, and so does a visible change
 // that addresses it (a slimmer or raised monolith no longer blocks the screen).
 const ISSUES: Partial<Record<ConceptShape, { label: string; detail: string }>> = {
   monolith: { label: 'Sightlines', detail: 'The monolith hides part of the screen from the back of the field.' },
   ribbons: { label: 'Artist no-gos', detail: 'The fastest LED chase could read as strobe. Keep it under 3 Hz.' },
-  halo: { label: 'Rigging', detail: 'The halo’s load is close to the venue’s [rigging limit].' },
+  halo: { label: 'Rigging', detail: 'The halo’s load is close to the venue’s rigging limit (sample spec).' },
 }
 
-/** Older saved concepts have no spec: fall back to their slot letter. */
-const LETTER_SHAPE: Record<string, ConceptShape> = { A: 'arch', B: 'monolith', C: 'ribbons', D: 'halo' }
-const shapeOf = (still: Still): ConceptShape => still.spec?.concept ?? LETTER_SHAPE[still.concept] ?? 'arch'
-
-function cleared(still: Still) {
-  if (still.reworked) return true
-  const t = still.spec?.tweaks
-  return shapeOf(still) === 'monolith' && !!t && ((t.width ?? 1) < 1 || (t.lift ?? 0) > 0)
+function cleared(g: Checked) {
+  if (g.reworked) return true
+  const t = g.spec.tweaks
+  return g.spec.concept === 'monolith' && !!t && ((t.width ?? 1) < 1 || (t.lift ?? 0) > 0)
 }
 
-export function briefCheck(still: Still, brief: Brief): CheckItem[] {
-  const issue = cleared(still) ? undefined : ISSUES[shapeOf(still)]
+export function briefCheck(g: Checked, brief: Brief): CheckItem[] {
+  const issue = cleared(g) ? undefined : ISSUES[g.spec.concept]
+  const venue = venueOf(brief.venueId)
   const items: CheckItem[] = [
-    { label: 'Rigging', ok: true, detail: 'Within the venue’s [rigging limit].' },
-    { label: 'LED wall', ok: true, detail: 'Fits the venue’s [LED wall].' },
-    { label: 'Sightlines', ok: true, detail: 'Clear from front of house and the back of the field.' },
+    { label: 'Rigging', ok: true, detail: `Within ${venue.name}’s rigging limit (sample spec: ${venue.specs.rigging}).` },
+    { label: 'LED wall', ok: true, detail: `Fits the LED wall (sample spec: ${venue.specs.ledWall}).` },
+    { label: 'Sightlines', ok: true, detail: 'Clear from front of house and the back of the room.' },
     { label: 'Artist no-gos', ok: true, detail: `Respects: ${brief.constraints.noGo.split('\n')[0] || 'nothing listed yet'}.` },
     { label: 'Budget band', ok: true, detail: 'Buildable within the chosen band.' },
   ]
   return items.map((item) => (issue && item.label === issue.label ? { label: item.label, ok: false, detail: issue.detail } : item))
 }
 
-/** One line on why the agent made this concept, so it reads as a collaborator rather than a slot machine. */
-export function rationale(still: Still, brief: Brief): string {
+/** One line on why the agent made this image, so it reads as a collaborator rather than a slot machine. */
+export function rationale(g: Checked, brief: Brief): string {
   const dark = isCovered(brief.venueId) || lightAt(setTimes(brief).start) === 'night'
   const lines: Record<ConceptShape, string> = {
-    arch: 'Frames the artist and reads clearly from the back of the field.',
-    monolith: `Strongest silhouette ${dark ? 'against the light show' : 'against the sunset'}; follows “monolithic”.`,
+    arch: 'Frames the artist and reads clearly from the back of the room.',
+    monolith: `Strongest silhouette ${dark ? 'against the light show' : 'against the sunset'}.`,
     ribbons: 'The most movement; comes alive after dark.',
     halo: 'Simple and iconic; strong for the livestream camera.',
   }
-  const second = still.spec?.with
-  return second ? `Combines two directions: ${lines[shapeOf(still)].charAt(0).toLowerCase()}${lines[shapeOf(still)].slice(1, -1)}, with the ${second} at its centre.` : lines[shapeOf(still)]
+  const line = lines[g.spec.concept]
+  const second = g.spec.with
+  return second ? `Combines two directions: ${line.charAt(0).toLowerCase()}${line.slice(1, -1)}, with the ${second} at its centre.` : line
 }

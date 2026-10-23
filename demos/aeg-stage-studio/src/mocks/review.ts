@@ -1,75 +1,57 @@
-import { shapeFor, type ArtShape } from '~/mocks/art'
-import type { ReviewComment, SetlistMoment, Still } from '~/state/types'
+import type { ConceptShape, Generation, ReviewComment, SetlistMoment } from '~/state/types'
 
-// Example feedback the artist leaves on what was sent. It depends on the concept's shape, so each concept
-// gets comments that make sense for it. A real build would load the artist's actual comments.
-const ON_CONCEPT: Record<ArtShape, { x: number; y: number; text: string }[]> = {
-  arch: [
-    { x: 27, y: 36, text: 'Love the height. Can the left side of the arch feel a little lighter?' },
-    { x: 62, y: 56, text: 'From front of house this edge blocks the sightline. Could the LED wall sit higher?' },
-  ],
-  monolith: [
-    { x: 50, y: 30, text: 'The monolith is the right idea. Make the top edge sharper, less boxy.' },
-    { x: 50, y: 70, text: 'Can the screen inside glow a little warmer?' },
-  ],
-  ribbons: [
-    { x: 30, y: 40, text: 'The ribbons feel busy. Try three instead of five.' },
-    { x: 75, y: 55, text: 'Keep this curve, it matches the chorus.' },
-  ],
-  halo: [
-    { x: 50, y: 25, text: 'The halo should sit higher so it reads from the back of the field.' },
-    { x: 35, y: 80, text: 'Hide the riser under the halo, it distracts.' },
-  ],
+// Example feedback the artist leaves on the show. It depends on each look's shape, so the comments make sense for
+// what's on screen. Comments on a look are about the look (light, haze, colour), which the set allows to change. A real build would load the artist's actual comments.
+const ON_LOOK: Record<ConceptShape, { x: number; y: number; text: string }> = {
+  arch: { x: 27, y: 36, text: 'Love the arch. Can it glow warmer here, more amber?' },
+  monolith: { x: 50, y: 30, text: 'The monolith is right. The screen inside should glow warmer.' },
+  ribbons: { x: 30, y: 40, text: 'The ribbons feel busy here. Softer light, fewer colours.' },
+  halo: { x: 50, y: 25, text: 'The halo needs more haze around it, it looks too clean.' },
 }
 
-export function artistFeedback(concepts: Still[], moments: SetlistMoment[], clipSongs: number[], editedSongs: number[] = []): Omit<ReviewComment, 'number'>[] {
-  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  const comments: Omit<ReviewComment, 'number'>[] = []
-  concepts.forEach((still, i) => {
-    // The concept's real type: a planned round can put any type in any slot.
-    ON_CONCEPT[still.spec?.concept ?? shapeFor(still.concept)].forEach((c, j) =>
-      comments.push({
-        id: `${still.id}-c${j}`,
-        stillId: still.id,
-        target: { kind: 'concept', x: c.x, y: c.y },
-        author: 'Artist',
-        time,
-        text: c.text,
-        resolved: false,
-      }),
-    )
-    // One comment on motion for the first concept, on its biggest moment if it has a clip.
-    const song = clipSongs.includes(14) ? 14 : clipSongs[0]
-    if (i === 0 && song) {
-      const title = moments.find((m) => m.number === song)?.title ?? `song ${song}`
-      comments.push({
-        id: `${still.id}-m${song}`,
-        stillId: still.id,
-        target: { kind: 'clip', song },
-        author: 'Artist',
-        time,
-        // A clip you already reworked gets a reaction to the edit, not the same note again.
-        text: editedSongs.includes(song) ? `${title}: the pacing works now. Keep this one.` : `${title}: it feels rushed. Hold the opening for two more beats before it moves.`,
-        resolved: false,
-      })
-    }
-  })
-  return comments
-}
+const ON_LOOK_LIGHT = { x: 62, y: 56, text: 'This moment should feel bigger. Brighter, more haze.' }
+
+type Out = Omit<ReviewComment, 'number'>
+
+const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
 /**
- * The artist's reply to a new design that took their earlier comments on: one note per concept, saying it's
- * resolved. Marked resolved, so it doesn't count as something left to do.
+ * The artist's reply to a show: one comment on the first moment's look, one on the biggest moment's look, and one on
+ * that moment's clip (unless you already reworked the clip, then a reaction to the edit).
  */
-export function artistPraise(concepts: Still[], addressed: number): Omit<ReviewComment, 'number'>[] {
-  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  return concepts.map((still) => ({
-    id: `${still.id}-ok`,
-    stillId: still.id,
-    target: { kind: 'concept', x: 50, y: 45 },
+export function artistFeedback(looks: { moment: SetlistMoment; look: Generation }[], editedSongs: number[] = []): Out[] {
+  if (!looks.length) return []
+  const time = now()
+  const first = looks[0]!
+  const big = looks.find((l) => /split|drop|encore|title/i.test(l.moment.title)) ?? looks.at(-1)!
+  const out: Out[] = [
+    { id: `c-${first.look.id}`, song: first.moment.number, genId: first.look.id, target: { kind: 'look', x: ON_LOOK[first.look.spec.concept].x, y: ON_LOOK[first.look.spec.concept].y }, author: 'Artist', time, text: ON_LOOK[first.look.spec.concept].text, resolved: false },
+  ]
+  if (big !== first) out.push({ id: `c-${big.look.id}`, song: big.moment.number, genId: big.look.id, target: { kind: 'look', x: ON_LOOK_LIGHT.x, y: ON_LOOK_LIGHT.y }, author: 'Artist', time, text: ON_LOOK_LIGHT.text, resolved: false })
+  out.push({
+    id: `m-${big.look.id}`,
+    song: big.moment.number,
+    genId: big.look.id,
+    target: { kind: 'clip' },
     author: 'Artist',
     time,
-    text: `Much closer. ${addressed > 1 ? `All ${addressed} of my notes` : 'My note'} landed. This is the one.`,
+    text: editedSongs.includes(big.moment.number) ? `${big.moment.title}: the pacing works now. Keep this one.` : `${big.moment.title}: the clip feels rushed. Hold the opening for two more beats before it moves.`,
+    resolved: false,
+  })
+  return out
+}
+
+/** The artist's reply to new looks that took their comments on: one note per reworked moment, already resolved. */
+export function artistPraise(looks: { moment: SetlistMoment; look: Generation }[]): Out[] {
+  const time = now()
+  return looks.map(({ moment, look }) => ({
+    id: `ok-${look.id}`,
+    song: moment.number,
+    genId: look.id,
+    target: { kind: 'look', x: 50, y: 45 },
+    author: 'Artist',
+    time,
+    text: `${moment.title}: much closer. My note landed.`,
     resolved: true,
   }))
 }

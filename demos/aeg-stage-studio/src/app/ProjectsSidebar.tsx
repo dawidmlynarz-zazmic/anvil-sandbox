@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { NavLink, useNavigate, useParams } from 'react-router-dom'
-import { FolderIcon, FolderOpenIcon, Icon, PlusIcon, RotateCcwIcon } from '@anvil/components/ui/icon'
+import { NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { FolderIcon, FolderOpenIcon, Icon, LayoutGridIcon, PlusIcon, RotateCcwIcon } from '@anvil/components/ui/icon'
 import {
   Sidebar,
   SidebarContent,
@@ -13,16 +13,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@anvil/components/ui/sidebar'
-import { projectStatusLabel } from '~/state/project'
+import { currentStep, projectStatusLabel } from '~/state/project'
 import { useStore } from '~/state/store'
 import { NewProjectDialog } from './NewProjectDialog'
 
-/** Every project, most recent first, like a chat history. Collapses to icons. */
+/** All projects, then every project, most recent first, like a chat history. Collapses to icons. */
 export function ProjectsSidebar() {
   const { list, resetDemo } = useStore()
   const [creating, setCreating] = useState(false)
   const { projectId } = useParams()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
 
   return (
     <Sidebar collapsible="icon">
@@ -32,6 +33,14 @@ export function ProjectsSidebar() {
           {/* The product name; hidden when the panel is collapsed to icons. */}
           <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
             <span className="block truncate px-2 py-1 type-text-sm-semibold">Stage Studio</span>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="All projects" isActive={pathname === '/'}>
+              <NavLink to="/" end>
+                <Icon icon={LayoutGridIcon} />
+                <span>All projects</span>
+              </NavLink>
+            </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="New project" onClick={() => setCreating(true)}>
@@ -59,7 +68,7 @@ export function ProjectsSidebar() {
                     // default 8px, like the other rows, so it centres in the 32px button.
                     className="group-data-[collapsible=icon]:p-2!"
                   >
-                    <NavLink to={`/p/${p.meta.id}`} aria-label={`${p.meta.artist} · ${p.meta.event}, ${projectStatusLabel(p)}`}>
+                    <NavLink to={`/p/${p.meta.id}/${currentStep(p)}`} aria-label={`${p.meta.artist} · ${p.meta.event}, ${projectStatusLabel(p)}`}>
                       <Icon icon={p.meta.id === projectId ? FolderOpenIcon : FolderIcon} />
                       <span className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
                         <span className="truncate type-text-sm-medium">

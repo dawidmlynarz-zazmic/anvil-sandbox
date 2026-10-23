@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Badge } from '@anvil/components/ui/badge'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@anvil/components/ui/card'
-import { Button } from '@anvil/components/ui/button'
-import { CircleCheckIcon, CircleDashedIcon, Icon, PlusIcon, XIcon } from '@anvil/components/ui/icon'
+import { CircleCheckIcon, CircleDashedIcon, Icon } from '@anvil/components/ui/icon'
 import { Calendar } from '@anvil/components/ui/calendar'
 import { DatePicker, DatePickerContent, DatePickerTrigger } from '@anvil/components/ui/date-picker'
 import { Input } from '@anvil/components/ui/input'
@@ -14,7 +13,7 @@ import { DaylightTimeline } from '~/components/local/DaylightTimeline/DaylightTi
 import { setTimes, SUNSET } from '~/services/light'
 import { fromISODate, toISODate, weekdayOf } from '~/lib/time'
 import { budgetBands } from '~/mocks/project'
-import { venues } from '~/mocks/venues'
+import { venueOf, venues } from '~/mocks/venues'
 import { TagInput } from '~/components/local/TagInput/TagInput'
 import { useProject } from '~/state/ProjectContext'
 import { briefReadiness } from '~/state/readiness'
@@ -44,35 +43,51 @@ function SectionHeader({ title, section, children }: { title: string; section: B
 
 export function VenueCard() {
   const { brief, patchBrief } = useProject()
-  const venue = venues.find((v) => v.id === brief.venueId) ?? venues[0]!
+  const venue = venueOf(brief.venueId)
   return (
     <Card>
       <SectionHeader title="Venue" section="venue">
-          Where the show happens. The agent loads the venue’s technical specs, so concepts only use what the stage can
-          really hold.
+          Where the show happens. The agent checks every image against the venue’s limits, so designs only use what the
+          stage can really hold.
         </SectionHeader>
       <CardContent className="flex flex-col gap-4">
         <Select value={brief.venueId} onValueChange={(venueId) => patchBrief({ venueId })}>
-          <SelectTrigger label="Venue" hint={venue.kind}>
+          <SelectTrigger label="Venue" hint={`${venue.kind}${venue.event ? ` · ${venue.event}` : ''}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {venues.map((v) => (
               <SelectItem key={v.id} value={v.id}>
-                {v.name}
+                {v.name} · {v.event ?? v.city}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <KeyValueList>
-          <KeyValueRow label="Stage width">{venue.specs.stageWidth}</KeyValueRow>
-          <KeyValueRow label="LED wall">{venue.specs.ledWall}</KeyValueRow>
-          <KeyValueRow label="Rigging limits">{venue.specs.rigging}</KeyValueRow>
-          <KeyValueRow label="3D stage model">{venue.specs.model3d}</KeyValueRow>
-        </KeyValueList>
-        <p className="text-muted-foreground type-text-xs-normal">
-          Values in [brackets] are placeholders until AEG supplies the real venue specs.
-        </p>
+        <section aria-label="About the venue" className="flex flex-col gap-2">
+          {venue.about && <p className="type-text-sm-normal">{venue.about}</p>}
+          <KeyValueList>
+            <KeyValueRow label="City">{venue.city}</KeyValueRow>
+            {venue.capacity && <KeyValueRow label="Capacity">{venue.capacity}</KeyValueRow>}
+            {venue.opened && <KeyValueRow label="Opened">{venue.opened}</KeyValueRow>}
+            <KeyValueRow label="Roof">{venue.covered ? 'Covered: lit as night all show' : 'Open air: the sun sets during some slots'}</KeyValueRow>
+          </KeyValueList>
+          <p className="text-muted-foreground type-text-xs-normal">Source: {venue.source}</p>
+        </section>
+        <section aria-label="Technical specs" className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="type-text-sm-semibold">Technical specs</span>
+            <Badge tone="warning" variant="outline" size="xs">
+              Sample
+            </Badge>
+          </div>
+          <KeyValueList>
+            <KeyValueRow label="Stage width">{venue.specs.stageWidth}</KeyValueRow>
+            <KeyValueRow label="LED wall">{venue.specs.ledWall}</KeyValueRow>
+            <KeyValueRow label="Rigging limits">{venue.specs.rigging}</KeyValueRow>
+            <KeyValueRow label="3D stage model">{venue.specs.model3d}</KeyValueRow>
+          </KeyValueList>
+          <p className="text-muted-foreground type-text-xs-normal">Sample values until AEG’s venue library is connected.</p>
+        </section>
       </CardContent>
     </Card>
   )
@@ -89,8 +104,7 @@ export function SlotCard() {
   return (
     <Card>
       <SectionHeader title="Performance time slot" section="slot">
-        When the artist plays. The time sets how much daylight the stage has, which drives the lighting in every
-        concept.
+        When the artist plays. The time sets how much daylight each key moment has, which drives its lighting.
       </SectionHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="grid grid-cols-1 items-start gap-3 @md:grid-cols-[1.3fr_1fr_1fr]">
@@ -133,7 +147,7 @@ export function VisualDirectionCard() {
   return (
     <Card>
       <SectionHeader title="Visual direction" section="visual">
-        A few words that steer the look. The agent turns them, and your {brief.referenceCount} reference image
+        A few words that steer the look of every moment. The agent turns them, and your {brief.referenceCount} reference image
         {brief.referenceCount === 1 ? '' : 's'}, into image and video prompts. Use the paperclip in the chat to add more
         references.
       </SectionHeader>
@@ -157,11 +171,11 @@ export function ConstraintsCard() {
   return (
     <Card>
       <SectionHeader title="Constraints" section="constraints">
-          The limits concepts must stay inside. If a concept would break one, the agent leaves it out or flags it.
+          The limits every image must stay inside. If one would break a limit, the agent flags it.
         </SectionHeader>
       <CardContent className="flex flex-col gap-4">
         <Select value={constraints.budget} onValueChange={(v) => set('budget', v)}>
-          <SelectTrigger label="Budget band" hint="A rough production budget, used to keep concepts buildable.">
+          <SelectTrigger label="Budget band" hint="A rough production budget, used to keep designs buildable.">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -185,78 +199,6 @@ export function ConstraintsCard() {
           value={constraints.noGo}
           onChange={(e) => set('noGo', e.target.value)}
         />
-      </CardContent>
-    </Card>
-  )
-}
-
-export function SetlistCard() {
-  const { brief, patchBrief } = useProject()
-  const [number, setNumber] = useState('')
-  const [title, setTitle] = useState('')
-  const [intent, setIntent] = useState('')
-  const song = Number(number)
-  const taken = brief.moments.some((m) => m.number === song)
-  const valid = Number.isInteger(song) && song > 0 && !taken && title.trim().length > 0
-  const add = () => {
-    if (!valid) return
-    const moments = [...brief.moments, { number: song, title: title.trim(), intent: intent.trim() || 'No direction yet' }]
-    patchBrief({ moments: moments.sort((a, b) => a.number - b.number) })
-    setNumber('')
-    setTitle('')
-    setIntent('')
-  }
-  return (
-    <Card>
-      <SectionHeader title="Key moments" section="moments">
-        The few songs where the stage should do something memorable, such as a reveal, a big drop or the finale. The
-        agent designs around them, and each one becomes an eight-second clip in the Motion step.
-      </SectionHeader>
-      <CardContent className="flex flex-col gap-4">
-        <ul className="grid grid-cols-2 gap-3">
-          {brief.moments.map((m) => (
-            <li key={m.number}>
-              <Card size="sm" className="h-full min-w-0">
-                <CardContent className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <Badge tone="agent" variant="subtle" size="sm">
-                      Song {m.number}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      intent="neutral"
-                      size="icon-xs"
-                      aria-label={`Remove song ${m.number}, ${m.title}`}
-                      onClick={() => patchBrief({ moments: brief.moments.filter((x) => x.number !== m.number) })}
-                    >
-                      <Icon icon={XIcon} />
-                    </Button>
-                  </div>
-                  <p className="type-text-sm-semibold">{m.title}</p>
-                  <p className="text-muted-foreground type-text-xs-normal">{m.intent}</p>
-                </CardContent>
-              </Card>
-            </li>
-          ))}
-        </ul>
-        <form
-          className="flex flex-col gap-3"
-          onSubmit={(e) => {
-            e.preventDefault()
-            add()
-          }}
-        >
-          <p className="type-text-sm-semibold">Add a moment</p>
-          <div className="grid grid-cols-[6rem_1fr] gap-3">
-            <Input label="Song" inputMode="numeric" placeholder="e.g. 9" value={number} onChange={(e) => setNumber(e.target.value)} aria-invalid={taken || undefined} hint={taken ? 'Already a key moment' : undefined} />
-            <Input label="Moment" placeholder="e.g. Sunset drop" value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
-          <Input label="What should happen" placeholder="e.g. The LED wall peaks with the sun" value={intent} onChange={(e) => setIntent(e.target.value)} />
-          <Button type="submit" variant="outline" intent="neutral" className="self-start" disabled={!valid}>
-            <Icon icon={PlusIcon} />
-            Add moment
-          </Button>
-        </form>
       </CardContent>
     </Card>
   )

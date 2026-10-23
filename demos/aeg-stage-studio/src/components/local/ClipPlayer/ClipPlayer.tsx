@@ -22,31 +22,43 @@ export interface ClipPlayerProps extends Omit<React.ComponentProps<'div'>, 'chil
   renderFrame?: (t: number, variant: 'main' | 'compare') => ReactNode
   /** Names the two halves when comparing, e.g. ["Golden hour", "Night"]. */
   compareLabels?: [string, string]
+  /** Starts playing on its own, and again whenever the clip (its label) changes: for playing clips in a sequence. */
+  autoPlay?: boolean
+  /** Called when the clip plays through to the end (not when scrubbed there). */
+  onEnded?: () => void
 }
 
 const clock = (s: number) => `0:${String(Math.floor(s)).padStart(2, '0')}`
 
 /** A video preview with play, a scrubber and a time readout. Today it animates a still; swap the poster for a <video> later. */
-export function ClipPlayer({ poster, comparePoster, compare = false, seconds = 8, label, busy, renderFrame, compareLabels, className, ...props }: ClipPlayerProps) {
+export function ClipPlayer({ poster, comparePoster, compare = false, seconds = 8, label, busy, renderFrame, compareLabels, autoPlay, onEnded, className, ...props }: ClipPlayerProps) {
   const [time, setTime] = useState(0)
-  const [playing, setPlaying] = useState(false)
+  const [playing, setPlaying] = useState(!!autoPlay)
   const last = useRef(0)
+  const endedRef = useRef(onEnded)
+  endedRef.current = onEnded
+
+  // The playhead lives in a ref while playing (so the end is detected once) and is mirrored to state for rendering.
+  const timeRef = useRef(0)
+  timeRef.current = time
 
   useEffect(() => {
     if (!playing) return
     let frame = 0
     last.current = performance.now()
     const tick = (now: number) => {
-      const delta = (now - last.current) / 1000
+      // The first frame's timestamp can be a little earlier than the start: never step backwards.
+      const next = timeRef.current + Math.max(0, now - last.current) / 1000
       last.current = now
-      setTime((t) => {
-        const next = t + delta
-        if (next >= seconds) {
-          setPlaying(false)
-          return seconds
-        }
-        return next
-      })
+      if (next >= seconds) {
+        timeRef.current = seconds
+        setTime(seconds)
+        setPlaying(false)
+        endedRef.current?.()
+        return
+      }
+      timeRef.current = next
+      setTime(next)
       frame = requestAnimationFrame(tick)
     }
     frame = requestAnimationFrame(tick)
@@ -56,7 +68,8 @@ export function ClipPlayer({ poster, comparePoster, compare = false, seconds = 8
   // A new clip (or a new edit of it) starts from the beginning. The label names the clip and its version.
   useEffect(() => {
     setTime(0)
-    setPlaying(false)
+    setPlaying(!!autoPlay)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [label])
 
   const ended = time >= seconds

@@ -1,6 +1,7 @@
 # Anvil component map
 
-Started with the Brief screen; extended per screen.
+Started with the Brief screen; extended per screen. Since the moments-first loop (Phase 1, see `plan-moments.md`) the
+Stills and Motion screens below are replaced by the Show board and the Moment page; their tables stay as a record.
 
 | Wireframe element | Anvil component | Props | Gap? |
 | --- | --- | --- | --- |
@@ -62,3 +63,50 @@ Started with the Brief screen; extended per screen.
 | Review waiting state | `ui/card` + `ui/spinner` | No |
 | Request changes (pick comments) | `ui/dialog` + `ui/checkbox` | No |
 | Approve with open comments | `ui/alert-dialog` | No |
+
+## Home (`/`)
+
+| Element | Anvil component | Props | Gap? |
+| --- | --- | --- | --- |
+| Project card (thumbnail, show, venue, status) | `ui/card` `asChild` (a link) | interactive card | No |
+| Status pill | `ui/badge` | `shape="pill"`, `indicator`, `variant="subtle"` | No |
+| New project card | `ui/card` `asChild` (a button) + `NewProjectDialog` | | No |
+| All projects link | `ui/sidebar` `SidebarMenuButton` `asChild` | `isActive` | No |
+
+## Show board (`/show`)
+
+| Element | Anvil component | Props | Gap? |
+| --- | --- | --- | --- |
+| Running metrics | `agent/widget-metric-card` + `WidgetMetricGroup` | | No |
+| The set (locked or not) | `ui/card` + `CardAction` (Unlock) | | No |
+| Moment card (look, light, status, clip) | `ui/card` `size="sm"`, `ui/badge` | | No |
+| Add a key moment | `ui/card` + `ui/input` | | No |
+| Send the show | `ui/dialog` (SendDialog) | | No |
+| Preview the show (clips in order) | `ui/dialog` + local `ClipPlayer` (`autoPlay`, `onEnded`) + local `ClipTile` | | Yes (local parts) |
+| Kit status on a moment card | `ui/badge` | `variant="outline"` | No |
+
+## Moment page (`/m/:song`)
+
+| Element | Anvil component | Props | Gap? |
+| --- | --- | --- | --- |
+| Focus panel | local `ConceptCard` | `versionPrefix="#"`, `selectLabel="Pin"` | **Yes** (see candidates) |
+| Lineage (#2 → #6 → #12) | `ui/breadcrumb` | `BreadcrumbLink asChild` buttons | No |
+| Batch toolbar | `ui/button-group` + `ui/button` | outline, sm; icon-only when narrow | No |
+| Pinboard | `ui/button` xs per pin | | No |
+| Contact sheet | local `ContactSheet` | | **Yes** (see candidates) |
+| Compare 2–4 | `ui/dialog` | | No |
+| Lock the set | `ui/alert` `tone="agent"` with action | | No |
+| Motion | `ui/card` + local `ClipPlayer` + `anvil/key-value-row` + `ui/input` | | Yes (ClipPlayer) |
+| Previous / next moment | `ui/button` `size="icon-sm"` | | No |
+| Explore / Assets | `ui/tabs` `variant="line"` | in the URL (`?tab=assets`) | No |
+| Asset kit (stills, motion variants, pilot-only items) | `ui/card`, local `ClipPlayer` + `ClipTile`, `anvil/check-row` | | Yes (ClipPlayer, ClipTile) |
+| Kit out of date | `ui/alert` `tone="warning"` with action | | No |
+| Provenance on every image and asset | `ui/popover` + `anvil/key-value-row` + `anvil/check-row` | | No |
+
+## Review (`/review`), moments-first
+
+| Element | Anvil component | Props | Gap? |
+| --- | --- | --- | --- |
+| A tab per moment, with open-comment count | `ui/tabs` `variant="line"` + `ui/badge` | | No |
+| Look with the artist's pins | local `PinnedImage` | | Yes |
+| Approve the show (one sign-off) | `ui/alert-dialog`; artist view `ui/dialog` + `agent/rating` | | No |

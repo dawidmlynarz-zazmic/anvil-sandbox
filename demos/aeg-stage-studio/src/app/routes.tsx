@@ -2,31 +2,24 @@ import { lazy, Suspense } from 'react'
 import { Navigate, useParams, type RouteObject } from 'react-router-dom'
 import { BriefPage } from '~/features/brief/BriefPage'
 import { HandoffPage } from '~/features/handoff/HandoffPage'
-import { MotionPage } from '~/features/motion/MotionPage'
+import { MomentPage } from '~/features/moment/MomentPage'
 import { ReviewPage } from '~/features/review/ReviewPage'
-import { StillsPage } from '~/features/stills/StillsPage'
+import { ShowPage } from '~/features/show/ShowPage'
 import { currentStep } from '~/state/project'
 import { ProjectScope, useProject, type Step } from '~/state/ProjectContext'
 import { useStore } from '~/state/store'
 import { AppShell } from './AppShell'
+import { HomePage } from './HomePage'
 
 // Dev-only 3D lab, loaded on demand so three.js stays out of the main bundle.
 const LabPage = lazy(() => import('~/scene/LabPage').then((m) => ({ default: m.LabPage })))
 
-/** The core loop. The brief comes before it, once per project. */
+/** The loop after the brief: the show (one moment at a time), the artist's review, the handoff. */
 export const LOOP: { step: Step; label: string }[] = [
-  { step: 'stills', label: 'Stills' },
-  { step: 'motion', label: 'Motion' },
+  { step: 'show', label: 'Show' },
   { step: 'review', label: 'Review' },
   { step: 'handoff', label: 'Handoff' },
 ]
-
-/** "/" opens the most recently active project, on the step its work is at. */
-function Home() {
-  const { list } = useStore()
-  const latest = list[0]
-  return latest ? <Navigate to={`/p/${latest.meta.id}/${currentStep(latest)}`} replace /> : null
-}
 
 function ProjectLayout() {
   const { projectId = '' } = useParams()
@@ -45,17 +38,20 @@ function StepRedirect() {
 }
 
 export const routes: RouteObject[] = [
-  { path: '/', element: <Home /> },
+  { path: '/', element: <HomePage /> },
   {
     path: '/p/:projectId',
     element: <ProjectLayout />,
     children: [
       { index: true, element: <StepRedirect /> },
       { path: 'brief', element: <BriefPage /> },
-      { path: 'stills', element: <StillsPage /> },
-      { path: 'motion', element: <MotionPage /> },
+      { path: 'show', element: <ShowPage /> },
+      { path: 'm/:song', element: <MomentPage /> },
       { path: 'review', element: <ReviewPage /> },
       { path: 'handoff', element: <HandoffPage /> },
+      // Links from before the moments-first loop.
+      { path: 'stills', element: <Navigate to="../show" replace /> },
+      { path: 'motion', element: <Navigate to="../show" replace /> },
     ],
   },
   ...(import.meta.env.DEV ? [{ path: '/lab', element: <Suspense fallback={null}><LabPage /></Suspense> }] : []),

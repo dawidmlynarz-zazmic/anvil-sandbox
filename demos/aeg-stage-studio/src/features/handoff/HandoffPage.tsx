@@ -17,18 +17,26 @@ import { useState } from 'react'
 import { NewProjectDialog } from '~/app/NewProjectDialog'
 import { revealTop } from '~/lib/reveal'
 import { StillImage } from '~/components/StillImage'
+import { genById, kitStatus, lookFor } from '~/state/show'
 
 /** The end of the loop: everything production needs, once the artist has approved. */
 export function HandoffPage() {
   const navigate = useNavigate()
-  const { brief, rounds, motionStills, clips, status, review, versions, sentVersion, daysSinceBrief, artistRating, approvedStill, exported, exportPackage, path } = useProject()
+  const p = useProject()
+  const { moments, clips, status, review, versions, sentVersion, daysSinceBrief, artistRating, exported, exportPackage, path, generations, set } = p
   const [creating, setCreating] = useState(false)
   const approved = status === 'approved'
-  // One design goes to production: the approved one (older saved projects fall back to the first sent).
-  const all = rounds.flatMap((r) => r.stills)
-  const design = all.find((s) => s.id === (approvedStill ?? motionStills[0]))
-  const stills = design ? [design] : []
+  const setSource = set ? genById(p, set.fromId) : undefined
   const open = review.filter((c) => !c.resolved)
+  const sends = versions.filter((v) => v.summary.startsWith('Sent to the artist')).length
+  const looks = moments.flatMap((m) => {
+    const look = lookFor(p, m.number)
+    const slot = look ? clips[clipKey(look.id, m.number)] : undefined
+    const kit = kitStatus(p, m.number) === 'ready' ? p.kits[m.number] : undefined
+    return look ? [{ moment: m, look, clip: slot?.status === 'ready' ? slot.clip : undefined, kit }] : []
+  })
+  const kitAssets = looks.reduce((n, l) => n + (l.kit?.assets.length ?? 0), 0)
+  const withKits = looks.filter((l) => l.kit).length
 
   if (!approved) {
     return (
@@ -40,12 +48,12 @@ export function HandoffPage() {
           <EmptyStateHeader>
             <EmptyStateTitle>Handoff unlocks on approval</EmptyStateTitle>
             <EmptyStateDescription>
-              Once the artist approves a version, this is where the production team’s package comes together: stills,
-              motion, the cue sheet and the decision log.
+              Once the artist approves the show, this is where the production team’s package comes together: the set,
+              every moment’s look and clip, the cue sheet and the decision log.
             </EmptyStateDescription>
           </EmptyStateHeader>
-          <Button variant="outline" intent="neutral" onClick={() => navigate(path(sentVersion ? 'review' : 'stills'))}>
-            {sentVersion ? 'Go to review' : 'Go to stills'}
+          <Button variant="outline" intent="neutral" onClick={() => navigate(path(sentVersion ? 'review' : 'show'))}>
+            {sentVersion ? 'Go to review' : 'Go to the show'}
           </Button>
         </EmptyState>
       </div>
@@ -62,14 +70,12 @@ export function HandoffPage() {
               <h1 id="handoff-title" tabIndex={-1} className="type-heading-2xl outline-none">
                 Handoff
               </h1>
-              {design && (
-                <Badge tone="success" variant="subtle">
-                  {design.title.split(' · ')[0]} approved
-                </Badge>
-              )}
+              <Badge tone="success" variant="subtle">
+                Show approved
+              </Badge>
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
-              Everything the production team needs to build the approved design, in one package. {GUARDRAIL}
+              Everything the production team needs to build the approved show, in one package. {GUARDRAIL}
             </p>
           </div>
 
@@ -87,8 +93,8 @@ export function HandoffPage() {
               <Icon icon={CheckIcon} />
               <AlertTitle>Sent to the production team</AlertTitle>
               <AlertDescription>
-                {design?.title} is with production: stills, motion, the cue sheet and the decision log. Legal still confirms the
-                pending items below. This is a demo, so nothing left the app.
+                The show is with production: the set, {looks.length} moments with their looks and clips, the cue sheet and the
+                decision log. Legal still confirms the pending items below. This is a demo, so nothing left the app.
               </AlertDescription>
             </Alert>
           )}
@@ -101,8 +107,8 @@ export function HandoffPage() {
               The pilot’s three measures. “Today” is AEG’s current process, to be filled in with the production team.
             </p>
             <WidgetMetricGroup>
-              <WidgetMetricCard label="Concept rounds" value={rounds.length} period="Today: [typical rounds]" />
-              <WidgetMetricCard label="Days to approved design" value={daysSinceBrief} period="Today: [typical weeks]" />
+              <WidgetMetricCard label="Reviews with the artist" value={sends} period={`${generations.length} images explored · today: [typical rounds]`} />
+              <WidgetMetricCard label="Days to approved show" value={daysSinceBrief} period="Today: [typical weeks]" />
               <WidgetMetricCard
                 label="Artist feedback"
                 value={artistRating ? `${artistRating}/5` : 'Not rated'}
@@ -113,15 +119,37 @@ export function HandoffPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Approved design</CardTitle>
-              <CardDescription>The design the artist signed off: {design?.title}.</CardDescription>
+              <CardTitle>The set</CardTitle>
+              <CardDescription>
+                {set && setSource ? `${set.title}, locked from song ${setSource.song} #${setSource.n}. Every moment uses this structure.` : 'The set wasn’t locked: each moment’s look carries its own structure.'}
+              </CardDescription>
+            </CardHeader>
+            {setSource && (
+              <CardContent>
+                <StillImage still={setSource} alt={`The set: ${set?.title}`} className="aspect-[21/9] w-full rounded-lg object-cover" />
+              </CardContent>
+            )}
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Key moments</CardTitle>
+              <CardDescription>The look the artist signed off for each moment, in setlist order.</CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="flex flex-col gap-4">
-                {stills.map((s) => (
-                  <li key={s.id} className="flex flex-col gap-2">
-                    <StillImage still={s} alt={`Approved concept ${s.title}`} className="aspect-video w-full rounded-lg object-cover" />
-                    <span className="type-text-sm-semibold">{s.title}</span>
+              <ul className="grid grid-cols-2 gap-4">
+                {looks.map(({ moment, look, clip, kit }) => (
+                  <li key={moment.number} className="flex flex-col gap-1.5">
+                    <StillImage still={look} alt={`Song ${moment.number} · ${moment.title}: #${look.n}`} className="aspect-video w-full rounded-lg object-cover" />
+                    <span className="type-text-sm-semibold">
+                      Song {moment.number} · {moment.title}
+                    </span>
+                    <span className="text-muted-foreground type-text-xs-normal">
+                      #{look.n} · {look.caption} · {clip ? `clip v${clip.version}` : 'no clip'}
+                    </span>
+                    <span className="text-muted-foreground type-text-xs-normal">
+                      {kit ? `Asset kit: ${kit.assets.length} assets, each with its provenance` : 'No asset kit yet: build it on the moment’s Assets tab'}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -131,7 +159,7 @@ export function HandoffPage() {
           <Card>
             <CardHeader>
               <CardTitle>Cue sheet by song</CardTitle>
-              <CardDescription>For {design?.title.split(' · ')[0]}: lighting, LED content and camera for each key moment, including your edits.</CardDescription>
+              <CardDescription>Lighting, LED content and camera for each key moment, including clip edits.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -144,9 +172,7 @@ export function HandoffPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {brief.moments.map((m) => {
-                    const slot = stills[0] ? clips[clipKey(stills[0].id, m.number)] : undefined
-                    const clip = slot?.status === 'ready' ? slot.clip : undefined
+                  {looks.map(({ moment: m, clip }) => {
                     return (
                       <TableRow key={m.number}>
                         <TableCell className="type-text-sm-medium">
@@ -170,14 +196,14 @@ export function HandoffPage() {
             <Card className="row-span-2">
               <CardHeader>
                 <CardTitle>Decision log</CardTitle>
-                <CardDescription>How the design got here, version by version.</CardDescription>
+                <CardDescription>How the show got here, step by step.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Timeline>
                   {versions.map((v, i) => (
                     <TimelineItem
                       key={v.number}
-                      tone={v.summary.startsWith('Approved') ? 'success' : v.number === sentVersion ? 'agent' : 'neutral'}
+                      tone={/approved/i.test(v.summary) ? 'success' : v.number === sentVersion ? 'agent' : 'neutral'}
                       title={<span className="type-text-xs-medium">{v.summary}</span>}
                       detail={`${v.author} · ${v.time}`}
                       last={i === versions.length - 1}
@@ -217,8 +243,12 @@ export function HandoffPage() {
                 <CardDescription>What the export contains.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-2">
-                <CheckRow>Hi-res concept stills</CheckRow>
-                <CheckRow>Motion previews ({Object.values(clips).filter((c) => c.status === 'ready').length} clips)</CheckRow>
+                <CheckRow>The set and {looks.length} looks, hi-res</CheckRow>
+                <CheckRow>Motion previews ({looks.filter((l) => l.clip).length} clips)</CheckRow>
+                <CheckRow status={withKits === looks.length ? 'included' : 'pending'}>
+                  Asset kits ({kitAssets} assets across {withKits} of {looks.length} moments)
+                </CheckRow>
+                <CheckRow>Provenance for every image and clip</CheckRow>
                 <CheckRow>Cue sheet by song</CheckRow>
                 <CheckRow>Prompt and decision log</CheckRow>
                 <CheckRow status={exported ? 'included' : 'pending'}>Export to [production team’s tools]</CheckRow>

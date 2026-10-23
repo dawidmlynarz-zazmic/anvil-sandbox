@@ -5,9 +5,12 @@ import { Icon, SendIcon } from '@anvil/components/ui/icon'
 import { Textarea } from '@anvil/components/ui/textarea'
 
 export interface SendItem {
+  song: number
   title: string
-  version: number
-  clips: { song: number; title: string; version: number }[]
+  /** The look, e.g. “#6 · Warm light, in haze”. */
+  look: string
+  /** The clip's version, or undefined when it isn't ready. */
+  clip?: number
 }
 
 /** The one step that leaves the building: shows exactly what the artist will get, with an optional note, before sending. */
@@ -26,7 +29,7 @@ export function SendDialog({
 }) {
   const [open, setOpen] = useState(false)
   const [note, setNote] = useState('')
-  const clips = items.reduce((n, i) => n + i.clips.length, 0)
+  const clips = items.filter((i) => i.clip).length
   return (
     <Dialog
       open={open}
@@ -43,30 +46,28 @@ export function SendDialog({
       </DialogTrigger>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Send to {artist}</DialogTitle>
+          <DialogTitle>Send the show to {artist}</DialogTitle>
           <DialogDescription>
-            {artist} sees {items.length === 1 ? 'this concept' : `these ${items.length} concepts`} and {clips === 1 ? 'its clip' : `${clips} clips`}, and can
-            comment on any of them or approve one design.
+            {artist} sees {items.length === 1 ? 'the key moment' : `all ${items.length} key moments`}, each with its look and {clips === items.length ? 'its clip' : `${clips} of ${items.length} clips`}.
+            They can comment on any moment, then approve the show once.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
           <ul className="flex flex-col gap-3">
             {items.map((item) => (
-              <li key={item.title} className="flex flex-col gap-1">
+              <li key={item.song} className="flex flex-col gap-1">
                 <span className="type-text-sm-semibold">
-                  {item.title} <span className="text-muted-foreground type-text-xs-normal">· v{item.version}</span>
+                  Song {item.song} · {item.title}
                 </span>
                 <span className="text-muted-foreground type-text-xs-normal">
-                  {item.clips.length
-                    ? item.clips.map((c) => `song ${c.song} · ${c.title} (clip v${c.version})`).join(', ')
-                    : 'No clips ready yet: the artist sees the still only.'}
+                  Look {item.look} · {item.clip ? `clip v${item.clip}` : 'clip not ready: the artist sees the still only'}
                 </span>
               </li>
             ))}
           </ul>
           <Textarea
             label={`A note for ${artist}`}
-            hint="Optional. e.g. “Two directions for the residency; we lean towards the arch.”"
+            hint="Optional. e.g. “The set stays the same all night; each moment changes its light.”"
             rows={2}
             value={note}
             onChange={(e) => setNote(e.target.value)}

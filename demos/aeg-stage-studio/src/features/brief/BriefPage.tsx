@@ -11,14 +11,13 @@ import { useProject } from '~/state/ProjectContext'
 import { briefReadiness } from '~/state/readiness'
 import { reveal } from '~/lib/reveal'
 import type { BriefSection } from '~/state/types'
-import { ConstraintsCard, SetlistCard, SlotCard, VenueCard, VisualDirectionCard } from './BriefCards'
+import { ConstraintsCard, SlotCard, VenueCard, VisualDirectionCard } from './BriefCards'
 
 const SECTIONS: { key: BriefSection; label: string; Card: () => React.ReactNode }[] = [
   { key: 'venue', label: 'Venue', Card: VenueCard },
   { key: 'slot', label: 'Performance time slot', Card: SlotCard },
   { key: 'visual', label: 'Visual direction', Card: VisualDirectionCard },
   { key: 'constraints', label: 'Constraints', Card: ConstraintsCard },
-  { key: 'moments', label: 'Key moments', Card: SetlistCard },
 ]
 
 /**
@@ -28,11 +27,10 @@ const SECTIONS: { key: BriefSection; label: string; Card: () => React.ReactNode 
 export function BriefPage() {
   const navigate = useNavigate()
   const p = useProject()
-  const { phase, provenance, rounds, currentRound, briefRevision, path, startProject, revealBrief } = p
+  const { phase, provenance, path, momentPath, startProject, revealBrief } = p
   const setup = phase === 'setup'
   const visible = SECTIONS.filter((s) => provenance[s.key] !== 'pending')
   const formOpen = SECTIONS.every((s) => provenance[s.key] !== 'pending')
-  const changed = !!currentRound && currentRound.briefRevision < briefRevision
   // One readiness rule for the checklist, the footer, the rail and the agent.
   const readiness = briefReadiness(p)
 
@@ -58,7 +56,7 @@ export function BriefPage() {
             <p className="text-muted-foreground type-text-sm-normal">
               {setup
                 ? 'The agent is asking you about the show in the chat. Each answer fills in a part of this brief. You can also fill it in yourself.'
-                : 'The reference for every round. Edit it here or ask the agent in the chat. Changes apply to the next round you generate.'}
+                : 'The reference for every moment. Edit it here or ask the agent in the chat. Changes apply to images made from now on.'}
             </p>
           </div>
 
@@ -105,17 +103,17 @@ export function BriefPage() {
               {GUARDRAIL}
             </>
           }
-          status={readiness.ready ? 'Brief ready · creates 4 stage concepts' : `${readiness.left.length} part${readiness.left.length === 1 ? '' : 's'} of the brief to go`}
+          status={readiness.ready ? 'Brief ready · drafts the key moments and explores the first' : `${readiness.left.length} part${readiness.left.length === 1 ? '' : 's'} of the brief to go`}
         >
           <Button
             disabled={!readiness.ready}
             onClick={() => {
-              startProject()
-              navigate(path('stills'))
+              const first = startProject()
+              navigate(first === undefined ? path('show') : momentPath(first))
             }}
           >
             <Icon icon={SparklesIcon} />
-            Start project
+            Build the show
           </Button>
         </StepFooter>
       ) : (
@@ -126,16 +124,9 @@ export function BriefPage() {
               {GUARDRAIL}
             </>
           }
-          status={
-            rounds.length
-              ? changed
-                ? `Brief changed since round ${currentRound!.number}. Generate a new round in Stills to use it.`
-                : `Round ${currentRound!.number} uses this brief`
-              : undefined
-          }
         >
-          <Button onClick={() => navigate(path('stills'))}>
-            Go to stills
+          <Button onClick={() => navigate(path('show'))}>
+            Go to the show
             <Icon icon={ArrowRightIcon} />
           </Button>
         </StepFooter>

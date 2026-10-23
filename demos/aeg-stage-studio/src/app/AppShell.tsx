@@ -6,6 +6,7 @@ import { Icon, MoonIcon, PanelRightIcon, SunIcon } from '@anvil/components/ui/ic
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@anvil/components/ui/resizable'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@anvil/components/ui/sidebar'
 import { ChatPanel } from '~/features/chat/ChatPanel'
+import { statusBadge } from '~/state/project'
 import { useProject } from '~/state/ProjectContext'
 import { AboutDemo } from './AboutDemo'
 import { InviteDialog } from './InviteDialog'
@@ -25,12 +26,6 @@ const readChatWidth = () => {
   }
 }
 
-/** Three plain states, next to the project's name: being worked on, with the artist, or signed off. */
-const STATUS_BADGE = {
-  progress: { tone: 'warning', text: 'In progress' },
-  review: { tone: 'agent', text: 'In review' },
-  approved: { tone: 'success', text: 'Approved' },
-} as const
 
 /**
  * Projects (collapsible, like a chat history) · the project's conversation · the step's work · the loop.
@@ -79,7 +74,7 @@ export function AppShell() {
     }
   }
 
-  const badge = STATUS_BADGE[status === 'approved' ? 'approved' : status === 'awaiting-artist' || status === 'feedback' ? 'review' : 'progress']
+  const badge = statusBadge(status)
 
   return (
     <SidebarProvider defaultOpen={false} className="h-svh min-h-0 min-w-3xl">

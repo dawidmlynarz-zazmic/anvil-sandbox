@@ -1,94 +1,65 @@
-import { Fragment } from 'react'
-import { Link, NavLink, useLocation, useSearchParams } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { Timeline, TimelineItem, type TimelineTone } from '@anvil/components/anvil/timeline'
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '@anvil/components/ui/item'
-import {
-  CheckIcon,
-  ClapperboardIcon,
-  ClipboardCheckIcon,
-  FileTextIcon,
-  Icon,
-  ImageIcon,
-  PackageIcon,
-  RotateCcwIcon,
-  type LucideIcon,
-} from '@anvil/components/ui/icon'
+import { CheckIcon, ClipboardCheckIcon, FileTextIcon, Icon, LayoutListIcon, PackageIcon, RotateCcwIcon, type LucideIcon } from '@anvil/components/ui/icon'
+import { looksChosen } from '~/state/project'
 import { briefReadiness } from '~/state/readiness'
 import { useProject } from '~/state/ProjectContext'
+import { momentStatus } from '~/state/show'
 import { LOOP } from './routes'
 
-const ICONS: LucideIcon[] = [ImageIcon, ClapperboardIcon, ClipboardCheckIcon, PackageIcon]
+const ICONS: LucideIcon[] = [LayoutListIcon, ClipboardCheckIcon, PackageIcon]
 
 const subLink =
-  'focus-visible:focus-ring inline-flex min-h-6 items-center rounded-sm px-0.5 underline underline-offset-4 outline-none hover:text-foreground aria-[current=true]:text-foreground aria-[current=true]:type-text-xs-medium'
+  'focus-visible:focus-ring inline-flex min-h-6 items-center gap-1 rounded-sm px-0.5 underline underline-offset-4 outline-none hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:type-text-xs-medium'
 
 /**
- * Where the project stands. The brief sits above the loop; the loop (Stills → Motion → Review → Handoff) is
- * what repeats, version after version. Underneath: the project's history.
+ * Where the project stands. The brief sits above the loop; the loop is the show (moment by moment), the artist's
+ * review and the handoff. Underneath: the project's history.
  */
 export function LoopRail() {
   const { pathname } = useLocation()
-  const [params] = useSearchParams()
   const p = useProject()
-  const { phase, brief, rounds, selected, motionStills, clips, status, review, sentVersion, versions, path } = p
-  const stills = rounds.flatMap((r) => r.stills)
-  const latest = rounds.at(-1)
-  const readyClips = Object.values(clips).filter((c) => c.status === 'ready').length
+  const { phase, moments, status, review, sentVersion, versions, set, path, momentPath } = p
   const setup = phase === 'setup'
+  const chosen = looksChosen(p)
   const changesRequested = status === 'draft' && sentVersion !== null
+  const readiness = briefReadiness(p)
 
-  const done = [motionStills.length > 0, sentVersion !== null, status === 'approved', false]
+  const done = [!setup && moments.length > 0 && chosen === moments.length, sentVersion !== null, status === 'approved']
   const detail = [
-    rounds.length ? (
-      <>
+    setup ? (
+      'Starts when the brief is ready'
+    ) : (
+      <span className="flex flex-col gap-1">
         {changesRequested && (
           <span className="text-agent dark:text-agent-medium flex items-center gap-1">
             <Icon icon={RotateCcwIcon} size="xs" />
             Back here for the artist’s changes
           </span>
         )}
-        {selected.length} selected ·{' '}
-        {[...rounds].reverse().map((r, i) => (
-          <Fragment key={r.number}>
-            {i > 0 && ', '}
-            <Link
-              to={path('stills', `round=${r.number}`)}
-              className={subLink}
-              aria-current={pathname.endsWith('/stills') && (Number(params.get('round')) || latest?.number) === r.number}
-            >
-              Round {r.number}
-            </Link>
-          </Fragment>
-        ))}
-      </>
-    ) : setup ? (
-      'Starts when the brief is ready'
-    ) : (
-      'No rounds yet'
-    ),
-    motionStills.length ? (
-      <>
-        {readyClips} {readyClips === 1 ? 'clip' : 'clips'} ready ·{' '}
-        {motionStills.map((id, i) => (
-          <Fragment key={id}>
-            {i > 0 && ', '}
-            <Link
-              to={path('motion', `concept=${id}`)}
-              className={subLink}
-              aria-current={pathname.endsWith('/motion') && (params.get('concept') ?? motionStills[0]) === id}
-            >
-              {stills.find((s) => s.id === id)?.title.split(' · ')[0] ?? id}
-            </Link>
-          </Fragment>
-        ))}
-      </>
-    ) : (
-      'Nothing in motion yet'
+        <span>
+          {chosen} of {moments.length} looks · {set ? 'set locked' : 'set not locked'}
+        </span>
+        {/* The timeline's detail is a paragraph: one link per line, no list inside it. */}
+        <span className="flex flex-col">
+          {moments.map((m) => {
+            const ok = momentStatus(p, m.number) === 'chosen'
+            const to = momentPath(m.number)
+            return (
+              <Link key={m.number} to={to} className={`${subLink} self-start`} aria-current={pathname === to || pathname.endsWith(`/m/${m.number}`) ? 'page' : undefined}>
+                {ok && <Icon icon={CheckIcon} size="xs" label="Look chosen" />}
+                Song {m.number} · {m.title}
+              </Link>
+            )
+          })}
+        </span>
+      </span>
     ),
     status === 'approved'
       ? 'Approved'
       : status === 'awaiting-artist'
-        ? 'Waiting for the artist'
+        ? 'With the artist'
         : status === 'feedback'
           ? `${review.filter((c) => !c.resolved).length} open comments from the artist`
           : changesRequested
@@ -98,7 +69,6 @@ export function LoopRail() {
   ]
 
   const sends = versions.filter((v) => v.summary.startsWith('Sent to the artist')).length
-  const version = sends ? `Review ${sends}` : rounds.length ? `Round ${rounds.length}` : 'Not started'
 
   return (
     <aside aria-label="Project progress" className="border-border relative flex h-full w-64 shrink-0 flex-col gap-4 overflow-y-auto border-s p-4">
@@ -110,9 +80,7 @@ export function LoopRail() {
           <ItemContent>
             <ItemTitle>Brief</ItemTitle>
             <ItemDescription>
-              {setup
-                ? `Setting up · ${briefReadiness(p).done} of ${briefReadiness(p).total} done`
-                : `${brief.keywords.length} keyword${brief.keywords.length === 1 ? '' : 's'} · ${brief.moments.length} key moment${brief.moments.length === 1 ? '' : 's'}`}
+              {setup ? `Setting up · ${readiness.done} of ${readiness.total} done` : `${p.brief.keywords.length} keyword${p.brief.keywords.length === 1 ? '' : 's'} · stage and slot set`}
             </ItemDescription>
           </ItemContent>
         </NavLink>
@@ -120,12 +88,12 @@ export function LoopRail() {
 
       <div className="flex items-baseline justify-between">
         <h2 className="type-text-sm-semibold">The loop</h2>
-        <span className="text-muted-foreground type-text-xs-normal">{version}</span>
+        <span className="text-muted-foreground type-text-xs-normal">{sends ? `Review ${sends}` : setup ? 'Not started' : 'Designing'}</span>
       </div>
       <nav aria-label="Steps">
         <Timeline>
           {LOOP.map((s, i) => {
-            const current = pathname.endsWith(`/${s.step}`)
+            const current = pathname.endsWith(`/${s.step}`) || (s.step === 'show' && /\/m\/\d+$/.test(pathname))
             const tone: TimelineTone = done[i] ? 'success' : current ? 'agent' : 'neutral'
             return (
               <TimelineItem
@@ -150,7 +118,6 @@ export function LoopRail() {
         </Timeline>
       </nav>
 
-
       {versions.length > 0 && (
         <section aria-labelledby="history-title" className="flex flex-col gap-2">
           <h2 id="history-title" className="type-text-sm-semibold">
@@ -163,7 +130,7 @@ export function LoopRail() {
               .map((v, i, all) => (
                 <TimelineItem
                   key={v.number}
-                  tone={v.number === sentVersion ? 'agent' : v.summary.startsWith('Approved') ? 'success' : 'neutral'}
+                  tone={v.number === sentVersion ? 'agent' : /approved/i.test(v.summary) ? 'success' : 'neutral'}
                   title={<span className="type-text-xs-medium">{v.summary}</span>}
                   detail={`${v.author} · ${v.time}`}
                   last={i === all.length - 1}

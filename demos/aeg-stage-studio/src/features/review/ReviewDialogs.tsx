@@ -17,15 +17,13 @@ import { CheckIcon, Icon, RotateCcwIcon } from '@anvil/components/ui/icon'
 import { Rating } from '@anvil/components/agent/rating'
 import type { ReviewComment } from '~/state/types'
 
-/** Pick which open comments the next round should address, then start it. */
+/** Pick which open comments to take on, then go back to the show to rework those moments. */
 export function RequestChangesDialog({
   open,
-  nextRound,
   disabled,
   onConfirm,
 }: {
   open: ReviewComment[]
-  nextRound: number
   disabled?: boolean
   onConfirm: (ids: string[]) => void
 }) {
@@ -42,12 +40,13 @@ export function RequestChangesDialog({
         <DialogHeader>
           <DialogTitle>Request changes</DialogTitle>
           <DialogDescription>
-            Choose the comments round {nextRound} should address. Comments you leave out stay open here.
+            Choose the comments to take on. A comment on a look starts new images for that moment; a comment on a clip edits
+            the clip. Comments you leave out stay open here.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
           {open.length === 0 ? (
-            <p className="text-muted-foreground type-text-sm-normal">All comments are resolved. The next round will start from your current selection.</p>
+            <p className="text-muted-foreground type-text-sm-normal">All comments are resolved. Nothing to take on.</p>
           ) : (
             <ul className="flex flex-col gap-3">
               {open.map((c) => (
@@ -62,7 +61,7 @@ export function RequestChangesDialog({
                       <span className="type-text-sm-semibold">{c.number}.</span> {c.text}
                       <span className="text-muted-foreground type-text-xs-normal">
                         {' '}
-                        · {c.target.kind === 'clip' ? `song ${c.target.song} clip` : 'on the image'}
+                        · song {c.song} {c.target.kind === 'clip' ? 'clip' : 'look'}
                       </span>
                     </span>
                   </label>
@@ -72,9 +71,8 @@ export function RequestChangesDialog({
           )}
         </DialogBody>
         <DialogFooter>
-          <Button onClick={() => onConfirm(chosen)}>
-            Start round {nextRound}
-            {chosen.length ? ` with ${chosen.length} comment${chosen.length === 1 ? '' : 's'}` : ''}
+          <Button disabled={!chosen.length} onClick={() => onConfirm(chosen)}>
+            Request changes{chosen.length ? ` with ${chosen.length} comment${chosen.length === 1 ? '' : 's'}` : ''}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -82,7 +80,7 @@ export function RequestChangesDialog({
   )
 }
 
-/** Approves the design on screen (one design goes to production). Straight away when everything is resolved; otherwise confirm first. */
+/** Approves the whole show for production. Straight away when everything is resolved; otherwise confirm first. */
 export function ApproveButton({ name, openCount, disabled, onApprove }: { name: string; openCount: number; disabled?: boolean; onApprove: () => void }) {
   const button = (
     <Button disabled={disabled} onClick={openCount ? undefined : onApprove}>
@@ -112,7 +110,7 @@ export function ApproveButton({ name, openCount, disabled, onApprove }: { name: 
   )
 }
 
-/** Artist preview: approving asks how close the design is to their vision (the “artist feedback” measure). */
+/** Artist preview: approving the show asks how close it is to their vision (the “artist feedback” measure). */
 export function ArtistApproveDialog({ name, disabled, onApprove }: { name: string; disabled?: boolean; onApprove: (rating: number) => void }) {
   const [rating, setRating] = useState<number | undefined>()
   return (
@@ -120,13 +118,13 @@ export function ArtistApproveDialog({ name, disabled, onApprove }: { name: strin
       <DialogTrigger asChild>
         <Button disabled={disabled}>
           <Icon icon={CheckIcon} />
-          Approve {name.split(' · ')[0]}
+          Approve {name}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Approve {name}</DialogTitle>
-          <DialogDescription>This design goes to the production team. One question first.</DialogDescription>
+          <DialogDescription>Every moment, with its look and clip, goes to the production team. One question first.</DialogDescription>
         </DialogHeader>
         <DialogBody>
           <Rating

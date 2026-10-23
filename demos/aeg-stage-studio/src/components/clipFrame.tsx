@@ -2,22 +2,24 @@ import { lazy, Suspense } from 'react'
 import { useStageImage } from '~/scene/useStageImage'
 import { canRenderWebGL } from '~/scene/webgl'
 import { compareLight, momentLight } from '~/services/light'
-import type { Brief, MotionClip, Still, TimeOfDay } from '~/state/types'
+import { moveOf } from '~/services/generation'
+import type { Brief, MotionClip, TimeOfDay } from '~/state/types'
+import type { Pictured } from './StillImage'
 
 const LiveStage = lazy(() => import('~/scene/LiveStage'))
 
 const LABEL: Record<TimeOfDay, string> = { daylight: 'Daylight', 'golden-hour': 'Golden hour', night: 'Night' }
 
 /**
- * How a clip is drawn live: the concept's 3D stage in the light its song plays in (from the brief's time slot;
- * covered venues are always night), with the camera move from its cue. A plain-words edit slows it.
+ * How a clip is drawn live: the look's 3D stage in the light its song plays in (from the brief's time slot; covered
+ * venues are always night), with the camera move from its cue. A plain-words edit slows it.
  */
-export function clipFrame(still: Still | undefined, clip: MotionClip | undefined, brief: Brief) {
-  if (!still?.spec || !clip || !canRenderWebGL()) return undefined
-  const spec = still.spec
+export function clipFrame(look: Pictured | undefined, clip: MotionClip | undefined, brief: Brief) {
+  if (!look || !clip || !canRenderWebGL()) return undefined
+  const spec = look.spec
   const main = momentLight(brief, clip.momentNumber)
   const other = compareLight(brief, main)
-  const cue = clip.momentNumber % 3
+  const cue = moveOf(clip)
   const pace = clip.edits.length ? 0.7 : 1
   return {
     labels: [LABEL[main], LABEL[other ?? main]] as [string, string],
@@ -31,10 +33,10 @@ export function clipFrame(still: Still | undefined, clip: MotionClip | undefined
   }
 }
 
-/** A key moment's thumbnail: the concept's 3D still in that song's light (undefined while it renders), or the clip's 2D poster without WebGL. */
+/** A key moment's thumbnail: the look's 3D still in that song's light (undefined while it renders), or 2D art without WebGL. */
 // eslint-disable-next-line react-refresh/only-export-components
-export function useMomentThumb(still: Still | undefined, brief: Brief, song: number, fallback?: string) {
-  const spec = still?.spec ? { ...still.spec, timeOfDay: momentLight(brief, song) } : undefined
+export function useMomentThumb(look: Pictured | undefined, brief: Brief, song: number, fallback?: string) {
+  const spec = look ? { ...look.spec, timeOfDay: momentLight(brief, song) } : undefined
   const rendered = useStageImage(spec)
-  return rendered ?? (spec && canRenderWebGL() ? undefined : fallback)
+  return rendered ?? (spec && canRenderWebGL() ? undefined : (fallback ?? look?.image))
 }

@@ -1,14 +1,14 @@
-import { initialBrief } from '~/mocks/project'
-import { venues, venuesFor } from '~/mocks/venues'
-import { slotNote } from './light'
+import { venues, venuesFor, isCovered } from '~/mocks/venues'
+import { lightAt, setTimes, slotNote } from './light'
 import { formatShowDate, showDateFor, weekdayOf } from '~/lib/time'
-import type { Brief, BriefSection } from '~/state/types'
+import type { Brief, BriefSection, SetlistMoment } from '~/state/types'
 
 // A new project's brief, in two parts.
 // 1. The opening card (Anvil Clarifying Question): three choices that set up most of the brief at once. Each has a
 //    sensible default the agent suggests if you skip it.
-// 2. Then, one at a time in the chat, what can't be a fixed choice: the key moments (required; the agent can
-//    suggest them from the setlist) and the artist's no-gos (optional).
+// 2. Then, in the chat, the artist's no-gos (optional).
+// Key moments aren't part of the brief: they're the show itself. The agent drafts them from the setlist when you build
+// the show, and you shape them on the show board.
 // Artist and event are project details, set when the project is created. The show date, budget band and venue rules
 // are filled in by the agent and editable in the brief.
 
@@ -38,7 +38,7 @@ export function profileQuestions(event: string): ProfileQuestion[] {
       id: 'venue',
       title: 'Which stage?',
       kind: 'select',
-      options: ordered.map((v) => ({ value: v.name, label: `${v.name} · ${v.kind.toLowerCase()}${v.event ? ` (${v.event})` : ''}` })),
+      options: ordered.map((v) => ({ value: v.name, label: `${v.name} · ${v.event ? `${v.event} ${v.kind.toLowerCase()}` : `${v.kind.toLowerCase()}, ${v.city}`}` })),
     },
     {
       id: 'slot',
@@ -71,20 +71,15 @@ export function answeredQuestions(event: string, answers: Record<string, string 
 /** The questions asked one at a time in the chat, after the opening card. */
 export const QUESTIONS: { section: BriefSection; ask: string; suggestions: string[]; optional?: boolean }[] = [
   {
-    section: 'moments',
-    ask: 'Which songs are the key moments, where the stage should do something memorable? List them like “3 Opening, 14 Crowd split”, or let me suggest some from the setlist.',
-    suggestions: ['Suggest from the setlist'],
-  },
-  {
     section: 'constraints',
     optional: true,
-    ask: 'Last one, optional: is there anything the artist never wants to see? I’ve already loaded the venue’s rules.',
+    ask: 'One more, optional: is there anything the artist never wants to see? I’ve already loaded the venue’s rules.',
     suggestions: ['No strobe above 3 Hz', 'Nothing beyond the venue rules'],
   },
 ]
 
 export const DONE_TEXT =
-  'The brief is ready. Check it in the middle, change anything you like, then start the project. I’ll generate the first four concepts straight away.'
+  'The brief is ready. Check it in the middle, change anything you like, then build the show. I’ll draft the key moments from the setlist and start exploring the first one.'
 
 const DAYS = /(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -100,10 +95,14 @@ export function applyAnswer(
   const text = answer.trim()
   switch (section) {
     case 'venue': {
-      const venue = venues.find((v) => text.toLowerCase().includes(v.name.toLowerCase().split(' ')[0]!.toLowerCase())) ?? venues[0]!
+      const lower = text.toLowerCase()
+      const venue =
+        venues.find((v) => lower.includes(v.name.toLowerCase())) ??
+        venues.find((v) => lower.includes(v.name.toLowerCase().replace(/^the /, '').split(' ')[0]!)) ??
+        venues[0]!
       return {
         patch: { venueId: venue.id },
-        summary: `Venue: ${venue.name} (${venue.kind.toLowerCase()}). Its technical specs will come from AEG’s venue library; for now they show as placeholders.`,
+        summary: `Venue: ${venue.name}, ${venue.city}${venue.capacity ? ` (capacity ${venue.capacity})` : ''}. Its technical specs are samples until AEG’s venue library is connected.`,
       }
     }
     case 'slot': {
@@ -116,7 +115,7 @@ export function applyAnswer(
       const note = slotNote({ ...brief, slot })
       return {
         patch: { slot: { ...slot, note } },
-        summary: `Slot: ${date ? formatShowDate(date) : day}, ${slot.time}, ${slot.length}. ${note}, so I’ll light the concepts for that. Change the date or time in the brief if it’s not right.`,
+        summary: `Slot: ${date ? formatShowDate(date) : day}, ${slot.time}, ${slot.length}. ${note}, so I’ll light every moment for that. Change the date or time in the brief if it’s not right.`,
       }
     }
     case 'visual': {
@@ -129,19 +128,25 @@ export function applyAnswer(
       const constraints = { ...brief.constraints, noGo: none ? brief.constraints.noGo : text }
       return { patch: { constraints }, summary: none ? 'No extra no-gos. I kept the venue rules.' : `Added to the no-go list: ${text}.` }
     }
-    case 'moments': {
-      const listed = [...text.matchAll(/(\d{1,2})\s*[:\-–]?\s*([^,;\d]+)/g)].map((m) => ({
-        number: Number(m[1]),
-        title: cap(m[2]!.trim()),
-        intent: 'No direction yet',
-      }))
-      const moments = listed.length ? listed.sort((a, b) => a.number - b.number) : initialBrief.moments
-      return {
-        patch: { moments },
-        summary: listed.length
-          ? `Key moments: ${moments.map((m) => `song ${m.number}`).join(', ')}.`
-          : `I picked four key moments from the setlist: ${moments.map((m) => `${m.number} ${m.title}`).join(', ')}.`,
-      }
-    }
   }
+}
+
+const OPEN_AIR: SetlistMoment[] = [
+  { number: 3, title: 'Opening reveal', intent: 'Slow build from silhouette' },
+  { number: 7, title: 'Sunset drop', intent: 'LED wall peaks with the sun' },
+  { number: 14, title: 'Crowd split', intent: 'Stage opens in two halves' },
+  { number: 18, title: 'Finale', intent: 'Full-stage light wash' },
+]
+
+const AFTER_DARK: SetlistMoment[] = [
+  { number: 2, title: 'Cold open', intent: 'Single white beam, then the wall lights up' },
+  { number: 6, title: 'First drop', intent: 'Strobe-free pulse across the LED wall' },
+  { number: 11, title: 'Ballad', intent: 'Everything dims to one warm spot' },
+  { number: 15, title: 'Encore', intent: 'The rig lowers over the crowd' },
+]
+
+/** Key moments the agent drafts from the setlist (mocked): sunset moments for an open-air set that sees the sun go down. */
+export function draftMoments(brief: Brief): SetlistMoment[] {
+  const sunset = !isCovered(brief.venueId) && lightAt(setTimes(brief).start) !== 'night'
+  return sunset ? OPEN_AIR : AFTER_DARK
 }

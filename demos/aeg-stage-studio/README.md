@@ -20,20 +20,31 @@ Consumed read-only from the sibling clone `~/anvil-ui` (override the path with `
 
 ## How the app is organised
 
-- **Projects** (left, collapsible like a chat history): one per show. Each has its own brief, loop and conversation.
-  The demo opens on a new, empty project brief (the first use case), with three sample projects further along in the
-  list; **Reset the demo** at the bottom of the list restores that starting point.
-- **New project** asks for the artist and event, then the agent opens the brief with three questions in one card
-  (stage, roughly when, the look), then asks for the key moments and any no-gos. **Start project** generates round 1.
-- **The loop**: Stills → Motion → Review → Handoff, repeated version after version. The right rail shows where the
-  project stands, the next step and the history.
-- State is kept in `sessionStorage`: a reload keeps the demo where it was; a new tab starts fresh.
+The show is designed one key moment (a song) at a time, on one shared set. See `docs/plan-moments.md`.
+
+- **Home** (`/`): every project as a card, plus **New project**. The sidebar keeps the projects at hand inside a
+  project; **Reset the demo** at its bottom restores the seeded start.
+- **Brief**: the agent asks three questions in one card (stage, roughly when, the look), then any no-gos. Venues are
+  real AEG venues and festival stages, with the facts aegworldwide.com publishes; technical specs are labelled samples.
+  **Build the show** drafts the key moments from the setlist and starts exploring the first.
+- **Show board** (`/show`): the set, every key moment in setlist order (its light, look and status), running metrics,
+  and **Send the show to the artist** once every moment has a look.
+- **Moment page** (`/m/:song`): explore in batches (new directions, more like this, other angles, other light), pin,
+  compare any two to four, change an image in words or with pinned notes (each change is a new image, with its
+  lineage), choose the look, lock the set from it, and check the moment's clip. The **Assets** tab builds the moment's
+  kit from its look: angles, light states and motion variants, each with its provenance (LED loops and performer
+  stand-ins are listed as coming with the pilot models).
+- **Preview the show** (on the show board) plays every moment's clip in setlist order.
+- **Review**: the artist comments per moment (on the look or the clip) and approves the show once. **Request changes**
+  starts new looks for the moments they commented on.
+- **Handoff**: the set, each moment's look, clip and asset kit, the cue sheet, the decision log, rights and the package.
+- State is kept in `sessionStorage` (key `stage-studio:v3`): a reload keeps the demo where it was; a new tab starts fresh.
 
 ## Concept images
 
-Concepts are rendered in the browser as real 3D scenes (three.js via React Three Fiber, in `src/scene/`): the stage,
-its concept (arch, monolith, ribbons, halo), sky, haze, light beams and a crowd, lit for the chosen time of day and
-seen from the chosen camera view. Stills are rendered once off-screen and cached for the session; Motion renders the
+Stage images are rendered in the browser as real 3D scenes (three.js via React Three Fiber, in `src/scene/`): the stage,
+its concept (arch, monolith, ribbons, halo), sky, haze, light beams and a crowd, lit for the light each moment plays in and
+seen from the chosen camera view. Images are rendered once off-screen and cached for the session; clips render the
 scene live, with the cue's camera move. No API key or network is needed. Without WebGL the app falls back to flat 2D
 art. `/lab` (development only) shows the scenes side by side for tuning.
 

@@ -12,7 +12,8 @@ interface StoreState {
 
 type StoreAction = { type: 'create'; project: ProjectState } | { type: 'in'; id: string; action: Action } | { type: 'reset'; state: StoreState }
 
-const KEY = 'stage-studio:v1'
+// v3: moments-first with asset kits. Older saved demos are dropped, not migrated.
+const KEY = 'stage-studio:v3'
 
 function reducer(state: StoreState, action: StoreAction): StoreState {
   switch (action.type) {
@@ -37,7 +38,7 @@ const FIRST_SHOW = { artist: 'Juniper Cole', event: 'Stagecoach 2027' }
 const opening = (id: number, show: { artist: string; event: string }): ChatTurn => ({
   id,
   role: 'assistant',
-  text: `Let’s set up the brief for ${show.artist} at ${show.event}. Three quick questions to start; skip any and I’ll suggest something.`,
+  text: `Let’s set up the brief for ${show.artist} at ${show.event}. Three quick questions to start; skip any and I’ll suggest something. Then I’ll draft the show’s key moments with you.`,
   profile: 'ask',
 })
 

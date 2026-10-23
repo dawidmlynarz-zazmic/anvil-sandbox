@@ -5,10 +5,24 @@ export type StageView = 'front-of-house' | 'back-of-field' | 'livestream-cam'
 export interface Venue {
   id: string
   name: string
+  /** “Arena”, “Festival main stage”, “Festival tent”. */
   kind: string
+  /** The festival a stage belongs to (Coachella, Stagecoach…), for festival stages. */
+  event?: string
+  /** Tents and arenas have a roof: always lit as night. */
+  covered?: boolean
+  city: string
+  /** Facts as AEG publishes them (aegworldwide.com). Missing where AEG doesn't publish them. */
+  capacity?: string
+  opened?: string
+  about?: string
+  /** Where the facts come from. */
+  source: string
+  /** Sample technical specs, labelled as samples until AEG supplies the real ones. */
   specs: { stageWidth: string; ledWall: string; rigging: string; model3d: string }
 }
 
+/** A key moment: one song where the stage does something memorable. The unit the show is designed in. */
 export interface SetlistMoment {
   number: number
   title: string
@@ -17,12 +31,11 @@ export interface SetlistMoment {
 
 export interface Brief {
   venueId: string
-  /** `date` is the show day ("2027-04-17"); `day` is its weekday, kept for older saved briefs. */
+  /** `date` is the show day ("2027-04-17"); `day` is its weekday. */
   slot: { day: string; date?: string; time: string; length: string; note: string }
   keywords: string[]
   referenceCount: number
   constraints: { budget: string; venueRules: string; noGo: string }
-  moments: SetlistMoment[]
 }
 
 export interface BriefInput {
@@ -30,59 +43,12 @@ export interface BriefInput {
   attachments?: string[]
 }
 
-export interface StillsRequest {
-  round: number
-  /** The project id, so concepts in different projects never share ids or images. */
-  project?: string
-  timeOfDay: TimeOfDay
-  crowd: Crowd
-  view: StageView
-}
-
-export interface Still {
-  id: string
-  round: number
-  /** Concept letter, A–D. */
-  concept: string
-  title: string
-  /** 2D fallback art, shown until (or instead of) the 3D render. */
-  image: string
-  /** What the 3D renderer draws for this concept. Missing on concepts saved before the 3D renderer existed. */
-  spec?: StillSpec
-  /** This concept's version (1 when first generated). Refine, regenerate and variations make the next one. */
-  version?: number
-  /** What produced this version, in words: “Sharper top edge”, “Regenerated”. */
-  change?: string
-  /** Earlier versions, oldest first. */
-  history?: StillVersion[]
-  /** The user said “not this direction”: kept, greyed out, and avoided by the next round. */
-  dismissed?: boolean
-  /** “More like this”: three candidates waiting to be picked, or still being made. */
-  variants?: StillSpec[] | 'generating'
-  /** Work in progress on this concept. */
-  busy?: 'refining' | 'regenerating'
-  /** Changes the user has noted but not applied yet; applying them makes the next version. */
-  annotations?: Annotation[]
-  /** This design has been reworked since it was first generated (drives the brief check). */
-  reworked?: boolean
-}
-
-/** A change to make, pinned to a spot on the image (x, y: 0–100) or about the whole concept. */
+/** A change to make, pinned to a spot on the image (x, y: 0–100) or about the whole image. */
 export interface Annotation {
   number: number
   text: string
   x?: number
   y?: number
-}
-
-export interface StillVersion {
-  version: number
-  image: string
-  spec?: StillSpec
-  change?: string
-  /** The annotations that produced the version after this one. */
-  annotations?: Annotation[]
-  reworked?: boolean
 }
 
 export type ConceptShape = 'arch' | 'monolith' | 'ribbons' | 'halo'
@@ -100,10 +66,10 @@ export interface StageTweaks {
   brightness?: number
 }
 
-/** The 3D stage a concept shows. Mirrors the renderer's StageSpec without importing three.js into state. */
+/** The 3D stage an image shows. Mirrors the renderer's StageSpec without importing three.js into state. */
 export interface StillSpec {
   concept: ConceptShape
-  /** A second centrepiece, for a concept that combines two (e.g. an arch around a monolith). */
+  /** A second centrepiece, for a design that combines two (e.g. an arch around a monolith). */
   with?: ConceptShape
   timeOfDay: TimeOfDay
   crowd: Crowd
@@ -112,23 +78,82 @@ export interface StillSpec {
   tweaks?: StageTweaks
 }
 
-export interface Round {
-  number: number
-  note: string
-  settings: Omit<StillsRequest, 'round'>
-  stills: Still[]
-  done: boolean
-  /** The brief revision this round was generated from, so the app can tell when the brief has moved on. */
-  briefRevision: number
+/** What made a generation: a batch the agent explored, or one change to one image. */
+export type GenSource = 'directions' | 'more' | 'angles' | 'light' | 'edit' | 'take'
+
+/**
+ * One image explored for a key moment. Generations are never replaced: a change makes a child (`parentId`), so the
+ * whole exploration stays browsable, comparable and branchable.
+ */
+export interface Generation {
+  id: string
+  /** The key moment (song number) it was explored for. */
+  song: number
+  /** Running number within the moment: “#12”. */
+  n: number
+  /** Which batch it came in. Batches are the moment's rounds of exploration, newest last. */
+  batch: number
+  parentId?: string
+  source: GenSource
+  /** “Open-air arch”, or “Open-air arch with monolith”. */
+  title: string
+  /** What's different about it, in a few words: “Wider and raised”, “Back of field”. */
+  caption: string
+  spec: StillSpec
+  /** 2D fallback art for browsers without WebGL. */
+  image: string
+  /** Who asked for it: the agent exploring, or you (a change, a batch you started). */
+  author: 'agent' | 'you'
+  /** Set aside: “not this direction”. Kept, greyed out, and left out of later batches. */
+  dismissed?: boolean
+  /** Changes noted on it, not yet applied; applying makes a child. */
+  annotations?: Annotation[]
+  /** Reworked from an earlier design: clears the brief check's first-design risk. */
+  reworked?: boolean
+  /** When it was made (clock time), for its provenance. */
+  at?: string
+}
+
+export type AssetKind = 'angle' | 'light' | 'motion'
+
+/**
+ * One deliverable in a moment's asset kit, made from its look: the look from another camera position, in another light
+ * state, or in motion with another camera move. Kits are what production and content teams build from.
+ */
+export interface Asset {
+  id: string
+  kind: AssetKind
+  /** “Back of field”, “Night”, “Slow push-in”. */
+  title: string
+  /** What it shows, for stills (angles and light states). */
+  spec?: StillSpec
+  /** The clip, for motion variants. */
+  clip?: MotionClip
+  model: string
+  prompt: string
+  at: string
+}
+
+/** A moment's asset kit, built from one look. When the look changes, the kit is out of date until it's rebuilt. */
+export interface Kit {
+  lookId: string
+  assets: Asset[]
+}
+
+/** The show's physical set: the structure every moment shares once it's locked. */
+export interface ShowSet {
+  /** The generation the set was taken from. */
+  fromId: string
+  concept: ConceptShape
+  with?: ConceptShape
+  /** Structure only: size and height. Palette, haze and brightness stay free per moment. */
+  width: number
+  lift: number
+  title: string
 }
 
 /** draft → awaiting-artist (sent, no reply yet) → feedback (the artist commented) → approved. Request changes goes back to draft. */
 export type ProjectStatus = 'draft' | 'awaiting-artist' | 'feedback' | 'approved'
-
-export interface MotionRequest {
-  stillId: string
-  momentNumber: number
-}
 
 export interface MotionClip {
   id: string
@@ -142,6 +167,8 @@ export interface MotionClip {
   version: number
   /** Plain-language edits applied so far, oldest first. */
   edits: string[]
+  /** The camera move (0 crane up, 1 slow push-in, 2 locked wide). Defaults to the song's own. */
+  move?: number
 }
 
 export type ClipSlot =
@@ -163,14 +190,6 @@ export interface ChatTurn {
    * the answers given (question id → chosen option, or null when skipped).
    */
   profile?: 'ask' | Record<string, string | null>
-}
-
-export interface StillComment {
-  id: number
-  stillId: string
-  text: string
-  /** The round the note was written in. Once a later round exists, the note has been used. */
-  round: number
 }
 
 export const TIME_LABEL: Record<TimeOfDay, string> = {
@@ -203,18 +222,20 @@ export interface Thinking {
   seconds?: number
 }
 
-/** A comment from the artist: pinned on a concept image, or on one song's motion clip. */
+/** A comment from the artist on one key moment: pinned on its look, or on its clip. */
 export interface ReviewComment {
   id: string
   number: number
-  stillId: string
-  target: { kind: 'concept'; x: number; y: number } | { kind: 'clip'; song: number }
+  song: number
+  /** The look it was written on. */
+  genId: string
+  target: { kind: 'look'; x: number; y: number } | { kind: 'clip' }
   author: string
   time: string
   text: string
   resolved: boolean
-  /** The round that took this comment on (Request changes), shown as “Addressed in round N”. */
-  addressedIn?: number
+  /** Taken into changes (Request changes), shown as “Changes requested”. */
+  addressed?: boolean
 }
 
 /** One entry in the project's real history. Numbers count up from v1 as things happen. */
@@ -225,4 +246,4 @@ export interface Version {
   time: string
 }
 
-export type BriefSection = 'venue' | 'slot' | 'visual' | 'constraints' | 'moments'
+export type BriefSection = 'venue' | 'slot' | 'visual' | 'constraints'
