@@ -23,8 +23,8 @@ Consumed read-only from the sibling clone `~/anvil-ui` (override the path with `
 - **Projects** (left, collapsible like a chat history): one per show. Each has its own brief, loop and conversation.
   The demo opens on a new, empty project brief (the first use case), with three sample projects further along in the
   list; **Reset the demo** at the bottom of the list restores that starting point.
-- **New project** starts with the agent's brief interview (six questions). The brief fills in as you answer;
-  **Start project** generates round 1.
+- **New project** asks for the artist and event, then the agent opens the brief with three questions in one card
+  (stage, roughly when, the look), then asks for the key moments and any no-gos. **Start project** generates round 1.
 - **The loop**: Stills → Motion → Review → Handoff, repeated version after version. The right rail shows where the
   project stands, the next step and the history.
 - State is kept in `sessionStorage`: a reload keeps the demo where it was; a new tab starts fresh.
