@@ -1,0 +1,86 @@
+/*
+ * A beam of light that travels round a field's border, recreated in CSS from the idea behind Reacticx's React Native
+ * Border Beam. A small gradient (bright head, fading tail) rides `offset-path: inset(...)` round the box, so it moves at
+ * a constant speed along the edge, and a mask cuts the layer down to the ring the beam sits in. The ring is flush with the
+ * outside of the field, over the field's own 1px stroke, so there is one border, not two. The colour is Anvil's
+ * primary token by default and so follows the theme.
+ */
+[data-slot='border-beam'] {
+  position: relative;
+  border-radius: var(--beam-radius);
+}
+
+[data-slot='border-beam-ring'],
+[data-slot='border-beam-glow'],
+[data-slot='border-beam-glow-ring'] {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  transition: opacity var(--duration-base, 200ms) ease-out;
+}
+
+/* The ring: only the border band of the layer is visible. The glow's inner ring is cut the same way. */
+[data-slot='border-beam-ring'],
+[data-slot='border-beam-glow-ring'] {
+  padding: var(--beam-width);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--beam-color) var(--beam-ambient), transparent);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+[data-slot='border-beam-ring'] {
+  z-index: 1;
+}
+
+/* The glow: the cut ring, blurred, behind the field so it only shows outside it. The blur sits on this wrapper because a
+   mask is applied after a filter on the same element, and would cut the glow back to the ring. */
+[data-slot='border-beam-glow'] {
+  z-index: 0;
+  filter: blur(var(--beam-glow));
+  opacity: 1;
+}
+
+/* The beam: a thin strip that rides the path; its gradient runs along the direction of travel, bright at the head. */
+[data-slot='border-beam-ring']::before,
+[data-slot='border-beam-glow-ring']::before {
+  content: '';
+  position: absolute;
+  /* As thick as the band it lights and no more: a square would reach across the box and light the opposite edge. */
+  width: var(--beam-length);
+  height: calc(var(--beam-width) * 4);
+  offset-path: inset(0 round var(--beam-radius));
+  offset-anchor: 85% 50%;
+  /* Soft at both ends: the tail fades in, and the head fades out over its last few percent, so it has no hard edge. */
+  background: linear-gradient(to right, transparent, var(--beam-color) 55%, var(--beam-color) 90%, transparent);
+  animation: border-beam-run var(--beam-duration) linear infinite;
+}
+
+@keyframes border-beam-run {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+
+/* The beam is for the resting field: it steps aside while the field is focused or has text, when Anvil's focus ring is the signal. */
+[data-slot='border-beam']:focus-within > [data-slot^='border-beam-'],
+[data-slot='border-beam']:has(textarea:not(:placeholder-shown)) > [data-slot^='border-beam-'] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot='border-beam-ring']::before,
+  [data-slot='border-beam-glow-ring']::before {
+    animation: none;
+    offset-distance: 12%;
+  }
+}

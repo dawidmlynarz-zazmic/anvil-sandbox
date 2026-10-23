@@ -20,6 +20,7 @@ commit it was built against in its own README.
 | Demo | What | Run | Hosted preview |
 | --- | --- | --- | --- |
 | [aeg-stage-studio](demos/aeg-stage-studio) | AEG generative stage design prototype (mocked) | `pnpm stage-studio` | [Open](https://dawidmlynarz-zazmic.github.io/anvil-sandbox/aeg-stage-studio/) |
+| [axs-ticketing-agent](demos/axs-ticketing-agent) | AXS "Ask AXS" ticketing agent, mobile-first (mocked, in progress) | `pnpm ask-axs` | [Open](https://dawidmlynarz-zazmic.github.io/anvil-sandbox/axs-ticketing-agent/) |
 
 ## Hosted previews (GitHub Pages)
 

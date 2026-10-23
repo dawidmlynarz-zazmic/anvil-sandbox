@@ -1,0 +1,83 @@
+/*
+ * The AXS skin for this demo only. Anvil is untouched: its colours are CSS variables, so this file re-points a few of
+ * them under [data-brand='axs'] (set on <html> in index.html), and shapes the pieces AXS draws as pills through the
+ * `data-slot` hooks Anvil components expose. Delete this import and the app is plain Anvil again.
+ *
+ * Values are read from screenshots of the AXS app and site (docs/reference/), not from AXS's own tokens: confirm them
+ * before the demo goes to AXS. Primary is a shade darker than AXS's bright blue (about #007def), because white text on
+ * that blue is 4.05:1 and Anvil holds 4.5:1.
+ */
+:root[data-brand='axs'] {
+  --axs-navy: #0c1743;
+  --axs-blue: #0070dc;
+  --axs-blue-hover: #005bb5;
+
+  --background: #ffffff;
+  --foreground: var(--axs-navy);
+  --card: #ffffff;
+  --popover: #ffffff;
+  --muted: #eef1f8;
+  --muted-foreground: #4a5578;
+  --foreground-subtle: #5d6788;
+  --border: #dde2ef;
+  --input: #bcc4dc;
+  --border-strong: #8d98ba;
+  --primary: var(--axs-blue);
+  --button-primary-hover: var(--axs-blue-hover);
+  --ring: var(--axs-blue);
+  --foreground-link: var(--axs-blue);
+  --agent: var(--axs-blue);
+  --agent-subtle: #e6f1fc;
+  --agent-soft: #cfe3f9;
+  --agent-muted: #a9cdf3;
+  --agent-medium: #0a66c2;
+  --agent-strong: #004a94;
+}
+
+:root.dark[data-brand='axs'] {
+  --background: #050b26;
+  --foreground: #ffffff;
+  --card: var(--axs-navy);
+  --popover: #101c4f;
+  --muted: #14215a;
+  --muted-foreground: #aab5d9;
+  --foreground-subtle: #8b97c2;
+  --border: #22306b;
+  --input: #34458a;
+  --border-strong: #4d5fa5;
+  --primary: var(--axs-blue);
+  --button-primary-hover: #1a84ee;
+  --ring: #3b9bff;
+  --foreground-link: #3b9bff;
+  /* Secondary (outline) buttons: Anvil's near-black reads as a hole in the navy cards, so tint them from the navy. */
+  --button-outline: #1b2b6b;
+  --button-outline-hover: #26398a;
+  --agent: #3b9bff;
+  --agent-subtle: #0d2557;
+  --agent-soft: #143a7d;
+  --agent-muted: #1b4a99;
+  --agent-medium: #5aa9ff;
+  --agent-strong: #9cc9ff;
+}
+
+/* AXS draws its buttons, chips and fields as pills. */
+[data-brand='axs'] [data-slot='button'],
+[data-brand='axs'] [data-slot='chip'],
+[data-brand='axs'] [data-slot='quick-reply'],
+[data-brand='axs'] [data-slot='quick-reply-filter'] {
+  border-radius: calc(infinity * 1px);
+}
+
+/*
+ * A small control with a 44px tap area. The button keeps Anvil's size (a 32px icon button in a chat header, as in the
+ * Chat Shell story) and an invisible layer reaches out to 44px, so the target is big without the padding showing.
+ * Only for buttons that sit in the normal flow: it makes the button a positioning parent.
+ */
+[data-brand='axs'] .touch-target {
+  position: relative;
+}
+[data-brand='axs'] .touch-target::after {
+  content: '';
+  position: absolute;
+  inset: min(0px, calc((100% - 44px) / 2));
+}

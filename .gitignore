@@ -10,3 +10,4 @@ storybook-static/
 .env
 .env.*
 !.env.example
+demos/axs-ticketing-agent/docs/reference/

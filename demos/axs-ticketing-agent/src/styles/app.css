@@ -1,0 +1,14 @@
+@import '@anvil/styles/globals.css';
+@import './axs-brand.css';
+/* Tailwind v4 only scans this project by default: also generate the classes Anvil's components use. */
+@source '../../../../../anvil-ui/src';
+
+/* The demo's device frame on a larger screen (see DeviceFrame); the bottom Drawer lines up with it. */
+:root {
+  --frame-h: 100svh;
+}
+@media (min-width: 40rem) {
+  :root {
+    --frame-h: min(844px, calc(100svh - 3rem));
+  }
+}

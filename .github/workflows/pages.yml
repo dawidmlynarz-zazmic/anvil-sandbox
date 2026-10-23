@@ -1,6 +1,7 @@
 # Builds the demos and publishes them to GitHub Pages:
 #   https://<owner>.github.io/anvil-sandbox/            a list of demos
 #   https://<owner>.github.io/anvil-sandbox/aeg-stage-studio/
+#   https://<owner>.github.io/anvil-sandbox/axs-ticketing-agent/
 #
 # Optional password screen: add a repository secret DEMO_PASSWORD and re-run this workflow. Only its SHA-256 goes into
 # the build. It keeps casual visitors out; it is not access control (the site and the source are public).
@@ -70,13 +71,25 @@ jobs:
           fi
           pnpm --filter aeg-stage-studio build
 
+      - name: Build Ask AXS
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/axs-ticketing-agent/
+          DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
+        run: |
+          if [ -n "$DEMO_PASSWORD" ]; then
+            export VITE_DEMO_GATE="$(printf '%s' "$DEMO_PASSWORD" | sha256sum | cut -d' ' -f1)"
+          fi
+          pnpm --filter axs-ticketing-agent build
+
       - name: Assemble the site
         run: |
           mkdir -p _site
           cp site/index.html _site/
           cp -r demos/aeg-stage-studio/dist _site/aeg-stage-studio
-          # Pages serves 404.html for any unknown path: make deep links into the demo (…/p/<id>/stills) load the app.
-          cp _site/aeg-stage-studio/index.html _site/404.html
+          cp -r demos/axs-ticketing-agent/dist _site/axs-ticketing-agent
+          # Pages serves 404.html for any unknown path. With more than one single-page app, it sends deep links
+          # (…/aeg-stage-studio/p/<id>/stills) to that demo's index.html, which restores the path (spa-github-pages).
+          cp site/404.html _site/404.html
 
       - uses: actions/upload-pages-artifact@v3
         with:

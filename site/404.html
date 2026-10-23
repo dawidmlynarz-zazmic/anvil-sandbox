@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Anvil sandbox</title>
+    <script>
+      // GitHub Pages serves this file for any unknown path. A deep link into a demo (/<repo>/<demo>/some/route) goes to
+      // the demo's index.html as /<repo>/<demo>/?/some/route; the demo's own index.html restores the real path
+      // (spa-github-pages). Anything else goes to the site's list of demos.
+      (function (l) {
+        var demos = ['aeg-stage-studio', 'axs-ticketing-agent']
+        var seg = l.pathname.split('/')
+        var root = '/' + seg[1] + '/'
+        if (demos.indexOf(seg[2]) === -1) return l.replace(root)
+        var rest = seg.slice(3).join('/')
+        var query = l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : ''
+        l.replace(root + seg[2] + '/?/' + rest.replace(/&/g, '~and~') + query + l.hash)
+      })(window.location)
+    </script>
+  </head>
+</html>
