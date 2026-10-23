@@ -108,12 +108,12 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
   status per image), `agent/image-generation-card` (one image per card, too big for 20+ images) and local `ClipTile`
   (one selection, no pin or compare)
 - Proposed API: group `title`, `meta`, `pending` (placeholder count); tile `label`, `caption`, `src`, `alt`,
-  `focused`, `pinned`, `chosen` (a badge, e.g. “Look”), `dismissed`, `onOpen`, `onTogglePin`. Pins double as the
-  comparison set (the separate compare tick was removed in the reduction audit)
+  `focused`, `chosen` (a badge, e.g. “Look”), `dismissed`, `onOpen` (pinning and comparing were removed: the open
+  image's own actions cover them)
 - Built from: `ui/badge`, `ui/button` (icon-xs), `ui/skeleton`, tokens only
-- States covered: default, focused, pinned, chosen, set aside, rendering
+- States covered: default, focused, chosen, set aside, rendering
 - Accessibility notes: each image is a button named with its number, caption and state (`aria-pressed` when open);
-  the pin is named per image (“Pin #6” / “Unpin #6”); each batch is a named section with a heading
+  each batch is a named section with a heading
 - Story: `src/components/local/ContactSheet/ContactSheet.stories.tsx`
 - Recommendation: add to Anvil as a generated-asset grid; it pairs with `concept-card` (the focus view)
 

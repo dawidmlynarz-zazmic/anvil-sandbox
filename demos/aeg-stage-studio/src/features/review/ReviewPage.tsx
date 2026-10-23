@@ -38,9 +38,9 @@ function PinnedLook({ look, ...props }: Omit<React.ComponentProps<typeof PinnedI
 }
 
 /** A moment's clip as the artist saw it: live 3D, over that song's 3D still while the scene loads. */
-function ReviewClip({ look, clip, brief }: { look: Generation; clip: MotionClip; brief: Brief }) {
-  const poster = useMomentThumb(look, brief, clip.momentNumber, clip.poster)
-  return <ClipPlayer model={MODEL.motion} poster={poster} renderFrame={clipFrame(look, clip, brief)?.render} label={`Song ${clip.momentNumber}, clip version ${clip.version}`} />
+function ReviewClip({ look, clip, brief, of }: { look: Generation; clip: MotionClip; brief: Brief; /** How many key moments the show has. */ of: number }) {
+  const poster = useMomentThumb(look, brief, clip.momentNumber, of, clip.poster)
+  return <ClipPlayer model={MODEL.motion} poster={poster} renderFrame={clipFrame(look, clip, brief, of)?.render} label={`Song ${clip.momentNumber}, clip version ${clip.version}`} />
 }
 
 export function ReviewPage() {
@@ -272,7 +272,7 @@ export function ReviewPage() {
                   Motion
                 </h2>
                 {look && slot?.status === 'ready' ? (
-                  <ReviewClip look={look} clip={slot.clip} brief={brief} />
+                  <ReviewClip look={look} clip={slot.clip} brief={brief} of={moments.length} />
                 ) : (
                   <p className="text-muted-foreground type-text-sm-normal">{slot?.status === 'generating' ? 'This clip is being reworked.' : 'This clip wasn’t ready when you sent, so the artist hasn’t seen it.'}</p>
                 )}

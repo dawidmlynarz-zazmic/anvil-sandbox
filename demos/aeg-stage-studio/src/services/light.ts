@@ -1,4 +1,4 @@
-import { parseClock, parseLength } from '~/lib/time'
+import { formatClock, parseClock, parseLength } from '~/lib/time'
 import { isCovered } from '~/mocks/venues'
 import type { Brief, TimeOfDay } from '~/state/types'
 
@@ -10,8 +10,6 @@ export const SUNSET = 19 * 60 + 14
 /** Golden hour starts an hour before sunset; it reads as night 40 minutes after. */
 const GOLDEN_FROM = SUNSET - 60
 const NIGHT_FROM = SUNSET + 40
-/** A typical festival song with changeover, used to place a song number inside the set. */
-const SONG_MINUTES = 4
 
 /** The light at a time of day, in minutes after midnight. */
 export const lightAt = (minute: number): TimeOfDay => (minute < GOLDEN_FROM ? 'daylight' : minute < NIGHT_FROM ? 'golden-hour' : 'night')
@@ -27,16 +25,19 @@ export function openingLight(brief: Brief): TimeOfDay {
   return isCovered(brief.venueId) ? 'night' : lightAt(setTimes(brief).start)
 }
 
-/** Roughly when a song plays, from its number and the set's length. */
-function songMinute(brief: Brief, song: number) {
+/**
+ * Roughly when a key moment plays: the show's key moments are numbered 1, 2, 3… in setlist order and spread across
+ * the set, so moment `n` of `of` plays a little after the start of its share of the set.
+ */
+function momentMinute(brief: Brief, n: number, of: number) {
   const { start, end } = setTimes(brief)
-  const songs = Math.max(Math.round((end - start) / SONG_MINUTES), song, 1)
-  return start + ((song - 0.5) / songs) * (end - start)
+  const count = Math.max(of, n, 1)
+  return start + ((n - 0.5) / count) * (end - start)
 }
 
-/** The light a key moment plays in. */
-export function momentLight(brief: Brief, song: number): TimeOfDay {
-  return isCovered(brief.venueId) ? 'night' : lightAt(songMinute(brief, song))
+/** The light key moment `n` (of `of` key moments) plays in. */
+export function momentLight(brief: Brief, n: number, of: number): TimeOfDay {
+  return isCovered(brief.venueId) ? 'night' : lightAt(momentMinute(brief, n, of))
 }
 
 /** The other light to compare a clip against, or undefined where there is no daylight (covered venues). */
@@ -45,16 +46,15 @@ export function compareLight(brief: Brief, main: TimeOfDay): TimeOfDay | undefin
   return main === 'night' ? 'golden-hour' : 'night'
 }
 
-/** The slot in a few words, for the brief and the agent: "Golden hour → night by song 9", "All after dark". */
+/** The slot in a few words, for the brief and the agent: "Golden hour → night from 7:54 pm", "All after dark". */
 export function slotNote(brief: Brief): string {
   if (isCovered(brief.venueId)) return 'Under a roof: lit as night throughout'
   const { start, end } = setTimes(brief)
   const first = lightAt(start)
   const last = lightAt(end)
   if (first === last) return first === 'night' ? 'All after dark' : first === 'daylight' ? 'All in daylight' : 'All in golden hour'
-  // The first key moment (or song number) that falls in the last light.
-  const songs = Math.max(Math.round((end - start) / SONG_MINUTES), 1)
-  const turn = Array.from({ length: songs }, (_, i) => i + 1).find((n) => lightAt(songMinute(brief, n)) === last) ?? songs
+  // When the last light arrives, as a clock time: the first minute of the set that's in it.
+  const turn = Array.from({ length: end - start }, (_, i) => start + i).find((m) => lightAt(m) === last) ?? end
   const label = { daylight: 'Daylight', 'golden-hour': 'Golden hour', night: 'night' }
-  return `${label[first]} → ${last === 'night' ? 'night' : label[last].toLowerCase()} by song ${turn}`
+  return `${label[first]} → ${last === 'night' ? 'night' : label[last].toLowerCase()} from ${formatClock(turn)}`
 }

@@ -11,10 +11,10 @@ import {
   ArrowRightIcon,
   CameraIcon,
   CheckIcon,
+  ClapperboardIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  ColumnsIcon,
   Icon,
   ImageIcon,
   LayersIcon,
@@ -41,7 +41,7 @@ import { useProject } from '~/state/ProjectContext'
 import { defaultFocus, genById, gensFor, kitStatus, lineage, lookFor, MOMENT_STATUS, momentStatus, nextOpenMoment } from '~/state/show'
 import { TIME_LABEL, type Generation } from '~/state/types'
 import { AssetKit } from './AssetKit'
-import { CompareDialog } from './CompareDialog'
+import { LookMotion } from './LookMotion'
 import { LockSetDialog } from './LockSetDialog'
 
 /** One image on the contact sheet, with its own render. */
@@ -57,7 +57,6 @@ function Focus({ gen, readOnly }: { gen: Generation; readOnly: boolean }) {
   const parent = genById(p, gen.parentId)
   const parentSrc = useStillUrl(parent)
   const look = lookFor(p, gen.song)
-  const pinned = (p.pins[gen.song] ?? []).includes(gen.id)
   const pending = p.pending[gen.song]
   const [provenance, setProvenance] = useState(false)
   return (
@@ -82,9 +81,6 @@ function Focus({ gen, readOnly }: { gen: Generation; readOnly: boolean }) {
         compareInMenu
         menuItems={[{ label: 'Provenance', icon: ShieldCheckIcon, onSelect: () => setProvenance(true) }]}
         checks={briefCheck(gen, p.brief)}
-        selected={pinned}
-        selectLabel="Pin"
-        onSelectedChange={() => p.togglePin(gen.id)}
         dismissed={gen.dismissed}
         busy={pending?.of === gen.id ? `${pending.label}…` : undefined}
         annotations={gen.annotations}
@@ -111,8 +107,7 @@ export function MomentPage() {
   const { song: param } = useParams()
   const song = Number(param)
   const p = useProject()
-  const [comparing, setComparing] = useState(false)
-  // Explore (finding the look) or Look and assets (what's made from it). In the URL, so a link can open either.
+  // Explore (finding the look and putting it into motion) or its asset kit. In the URL, so a link can open either.
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') === 'assets' ? 'assets' : 'explore'
   const setTab = (next: string) => setParams(next === 'assets' ? { tab: 'assets' } : {}, { replace: true })
@@ -134,15 +129,12 @@ export function MomentPage() {
   const prev = p.moments[index - 1]
   const next = p.moments[index + 1]
   const look = lookFor(p, song)
-  const pins = p.pins[song] ?? []
   const pending = p.pending[song]
   const status = momentStatus(p, song)
   const locked = p.status === 'approved'
   const sent = p.status === 'awaiting-artist'
   const busy = !!pending || locked
   const open = (id: string) => setFocus(song, id)
-  // Pins are the comparison set: the latest four.
-  const comparePins = pins.slice(-4)
 
   // Batches, newest first, each with its images in order.
   const batches = [...new Set(all.map((g) => g.batch))].sort((a, b) => b - a).map((batch) => all.filter((g) => g.batch === batch))
@@ -198,7 +190,7 @@ export function MomentPage() {
               </Badge>
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
-              {moment.intent} · {TIME_LABEL[momentLight(p.brief, song)].toLowerCase()} · {p.set ? `set locked: ${lowerFirst(p.set.title)}` : 'set not locked yet'}
+              {moment.intent} · {TIME_LABEL[momentLight(p.brief, song, p.moments.length)].toLowerCase()} · {p.set ? `set locked: ${lowerFirst(p.set.title)}` : 'set not locked yet'}
             </p>
           </div>
 
@@ -221,22 +213,24 @@ export function MomentPage() {
           ) : (
             <>
               <Tabs value={tab} onValueChange={setTab}>
-                <TabsList variant="line" aria-label="Explore, or the look and its assets">
+                <TabsList variant="line" aria-label="Explore, or the asset kit">
                   <TabsTrigger value="explore">
                     <Icon icon={SparklesIcon} />
                     Explore · {all.length}
                   </TabsTrigger>
                   <TabsTrigger value="assets">
                     <Icon icon={PackageIcon} />
-                    Look and assets
+                    Asset kit
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
 
               {tab === 'assets' ? (
-                <AssetKit moment={moment} readOnly={locked} />
+                <AssetKit moment={moment} />
               ) : (
                 <>
+                  {/* Motion first: once the open image is the look, its clip leads the page. */}
+                  {look && focus?.id === look.id && <LookMotion moment={moment} look={look} readOnly={locked} />}
                   {focus && <Focus gen={focus} readOnly={locked} />}
 
                   {!p.set && focus && look?.id === focus.id && !locked && (
@@ -251,13 +245,8 @@ export function MomentPage() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <h2 id="explore-title" className="type-text-base-semibold">
                         {all.length} {all.length === 1 ? 'image' : 'images'}
-                        {pins.length > 0 && <span className="text-muted-foreground type-text-sm-normal"> · {pins.length} pinned</span>}
                       </h2>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" intent="neutral" size="sm" disabled={comparePins.length < 2} onClick={() => setComparing(true)}>
-                          <Icon icon={ColumnsIcon} />
-                          Compare pinned
-                        </Button>
                         {/* One way to explore: new directions, or a menu of batches built from the open image. */}
                         <ButtonGroup aria-label="Explore">
                           <Button variant="outline" intent="neutral" size="sm" disabled={busy} onClick={() => void p.explore(song, 'directions')}>
@@ -313,11 +302,9 @@ export function MomentPage() {
                                 key={g.id}
                                 gen={g}
                                 focused={focus?.id === g.id}
-                                pinned={pins.includes(g.id)}
                                 chosen={look?.id === g.id ? 'Look' : undefined}
                                 dismissed={g.dismissed}
                                 onOpen={() => open(g.id)}
-                                onTogglePin={() => p.togglePin(g.id)}
                               />
                             ))}
                           </ContactSheetGroup>
@@ -331,14 +318,6 @@ export function MomentPage() {
           )}
         </div>
       </div>
-      <CompareDialog
-        open={comparing}
-        onOpenChange={setComparing}
-        items={comparePins.flatMap((id) => genById(p, id) ?? [])}
-        lookId={look?.id}
-        pinned={pins}
-        onOpen={open}
-      />
       <StepFooter
         note={look ? `Look: #${look.n} · ${look.caption}` : 'No look chosen yet'}
         status={sent ? 'With the artist: choosing a new look waits until they reply' : undefined}
@@ -350,8 +329,8 @@ export function MomentPage() {
           </Button>
         ) : tab === 'explore' && choosable ? (
           <Button disabled={locked || sent || !!pending} onClick={() => p.chooseLook(focus.id)}>
-            <Icon icon={CheckIcon} />
-            Choose #{focus.n} as the look
+            <Icon icon={ClapperboardIcon} />
+            Put #{focus.n} into motion
           </Button>
         ) : openMoment && openMoment.number !== song ? (
           <Button onClick={() => navigate(p.momentPath(openMoment.number))}>

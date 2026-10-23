@@ -280,7 +280,7 @@ export function HandoffPage() {
                   {rows.map((row) => (
                     <MomentRow key={row.moment.number} row={row}>
                       <KeyValueList>
-                        <KeyValueRow label="Plays in">{TIME_LABEL[momentLight(p.brief, row.moment.number)]}</KeyValueRow>
+                        <KeyValueRow label="Plays in">{TIME_LABEL[momentLight(p.brief, row.moment.number, moments.length)]}</KeyValueRow>
                         <KeyValueRow label="Cue">{row.clip?.cue.lighting ?? 'No clip yet'}</KeyValueRow>
                         <KeyValueRow label="Look">{row.look.caption}</KeyValueRow>
                       </KeyValueList>

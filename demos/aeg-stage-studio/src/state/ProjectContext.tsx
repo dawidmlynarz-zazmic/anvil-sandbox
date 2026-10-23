@@ -16,7 +16,7 @@ import { ALL_SECTIONS, clipKey, looksChosen, type Action, type ProjectState } fr
 import { briefReadiness } from './readiness'
 import { genById, gensFor, lookFor, momentStatus, nextOpenMoment } from './show'
 import { useStore } from './store'
-import type { Brief, ChatTurn, Generation, MotionClip, ReviewComment, SetlistMoment, Thinking } from './types'
+import type { Brief, ChatTurn, Generation, MotionClip, ReviewComment, Thinking } from './types'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export { clipKey }
@@ -39,7 +39,10 @@ interface ProjectApi extends ProjectState {
   revealBrief: () => void
   /** Setup → the show: drafts the key moments and starts exploring the first. Returns the first moment's song. */
   startProject: () => number | undefined
-  setMoments: (moments: SetlistMoment[]) => void
+  /** Adds a key moment at the end of the show: it's numbered after the last one. */
+  addMoment: (title: string, intent: string) => void
+  /** Removes a key moment; the ones after it are renumbered. */
+  removeMoment: (song: number) => void
   /** A batch of images for a moment: new directions, or more like / other angles / other light of `baseId`. */
   explore: (song: number, kind: BatchKind, baseId?: string) => Promise<void>
   /** Applies a described change to one image, as a new image (its child). */
@@ -51,7 +54,6 @@ interface ProjectApi extends ProjectState {
   applyAnnotations: (genId: string) => Promise<void>
   /** A new take on an image, as its child. */
   anotherTake: (genId: string) => Promise<void>
-  togglePin: (genId: string) => void
   /** “Not this direction”: greys the image out and steers later batches away from its structure. Toggles. */
   toggleDismissed: (genId: string) => void
   /** Makes an image its moment's look, and renders the moment's clip from it. */
@@ -130,7 +132,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     if (!moment || s.pending[song]) return
     const existing = gensFor(s, song)
     const base = genById(s, opts.baseId)
-    const light = momentLight(s.brief, song)
+    const light = momentLight(s.brief, song, s.moments.length)
     const { drafts, summary } = planBatch(kind, { light, covered: isCovered(s.brief.venueId), set: s.set, existing, base, notes: opts.notes })
     if (!drafts.length) return
     const label = base && kind !== 'directions' ? `${BATCH_LABEL[kind]} · #${base.n}` : s.set ? 'New looks on the set' : BATCH_LABEL[kind]
@@ -152,7 +154,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     updateMessage(msg, {
       pending: false,
       thinking: { ...done(thinking, started, `${plural(made.length, 'image')} · SynthID watermarked · stored in your project`), title: `Explored song ${song}` },
-      text: `${capitalise(momentName(song))}. ${summary} Pin the ones you like, compare any two to four, and choose one as the look.`,
+      text: `${capitalise(momentName(song))}. ${summary} Open the one you like and put it into motion.`,
     })
   }
 
@@ -294,7 +296,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const g = find(genId)
     if (!g) return
     if (!matchesSet(g.spec, s.set)) {
-      say('assistant', `#${g.n} was made before the set was locked, so its structure differs from the set. Ask for more like it to restage it on the set, then choose one of those.`)
+      say('assistant', `#${g.n} was made before the set was locked, so its structure differs from the set. Ask for more like it to restage it on the set, then put one of those into motion.`)
       return
     }
     const redo = s.redo.includes(g.song)
@@ -307,9 +309,9 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     say(
       'assistant',
       [
-        `You chose #${g.n} as the look for ${momentName(g.song)}${redo ? ', taking on the artist’s comments' : ''}. I’m rendering its eight-second clip.`,
+        `You put #${g.n} into motion for ${momentName(g.song)}${redo ? ', taking on the artist’s comments' : ''}. It’s the moment’s look now, and its eight-second clip leads the page.`,
         s.set ? '' : 'When you’re happy with its structure, lock the set from it: every other moment then keeps that structure and varies only the look.',
-        next ? `${left === 1 ? 'One moment' : `${capitalise(String(left))} moments`} still need a look; next is ${momentName(next.number)}.` : 'Every moment has a look. Check the show board, then send the show to the artist.',
+        next ? `${left === 1 ? 'One moment' : `${capitalise(String(left))} moments`} to go; next is ${momentName(next.number)}.` : 'Every moment is in motion. Check the show board, then send the show to the artist.',
       ]
         .filter(Boolean)
         .join(' '),
@@ -349,7 +351,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     if (!look || !moment || s.kitPending[song]) return
     const slot = s.clips[clipKey(look.id, song)]
     const mainMove = slot?.status === 'ready' ? moveOf(slot.clip) : song % 3
-    const planned = planKit(look, song, s.brief, isCovered(s.brief.venueId), mainMove)
+    const planned = planKit(look, song, s.moments.length, s.brief, isCovered(s.brief.venueId), mainMove)
     const stills = planned.filter((a) => a.kind !== 'motion').length
     const clips = planned.length - stills
     const started = Date.now()
@@ -511,28 +513,27 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       if (!first) return undefined
       say(
         'assistant',
-        `I drafted ${plural(moments.length, 'key moment')} from the setlist: ${listing(moments.map((m) => `${m.number} ${m.title}`))}. Change them on the show board any time. Starting with song ${first.number} · ${first.title}, which plays in ${TIME_LABEL[momentLight(s.brief, first.number)].toLowerCase()}.`,
+        `I drafted ${plural(moments.length, 'key moment')} from the setlist: ${listing(moments.map((m) => `${m.number} ${m.title}`))}. Change them on the show board any time. Starting with song ${first.number} · ${first.title}, which plays in ${TIME_LABEL[momentLight(s.brief, first.number, moments.length)].toLowerCase()}.`,
       )
       // The batch reads the moments from the store, which has them once this render lands.
       window.setTimeout(() => void runBatch(first.number, 'directions', { author: 'agent' }), 300)
       return first.number
     },
-    setMoments: (moments) => d({ type: 'moments/set', moments }),
+    addMoment: (title, intent) => {
+      const moments = get().moments
+      d({ type: 'moments/set', moments: [...moments, { number: (moments.at(-1)?.number ?? 0) + 1, title, intent }] })
+    },
+    removeMoment: (song) => d({ type: 'moments/remove', song }),
     explore: (song, kind, baseId) => runBatch(song, kind, { baseId, author: 'you' }),
     refine,
     addAnnotation,
     removeAnnotation,
     applyAnnotations,
     anotherTake,
-    togglePin: (genId) => {
-      const g = find(genId)
-      if (g) d({ type: 'pin/toggle', song: g.song, id: genId })
-    },
     toggleDismissed: (genId) => {
       const g = find(genId)
       if (!g) return
       d({ type: 'gen/patch', id: genId, patch: { dismissed: !g.dismissed } })
-      if (!g.dismissed && get().pins[g.song]?.includes(genId)) d({ type: 'pin/toggle', song: g.song, id: genId })
     },
     chooseLook,
     lockSet,

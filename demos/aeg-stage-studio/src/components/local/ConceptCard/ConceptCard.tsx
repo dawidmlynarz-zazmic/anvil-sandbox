@@ -64,8 +64,9 @@ export interface ConceptCardProps {
   }
   /** The brief and venue check: every item passes, or some need a look. */
   checks?: ConceptCheck[]
-  selected: boolean
-  onSelectedChange: (selected: boolean) => void
+  /** A footer checkbox (e.g. “Select”); left out when there's nothing to select. */
+  selected?: boolean
+  onSelectedChange?: (selected: boolean) => void
   /** “Not this direction”: greyed out, can be brought back. */
   dismissed?: boolean
   /** Shown over the image while the agent works on this concept, e.g. “Refining…”. */
@@ -390,10 +391,14 @@ export function ConceptCard({
       </CardContent>
 
       <CardFooter className="flex items-center justify-between gap-2">
-        <label className="flex shrink-0 items-center gap-2 type-text-sm-medium">
-          <Checkbox checked={selected} onCheckedChange={(on) => onSelectedChange(on === true)} disabled={dismissed} aria-label={`${selectLabel} ${title}`} />
-          {selectLabel}
-        </label>
+        {onSelectedChange ? (
+          <label className="flex shrink-0 items-center gap-2 type-text-sm-medium">
+            <Checkbox checked={!!selected} onCheckedChange={(on) => onSelectedChange(on === true)} disabled={dismissed} aria-label={`${selectLabel} ${title}`} />
+            {selectLabel}
+          </label>
+        ) : (
+          <span />
+        )}
         <div className="flex items-center gap-1">
           {editable && onAddAnnotation && (
             <Button

@@ -15,7 +15,7 @@ export const initialBrief: Brief = {
     date: '2027-04-17',
     time: '7:10 pm',
     length: '75 min',
-    note: 'Golden hour → night by song 12',
+    note: 'Golden hour → night from 7:54 pm',
   },
   keywords: ['Desert modernism', 'Warm haze', 'Monolithic', 'Kinetic light'],
   referenceCount: 3,
@@ -41,11 +41,11 @@ export const openingMessages: ChatTurn[] = [
     id: 1,
     role: 'user',
     attachments: true,
-    text: 'Desert-modernist stage for the Saturday sunset slot: warm, monolithic, with light that follows the sun down. The big moment is the crowd split in song 14.',
+    text: 'Desert-modernist stage for the Saturday sunset slot: warm, monolithic, with light that follows the sun down. The big moment is the crowd split.',
   },
   {
     id: 2,
     role: 'assistant',
-    text: 'Thanks. I loaded the Coachella Stage specs and matched your slot to sunset, so the show runs from golden hour into night by song 12. I filled in the brief from your mood board and drafted four key moments from the setlist.',
+    text: 'Thanks. I loaded the Coachella Stage specs and matched your slot to sunset, so the show runs from golden hour into night from 7:54 pm. I filled in the brief from your mood board and drafted four key moments from the setlist.',
   },
 ]

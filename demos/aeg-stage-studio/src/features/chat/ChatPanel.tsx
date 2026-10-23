@@ -138,12 +138,11 @@ export function ChatPanel() {
       if (!moment) return
       if (isQuestion(value)) {
         const all = gensFor(project, song)
-        const pins = project.pins[song]?.length ?? 0
         void reply(
           `Checking song ${song}`,
           'You asked a question, so I’ll answer from this moment as it stands and change nothing.',
-          ['Read the moment’s images, pins and look'],
-          `Song ${song} · ${moment.title} has ${all.length} ${all.length === 1 ? 'image' : 'images'}${pins ? `, ${pins} pinned` : ''}${look ? `, and #${look.n} is its look` : ', and no look yet'}.${focus ? ` #${focus.n} is open: describe a change (“narrower, warmer”) and I’ll make it as a new image.` : ''}`,
+          ['Read the moment’s images and look'],
+          `Song ${song} · ${moment.title} has ${all.length} ${all.length === 1 ? 'image' : 'images'}${look ? `, and #${look.n} is its look` : ', and no look yet'}.${focus ? ` #${focus.n} is open: describe a change (“narrower, warmer”) and I’ll make it as a new image.` : ''}`,
         )
       } else if (/\b(kit|assets?)\b/i.test(value) && look) {
         // “Build the kit” makes the moment's asset kit from its look.

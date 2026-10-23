@@ -18,20 +18,20 @@ interface Scene {
 
 function SceneTile({ scene, selected, onClick }: { scene: Scene; selected: boolean; onClick: () => void }) {
   const p = useProject()
-  const thumb = useMomentThumb(scene.look, p.brief, scene.moment.number)
+  const thumb = useMomentThumb(scene.look, p.brief, scene.moment.number, p.moments.length)
   return <ClipTile song={scene.moment.number} title={scene.moment.title} status="ready" poster={thumb} selected={selected} onClick={onClick} />
 }
 
 function Player({ scene, index, count, onEnded }: { scene: Scene; index: number; count: number; onEnded: () => void }) {
   const p = useProject()
-  const poster = useMomentThumb(scene.look, p.brief, scene.moment.number, scene.clip.poster)
+  const poster = useMomentThumb(scene.look, p.brief, scene.moment.number, p.moments.length, scene.clip.poster)
   return (
     <ClipPlayer
       model={MODEL.motion}
       autoPlay
       onEnded={onEnded}
       poster={poster}
-      renderFrame={clipFrame(scene.look, scene.clip, p.brief)?.render}
+      renderFrame={clipFrame(scene.look, scene.clip, p.brief, p.moments.length)?.render}
       label={`Song ${scene.moment.number} · ${scene.moment.title}, ${index + 1} of ${count}`}
     />
   )

@@ -30,7 +30,6 @@ const base = (id: string, artist: string, event: string, brief: Brief, moments: 
   moments,
   generations: [],
   looks: {},
-  pins: {},
   set: null,
   pending: {},
   clips: {},
@@ -50,7 +49,7 @@ const base = (id: string, artist: string, event: string, brief: Brief, moments: 
 function explore(p: ProjectState, song: number, kind: BatchKind, baseN?: number) {
   const existing = p.generations.filter((g) => g.song === song)
   const { drafts } = planBatch(kind, {
-    light: momentLight(p.brief, song),
+    light: momentLight(p.brief, song, p.moments.length),
     covered: isCovered(p.brief.venueId),
     set: p.set,
     existing,
@@ -72,32 +71,31 @@ function choose(p: ProjectState, song: number, n: number) {
 /** A moment's asset kit, built from its look. */
 function kit(p: ProjectState, song: number) {
   const look = p.generations.find((g) => g.id === p.looks[song])!
-  const assets = planKit(look, song, p.brief, isCovered(p.brief.venueId), song % 3).map((a, i) => ({ ...a, id: `${look.id}.kit.${i + 1}`, at: '11:20' }))
+  const assets = planKit(look, song, p.moments.length, p.brief, isCovered(p.brief.venueId), song % 3).map((a, i) => ({ ...a, id: `${look.id}.kit.${i + 1}`, at: '11:20' }))
   p.kits[song] = { lookId: look.id, assets }
 }
 
-/** Exploring the first moment: two batches in, two images pinned, nothing chosen yet. The live demo starts here. */
+/** Exploring the first moment: two batches in, nothing chosen yet. The live demo starts here. */
 function coachella(): ProjectState {
   const p = base('coachella', 'Marisol Vey', 'Coachella 2027', initialBrief, draftMoments(initialBrief), 9)
-  explore(p, 3, 'directions')
-  explore(p, 3, 'more', 2)
-  p.pins[3] = [gen(p, 3, 2).id, gen(p, 3, 6).id]
+  explore(p, 1, 'directions')
+  explore(p, 1, 'more', 2)
   return {
     ...p,
     messages: [
       ...openingMessages,
       ...turns(
         [
-          ['assistant', 'Four directions for song 3 · Opening reveal: open-air arch, stone monolith, kinetic LED ribbons and floating halo.'],
+          ['assistant', 'Four directions for song 1 · Opening reveal: open-air arch, stone monolith, kinetic LED ribbons and floating halo.'],
           ['user', 'More like the monolith.'],
-          ['assistant', 'Three more like #2 for song 3. Pin the ones you like, compare any two to four, and choose one as the look.'],
+          ['assistant', 'Three more like #2 for song 1. Open the one you like and put it into motion.'],
         ],
         3,
       ),
     ],
     versions: versions([
-      ['Song 3 · New directions (4 images)', 'Stage agent'],
-      ['Song 3 · More like #2 (3 images)', 'You'],
+      ['Song 1 · New directions (4 images)', 'Stage agent'],
+      ['Song 1 · More like #2 (3 images)', 'You'],
     ]),
   }
 }
@@ -111,15 +109,14 @@ function o2(): ProjectState {
     keywords: ['Chrome', 'Cold neon', 'Brutalist'],
   }
   const p = base('o2', 'The Velvet Static', 'The O2 residency 2027', brief, draftMoments(brief), 16)
-  explore(p, 2, 'directions')
-  explore(p, 2, 'more', 3)
-  choose(p, 2, 6)
-  p.set = setFrom(gen(p, 2, 6))
-  for (const song of [6, 11, 15]) {
+  explore(p, 1, 'directions')
+  explore(p, 1, 'more', 3)
+  choose(p, 1, 6)
+  p.set = setFrom(gen(p, 1, 6))
+  for (const song of [2, 3, 4]) {
     explore(p, song, 'directions')
-    choose(p, song, song === 11 ? 3 : 2)
+    choose(p, song, song === 3 ? 3 : 2)
   }
-  p.pins = { 2: [gen(p, 2, 6).id] }
   for (const m of p.moments) kit(p, m.number)
   const looks = p.moments.map((moment) => ({ moment, look: p.generations.find((g) => g.id === p.looks[moment.number])! }))
   const review = artistFeedback(looks).map((c, i) => ({ ...c, number: i + 1, time: '10:40' }))
@@ -129,8 +126,8 @@ function o2(): ProjectState {
     review,
     sentVersion: 4,
     versions: versions([
-      ['Song 2 · New directions, then more like #3', 'Stage agent'],
-      ['Set locked from song 2 #6 · Kinetic LED ribbons', 'You'],
+      ['Song 1 · New directions, then more like #3', 'Stage agent'],
+      ['Set locked from song 1 #6 · Kinetic LED ribbons', 'You'],
       ['Looks chosen for all 4 moments', 'You'],
       ['Sent to the artist · 4 moments with motion', 'You'],
     ]),
@@ -138,7 +135,7 @@ function o2(): ProjectState {
       [
         ['user', 'Cold, industrial residency look for The O2. Chrome and neon, nothing warm until the ballad.'],
         ['assistant', 'Loaded The O2. It’s under a roof, so every moment is lit as night. I drafted four key moments from the setlist.'],
-        ['assistant', 'You locked the set from song 2 #6: kinetic LED ribbons. New looks for the other moments keep that structure.'],
+        ['assistant', 'You locked the set from song 1 #6: kinetic LED ribbons. New looks for the other moments keep that structure.'],
         ['assistant', 'Sent to the artist: 4 moments, each with its look and clip.'],
         ['assistant', `The artist replied with ${review.length} comments. Open Review to go through them, then approve the show or request changes.`],
       ],
@@ -157,18 +154,18 @@ function arena(): ProjectState {
   }
   const moments: SetlistMoment[] = [
     { number: 1, title: 'Entrance', intent: 'Halo descends as the artist walks on' },
-    { number: 5, title: 'Title track', intent: 'Halo splits into rings' },
-    { number: 9, title: 'Acoustic set', intent: 'Rings rise; one spot on the artist' },
-    { number: 13, title: 'Finale', intent: 'Full white wash, halo flares' },
+    { number: 2, title: 'Title track', intent: 'Halo splits into rings' },
+    { number: 3, title: 'Acoustic set', intent: 'Rings rise; one spot on the artist' },
+    { number: 4, title: 'Finale', intent: 'Full white wash, halo flares' },
   ]
   const p = base('arena', 'Ren Halloway', 'Crypto.com Arena tour 2027', brief, moments, 21)
   explore(p, 1, 'directions')
   explore(p, 1, 'more', 4)
   choose(p, 1, 5)
   p.set = setFrom(gen(p, 1, 5))
-  for (const song of [5, 9, 13]) {
+  for (const song of [2, 3, 4]) {
     explore(p, song, 'directions')
-    choose(p, song, song === 9 ? 1 : 4)
+    choose(p, song, song === 3 ? 1 : 4)
   }
   for (const m of moments) kit(p, m.number)
   const looks = moments.map((moment) => ({ moment, look: p.generations.find((g) => g.id === p.looks[moment.number])! }))
@@ -191,7 +188,7 @@ function arena(): ProjectState {
     messages: turns(
       [
         ['user', 'Minimal, monochrome arena show built around a single halo.'],
-        ['assistant', 'Song 13 has a new look that takes on the artist’s comment: brighter, in haze.'],
+        ['assistant', 'Song 4 has a new look that takes on the artist’s comment: brighter, in haze.'],
         ['assistant', 'The artist approved the show and rated it 4/5. The handoff package is ready: 4 moments, each with its look and clip. 1 comment was left open and is in the decision log.'],
       ],
       300,

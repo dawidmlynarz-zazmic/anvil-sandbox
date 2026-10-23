@@ -4,7 +4,7 @@ import { listing, take, tweaksFrom } from './changes'
 import { capitalise, conceptTitle, describeLook, describeTweaks, lowerFirst, SHAPES, SHAPE_SHORT } from './shapes'
 
 // Mocked exploration. A batch is a few images for one key moment, planned from what you ask for: new directions,
-// more like a pinned image, other camera angles, or other light. Before the set is locked, a batch may try any
+// more like the open image, other camera angles, or other light. Before the set is locked, a batch may try any
 // structure; after, every image keeps the set's structure and varies only the look (palette, haze, brightness).
 
 export type BatchKind = 'directions' | 'more' | 'angles' | 'light'
