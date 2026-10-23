@@ -139,7 +139,7 @@ export function AskChat({ onClose }: { onClose: () => void }) {
           </MessageScrollerItem>
         )}
       </ChatShellThread>
-      <ChatShellComposer disclaimer="Sample shows, prices and seats. You always pay on AXS.">
+      <ChatShellComposer disclaimer="AI-powered assistant. Responses may not always be accurate.">
         <BorderBeam>
           <PromptInput aria-label="Message Ask AXS" size="compact" placeholder="Ask about shows, dates or seats" onSubmit={(text) => void send({ type: 'text', text })} />
         </BorderBeam>

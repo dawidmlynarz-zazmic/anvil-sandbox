@@ -1,0 +1,92 @@
+/*
+ * A hairline ring with a flowing, multi-tone glow, recreated in CSS from the idea behind Reacticx's React Native Chroma
+ * Ring: a quiet base ring, and two soft highlights that travel round the edge together, each shifting through a few
+ * tones. A conic gradient turns round the element and is cut down to the ring; a blurred copy behind gives the glow.
+ * The tones come from custom properties set by <ChromaRing> and default to the brand blue and white.
+ */
+@property --chroma-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+[data-slot='chroma-ring'] {
+  border-radius: var(--chroma-radius);
+}
+
+[data-slot='chroma-ring-base'],
+[data-slot='chroma-ring-flow'],
+[data-slot='chroma-ring-glow'],
+[data-slot='chroma-ring-glow-ring'] {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Only the border band is visible. */
+[data-slot='chroma-ring-base'],
+[data-slot='chroma-ring-flow'],
+[data-slot='chroma-ring-glow-ring'] {
+  padding: var(--chroma-width);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+[data-slot='chroma-ring-base'] {
+  z-index: 1;
+  background: var(--chroma-base);
+}
+
+/* Two opposite highlights, each rising from nothing, through three tones, and back. */
+[data-slot='chroma-ring-flow'],
+[data-slot='chroma-ring-glow-ring'] {
+  background: conic-gradient(
+    from var(--chroma-angle),
+    transparent 0deg,
+    var(--chroma-3) 18deg,
+    var(--chroma-2) 36deg,
+    var(--chroma-1) 50deg,
+    var(--chroma-2) 64deg,
+    var(--chroma-3) 82deg,
+    transparent 100deg,
+    transparent 180deg,
+    var(--chroma-3) 198deg,
+    var(--chroma-2) 216deg,
+    var(--chroma-1) 230deg,
+    var(--chroma-2) 244deg,
+    var(--chroma-3) 262deg,
+    transparent 280deg,
+    transparent 360deg
+  );
+  animation: chroma-ring-turn var(--chroma-duration) linear infinite;
+}
+
+[data-slot='chroma-ring-flow'] {
+  z-index: 1;
+}
+
+/* The blur sits on this wrapper, because a mask is applied after a filter on the same element and would cut the glow back to the ring. */
+[data-slot='chroma-ring-glow'] {
+  z-index: 0;
+  filter: blur(var(--chroma-blur));
+}
+
+@keyframes chroma-ring-turn {
+  to {
+    --chroma-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot='chroma-ring-flow'],
+  [data-slot='chroma-ring-glow-ring'] {
+    animation: none;
+    --chroma-angle: 30deg;
+  }
+}

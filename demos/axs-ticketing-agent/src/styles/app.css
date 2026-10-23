@@ -10,5 +10,7 @@
 @media (min-width: 40rem) {
   :root {
     --frame-h: min(844px, calc(100svh - 3rem));
+    /* Anvil's radius scale stops at 2xl, so `rounded-3xl` makes no class: the frame's corners come from here. */
+    --frame-radius: calc(var(--radius-2xl) + 12px);
   }
 }

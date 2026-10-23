@@ -23,13 +23,13 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 - Recommendation: add to Anvil (any seated venue, travel or cinema)
 
 ## launcher-mobile
-- Status: **built** as `AskLauncher` (`src/components/local/AskLauncher/`): the floating button plus a bottom Drawer. Two things Anvil's Drawer needed: `showCloseButton={false}` (the chat has its own close) and `!` overrides for `max-height` and `bottom`, which Anvil sets with attribute selectors. The demo's desktop device frame needs the Drawer aligned to it (`--frame-h`); a real phone doesn't.
+- Status: **built** as `AskLauncher` (`src/components/local/AskLauncher/`): the floating button plus a bottom Drawer. What Anvil's Drawer needed: `showCloseButton={false}` (the chat has its own close), `handleOnly` plus a hidden handle (so nothing drags it closed), and `!` overrides for height, margin, corners and position, which Anvil sets with attribute selectors. A `variant="fullscreen"` on `DrawerContent` would remove all of that. The demo portals the Drawer into its device frame (Vaul's `container`, with the frame as the containing block via a transform), so on a desktop the modal, its dimming and its slide-in stay inside the frame instead of sweeping across the browser window; `AskLauncher` takes that as a `container` prop. The demo's desktop device frame needs the Drawer aligned to it (`--frame-h`); a real phone doesn't.
 - Type: new variant of `Launcher` (`surface="mobile"`)
 - Needed for: the floating "Ask AXS" button on the host page
 - Closest Anvil option checked: `agent/launcher` (a 56px circle that opens a popover Chat Shell, 400 × 640, above the
   button, right-aligned; fine on desktop, wrong on a phone); `agent/proactive-drawer` (a drawer, but it peeks a message
   and isn't a persistent launcher)
-- Proposed API: `surface` popover · mobile; with mobile, `children` open in a bottom `Drawer` at full height; same
+- Proposed API: `surface` popover · mobile; with mobile, `children` open as a full-screen modal in a bottom-sliding `Drawer` (no grab handle, not draggable, closed by the chat's own close button or Escape); same
   `unread`, `preview`, `offline` states
 - Built from: `agent/launcher` button, `ui/drawer`, `agent/chat-shell surface="mobile"`
 - States covered: idle, attention (`preview`), open, offline
@@ -89,6 +89,18 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 - Story: `src/components/local/BorderBeam/BorderBeam.stories.tsx`
 - Recommendation: keep app-specific, or add to Anvil as an optional agent-composer effect once Anvil has a motion guideline for ambient animation
 
+## chroma-ring
+- Status: **built** (`src/components/local/ChromaRing/`), used on the floating Ask AXS button.
+- Type: new component (an attention effect around a button or field)
+- Needed for: the Ask AXS launcher at rest
+- Closest Anvil option checked: none. `Launcher` has an `attention` state (a pulse ring that stops under reduced motion) but no flowing ring; Reacticx's Chroma Ring is React Native (Skia and Reanimated), so this recreates the idea in CSS
+- Proposed API: `radius` (read from the child by default), `borderWidth`, `duration`, `blur`, `base`, `colors` (three tones), named after Reacticx's props
+- Built from: a conic gradient with two opposite highlights, cut down to the ring with a mask, plus a blurred copy behind for the glow; the tones default to Anvil's primary blue and `--primary-foreground`, so it follows both themes
+- States covered: animating, no glow, reduced motion (holds still)
+- Accessibility notes: decorative (`aria-hidden`, no pointer events); stops under `prefers-reduced-motion`; the button keeps its own focus ring and name
+- Story: `src/components/local/ChromaRing/ChromaRing.stories.tsx`
+- Recommendation: add to Anvil as an optional effect for `Launcher`'s `attention` state, or keep app-specific
+
 ## Not candidates (app-specific)
 
 - `PosterArt`: typographic placeholder posters for fictional shows (no real artwork). Passed to `OfferCard` `media`.
@@ -97,11 +109,13 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 
 ## Anvil issues found
 
+- Anvil's radius scale stops at `2xl`, so `rounded-3xl` generates no class and fails silently (it left the demo's device frame square-cornered). An app needing a larger radius must define its own value.
+
 None blocking; each has a local workaround.
 
 - `Launcher` is popover-only (400 × 640): see `launcher-mobile`.
 - `OfferCard` vertical is a fixed 220px, so a price plus the button overflows when the price is long ("From £57.50 each"). Worked around with short price text. A wrapping price, or the button on its own row, would fix it.
-- `DrawerContent` sets `max-height` and `bottom` with `data-[vaul-drawer-direction=bottom]:` selectors, so a `className` override needs `!`. It also always renders a portal to `body`, so it can't be contained in a device frame without those overrides.
+- `DrawerContent` sets `max-height`, `margin`, `bottom` and the corner radius with `data-[vaul-drawer-direction=bottom]:` selectors, so a `className` override needs `!`. The handle can't be turned off by a prop. It also always renders a portal to `body`, so it can't be contained in a device frame without those overrides.
 - `ChatShellThread` always opens at the end of the thread, so a tall `WelcomeState` opens scrolled past its heading on a phone. Worked around with `scrollToStart` while the thread is empty. A `defaultScrollPosition` prop on `ChatShellThread` would fix it.
 - `WelcomeState` with three `StarterPromptCard`s is about 1.4 screens tall on a phone (the top padding is `--space-3xl`), so the third starter is below the fold.
 - `QuickReply` is a medium-radius chip by design; AXS draws pills, handled in the skin (`axs-brand.css`).

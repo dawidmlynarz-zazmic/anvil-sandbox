@@ -3,6 +3,7 @@ import { Card } from '@anvil/components/ui/card'
 import { Icon, SearchIcon } from '@anvil/components/ui/icon'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@anvil/components/ui/input-group'
 import { AxsLogo } from '~/components/AxsLogo'
+import { useFrame } from '~/app/DeviceFrame'
 import { AskLauncher } from '~/components/local/AskLauncher/AskLauncher'
 import { showDateLine } from '~/lib/format'
 import { SHOWS } from '~/mocks/shows'
@@ -17,6 +18,7 @@ export function HostPage() {
   const navigate = useNavigate()
   const open = !!useMatch('/ask')
   const { send } = useSession()
+  const frame = useFrame()
   const ask = () => navigate('/ask')
 
   return (
@@ -68,7 +70,7 @@ export function HostPage() {
           ))}
         </ul>
       </main>
-      <AskLauncher open={open} onOpenChange={(o) => navigate(o ? '/ask' : '/')}>
+      <AskLauncher open={open} onOpenChange={(o) => navigate(o ? '/ask' : '/')} container={frame}>
         <AskChat onClose={() => navigate('/')} />
       </AskLauncher>
     </>
