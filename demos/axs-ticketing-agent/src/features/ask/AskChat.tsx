@@ -8,7 +8,7 @@ import { ToolLogLine } from '@anvil/components/agent/tool-log-line'
 import { WelcomeState } from '@anvil/components/agent/welcome-state'
 import { Button } from '@anvil/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@anvil/components/ui/dropdown-menu'
-import { EllipsisIcon, Icon, MoonIcon, RotateCcwIcon, SearchIcon, SunIcon, TicketIcon, UsersIcon, XIcon } from '@anvil/components/ui/icon'
+import { CompassIcon, EllipsisIcon, Icon, MapPinIcon, MoonIcon, PoundSterlingIcon, RotateCcwIcon, SunIcon, XIcon } from '@anvil/components/ui/icon'
 import { MessageScrollerItem, useMessageScroller } from '@anvil/components/ui/message-scroller'
 import { useTheme } from '~/app/useTheme'
 import { BorderBeam } from '~/components/local/BorderBeam/BorderBeam'
@@ -37,8 +37,8 @@ function FollowEnd({ signal, empty }: { signal: string; empty: boolean }) {
   return null
 }
 
-const STARTER_ICONS = [UsersIcon, SearchIcon, TicketIcon]
-const STARTER_NOTES = ['Budget and group size', 'A venue and a season', 'A venue and a number']
+const STARTER_ICONS = [CompassIcon, MapPinIcon, PoundSterlingIcon]
+const STARTER_NOTES = ['See what’s on, then narrow it down', 'Pick a venue and a season', 'Start from what you want to spend']
 
 export function AskChat({ onClose }: { onClose: () => void }) {
   const { session, busy, send, reset } = useSession()
@@ -82,7 +82,7 @@ export function AskChat({ onClose }: { onClose: () => void }) {
         {turns.length === 0 && (
           <WelcomeState
             greeting="Find your next show"
-            subtitle="Tell me how many tickets, your budget and when. I search the sample London shows in this demo."
+            subtitle="Ask for a place, a date or a budget, or start with one of these. I search the sample London shows in this demo."
           >
             {STARTERS.map((s, i) => (
               <StarterPromptCard

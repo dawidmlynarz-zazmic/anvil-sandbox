@@ -16,11 +16,8 @@ const turn = (text: string, extra: Partial<Turn> = {}): Turn => ({
   ...extra,
 })
 
-export const STARTERS = [
-  'Two tickets for a big night out in London, under £80 each',
-  'Anything live at The O2 next summer?',
-  'Boxing at Wembley, 2 seats',
-]
+// Open-ended on purpose: none says how many people. The agent asks that next, with a stepper.
+export const STARTERS = ['What’s on in London?', 'Anything live at The O2 next summer?', 'Great shows under £80']
 
 const WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 }
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
@@ -74,7 +71,7 @@ export function parseAsk(text: string): Criteria {
     const first = `${y}-${String(m).padStart(2, '0')}-01`
     Object.assign(c, { from: first, to: toIso(new Date(Date.UTC(y, m, 0, 12))), whenLabel: `in ${MONTHS[monthIdx][0].toUpperCase()}${MONTHS[monthIdx].slice(1)} ${y}` })
   }
-  if (Object.keys(c).length === 0 && /what'?s on|whats on|everything|anything|any shows?|all shows|surprise me|ideas/.test(t)) c.browse = true
+  if (Object.keys(c).length === 0 && /what['’]?s on|everything|anything|any shows?|all shows|surprise me|ideas/.test(t)) c.browse = true
   return c
 }
 
@@ -255,7 +252,7 @@ function handoffLines(session: Session): { label: string; value: string }[] {
 }
 
 const FALLBACK = turn(
-  'I can search the sample London shows in this demo: say how many tickets, your budget and when, or name a show. Try one of these.',
+  'I can search the sample London shows in this demo: tell me a place, a date or a budget, or name a show. Try one of these.',
 )
 
 /** What the agent says to a button press, as the user's own message in the thread. */
@@ -308,7 +305,7 @@ export async function respond(action: Action, session: Session): Promise<AgentRe
         // No number of tickets yet: say what's on, then ask with a stepper rather than a row of chips.
         const found = await axsTools.findEvents({ ...criteria, qty: 1 })
         if (found.length) {
-          const where = `${criteria.venue ? `at ${criteria.venue}` : 'in London'}${criteria.whenLabel ? ` ${criteria.whenLabel}` : ''}`
+          const where = `${criteria.venue ? `at ${criteria.venue}` : 'in London'}${criteria.whenLabel ? ` ${criteria.whenLabel}` : ''}${criteria.maxPrice ? `, under ${gbp(criteria.maxPrice, true)} each` : ''}`
           return {
             patch: { criteria, selection: {} },
             turns: [
