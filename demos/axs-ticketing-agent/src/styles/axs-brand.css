@@ -81,3 +81,8 @@
   position: absolute;
   inset: min(0px, calc((100% - 44px) / 2));
 }
+
+/* The welcome screen shows the Gemini mark on its own, in its own colours, not on Anvil's tinted square. */
+[data-brand='axs'] [data-slot='welcome-state'] [data-slot='icon-tile'] {
+  background: transparent;
+}

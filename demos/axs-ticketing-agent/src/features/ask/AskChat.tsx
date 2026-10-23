@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { CompassIcon, EllipsisIcon, Icon, MapPinIcon, MoonIcon, PoundSterlingIcon, RotateCcwIcon, SunIcon, XIcon } from '@anvil/components/ui/icon'
 import { MessageScrollerItem, useMessageScroller } from '@anvil/components/ui/message-scroller'
 import { useTheme } from '~/app/useTheme'
+import { GeminiIcon } from '~/components/GeminiIcon'
 import { BorderBeam } from '~/components/local/BorderBeam/BorderBeam'
 import { STARTERS } from '~/services/agent'
 import { useSession } from '~/state/session'
@@ -81,6 +82,7 @@ export function AskChat({ onClose }: { onClose: () => void }) {
         <FollowEnd signal={`${turns.length}:${busy}`} empty={turns.length === 0} />
         {turns.length === 0 && (
           <WelcomeState
+            icon={GeminiIcon}
             greeting="Find your next show"
             subtitle="Ask for a place, a date or a budget, or start with one of these. I search the sample London shows in this demo."
           >
