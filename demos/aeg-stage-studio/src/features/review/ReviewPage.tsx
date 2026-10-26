@@ -138,8 +138,8 @@ export function ReviewPage() {
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
               {artistView
-                ? 'Your show, moment by moment. Pin a comment on a look, comment on a clip, or approve the show.'
-                : 'What the artist saw and said, moment by moment.'}
+                ? 'Your show, song by song. Click an image to leave a comment on it, comment on a clip, or approve the show.'
+                : 'What the artist saw and said, song by song.'}
             </p>
           </div>
 
@@ -147,7 +147,7 @@ export function ReviewPage() {
             <Alert tone="agent" role="status">
               <Icon icon={EyeIcon} />
               <AlertTitle>Previewing as {meta.artist}</AlertTitle>
-              <AlertDescription>This is what the artist sees. Pin comments on any moment, then send them or approve the show.</AlertDescription>
+              <AlertDescription>This is what the artist sees. Leave comments on any song, then send them or approve the show.</AlertDescription>
             </Alert>
           )}
 
@@ -188,7 +188,7 @@ export function ReviewPage() {
             >
               <Icon icon={CheckIcon} />
               <AlertTitle>The show is approved</AlertTitle>
-              <AlertDescription>Every moment is signed off with its look and clip. The handoff package is ready.</AlertDescription>
+              <AlertDescription>Every song is signed off with its look and clip. The handoff package is ready.</AlertDescription>
             </Alert>
           )}
 
@@ -198,8 +198,8 @@ export function ReviewPage() {
               <AlertTitle>Changes requested</AlertTitle>
               <AlertDescription>
                 {p.redo.length
-                  ? `The agent is exploring new looks for ${p.redo.length === 1 ? `song ${p.redo[0]}` : `${p.redo.length} moments`} with the artist’s comments. Choose new looks, then send the show again.`
-                  : 'Every moment the artist commented on has a new look. Send the show again from the show board.'}
+                  ? `The agent is exploring new looks for ${p.redo.length === 1 ? `song ${p.redo[0]}` : `${p.redo.length} songs`} with the artist’s comments. Put the new images you like into motion, then send the show again.`
+                  : 'Every song the artist commented on has a new look. Send the show again from the show board.'}
               </AlertDescription>
             </Alert>
           )}
@@ -207,7 +207,7 @@ export function ReviewPage() {
           {(!waiting || artistView) && (
             <>
               <Tabs value={String(song)} onValueChange={(v) => pick(Number(v))}>
-                <TabsList variant="line" aria-label="Key moments" className="max-w-full overflow-x-auto">
+                <TabsList variant="line" aria-label="Songs" className="max-w-full overflow-x-auto">
                   {moments.map((m) => {
                     const count = review.filter((c) => c.song === m.number && !c.resolved).length
                     return (
@@ -240,7 +240,7 @@ export function ReviewPage() {
                     draft={draft ? { ...draft, number: review.length + 1 } : null}
                   />
                 ) : (
-                  <p className="text-muted-foreground type-text-sm-normal">This moment has no look yet.</p>
+                  <p className="text-muted-foreground type-text-sm-normal">This song isn’t in motion yet.</p>
                 )}
                 {artistView && draft && look && (
                   <form
@@ -253,7 +253,7 @@ export function ReviewPage() {
                       setDraftText('')
                     }}
                   >
-                    <Textarea label={`Comment ${review.length + 1}`} hint="Pinned where you clicked. Say what you’d change there." rows={2} autoFocus value={draftText} onChange={(e) => setDraftText(e.target.value)} />
+                    <Textarea label={`Comment ${review.length + 1}`} hint="Placed where you clicked. Say what you’d change there." rows={2} autoFocus value={draftText} onChange={(e) => setDraftText(e.target.value)} />
                     <div className="flex gap-2">
                       <Button type="submit" size="sm" disabled={!draftText.trim()}>
                         Add comment
@@ -264,12 +264,12 @@ export function ReviewPage() {
                     </div>
                   </form>
                 )}
-                {artistView && !draft && !approved && look && <p className="text-muted-foreground type-text-xs-normal">Click anywhere on the image to pin a comment there.</p>}
+                {artistView && !draft && !approved && look && <p className="text-muted-foreground type-text-xs-normal">Click anywhere on the image to leave a comment there.</p>}
               </section>
 
               <section id="review-clip" aria-labelledby="clip-title" className="flex scroll-mt-4 flex-col gap-2">
                 <h2 id="clip-title" className="type-text-base-semibold">
-                  Motion
+                  The clip
                 </h2>
                 {look && slot?.status === 'ready' ? (
                   <ReviewClip look={look} clip={slot.clip} brief={brief} of={moments.length} />
@@ -299,9 +299,9 @@ export function ReviewPage() {
                   <CardTitle>Comments on song {song}</CardTitle>
                   <CardDescription>
                     {artistView
-                      ? `Your comments on this moment (${forMoment.length}). The team sees them when you send.`
+                      ? `Your comments on this song (${forMoment.length}). The team sees them when you send.`
                       : forMoment.length === 0
-                        ? 'No comments on this moment.'
+                        ? 'No comments on this song.'
                         : forMoment.filter((c) => !c.resolved).length
                           ? `${forMoment.filter((c) => !c.resolved).length} open. Tick a comment once it’s dealt with.`
                           : 'All resolved.'}
@@ -372,7 +372,7 @@ export function ReviewPage() {
         </StepFooter>
       ) : (
         <StepFooter
-          note={approved ? 'The show is approved.' : waiting ? 'You can keep working while you wait.' : 'Approving signs off every moment and prepares the handoff package.'}
+          note={approved ? 'The show is approved.' : waiting ? 'You can keep working while you wait.' : 'Approving signs off every song and prepares the handoff package.'}
           status={waiting ? 'Waiting for the artist’s reply' : approved || changesRequested ? undefined : open.length ? `${open.length} open comment${open.length === 1 ? '' : 's'}` : 'All comments resolved'}
         >
           <RequestChangesDialog

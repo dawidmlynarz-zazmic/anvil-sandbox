@@ -33,7 +33,7 @@ export function StepNav() {
       step: 'show',
       label: 'Show',
       dot: setup ? 'todo' : chosen === p.moments.length && p.moments.length > 0 ? 'done' : 'active',
-      status: setup ? 'Not started' : `${chosen} of ${p.moments.length} looks`,
+      status: setup ? 'Not started' : `${chosen} of ${p.moments.length} songs in motion`,
     },
     {
       step: 'review',

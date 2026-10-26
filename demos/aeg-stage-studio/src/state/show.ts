@@ -26,7 +26,7 @@ export const MOMENT_STATUS: Record<MomentStatus, { text: string; tone: 'neutral'
   exploring: { text: 'Exploring', tone: 'agent' },
   chosen: { text: 'In motion', tone: 'success' },
   'needs-changes': { text: 'Artist asked for changes', tone: 'warning' },
-  'off-set': { text: 'Doesn’t match the set', tone: 'warning' },
+  'off-set': { text: 'Doesn’t match the stage set', tone: 'warning' },
 }
 
 export function momentStatus(p: Show, song: number): MomentStatus {

@@ -9,7 +9,7 @@ export function draftPrompt(brief: Brief, moment: SetlistMoment, light: TimeOfDa
   return [
     `Concept still of the ${venueOf(brief.venueId).name} stage, song ${moment.number} (“${moment.title}”): ${moment.intent.toLowerCase()}.`,
     `Style: ${brief.keywords.join(', ').toLowerCase()}.`,
-    set ? `Keep the set: ${lowerFirst(set.title)}, same structure and size. Vary only the light, LED content and haze.` : 'Explore the stage structure freely.',
+    set ? `Keep the stage set: ${lowerFirst(set.title)}, same structure and size. Vary only the light, LED content and haze.` : 'Explore the stage structure freely.',
     `Lighting: ${TIME_LABEL[light].toLowerCase()}.`,
     `Avoid: ${brief.constraints.noGo.toLowerCase() || 'nothing listed'}.`,
   ].join('\n')
@@ -25,7 +25,7 @@ const ASK: Record<BatchKind, string> = {
 export function batchThinking(brief: Brief, moment: SetlistMoment, light: TimeOfDay, set: ShowSet | null, kind: BatchKind, count: number, notes: string[] = []): Thinking {
   return {
     title: `Exploring song ${moment.number}`,
-    reasoning: `Song ${moment.number} (${moment.title}) plays in ${TIME_LABEL[light].toLowerCase()} (${slotNote(brief).toLowerCase()}). You asked for ${ASK[kind]}. ${set ? 'The set is locked, so I’ll keep its structure and vary the look.' : 'The set isn’t locked yet, so the structure can still change.'}`,
+    reasoning: `Song ${moment.number} (${moment.title}) plays in ${TIME_LABEL[light].toLowerCase()} (${slotNote(brief).toLowerCase()}). You asked for ${ASK[kind]}. ${set ? 'The stage set is locked, so I’ll keep its structure and vary the look.' : 'The stage set isn’t locked yet, so the structure can still change.'}`,
     steps: [`Loaded ${venueOf(brief.venueId).name}`, 'Checked the artist’s no-go list', ...notes.map((n) => `Read the artist’s comment: “${n}”`), `Drafted ${count} prompts`],
     tools: [{ name: 'generate_stills', summary: `Nano Banana Pro · ${count} images`, input: draftPrompt(brief, moment, light, set), status: 'running' }],
   }

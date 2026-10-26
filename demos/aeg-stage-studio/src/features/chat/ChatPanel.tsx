@@ -21,12 +21,13 @@ import { lowerFirst } from '~/services/shapes'
 import { clipKey, useProject } from '~/state/ProjectContext'
 import { looksChosen } from '~/state/project'
 import { footprint, issues, venueChecks } from '~/services/venueCheck'
+import { isCovered } from '~/mocks/venues'
 import { genById, gensFor, lookFor, MOMENT_STATUS, momentStatus } from '~/state/show'
 
 const PLACEHOLDER: Record<string, string> = {
   setup: 'Answer the question, or use a suggestion',
   brief: 'Describe the show, or ask me to change the brief…',
-  show: 'Ask about the show, e.g. “will the set hold in the wind?”',
+  show: 'Ask about the show, e.g. “will the stage set hold in the wind?”',
   m: 'Change the open image, e.g. “narrower, warmer”',
   review: 'Ask about the review, e.g. “what’s comment 2?”',
   handoff: 'Ask about the package or the decision log',
@@ -140,15 +141,15 @@ export function ChatPanel() {
         const all = gensFor(project, song)
         void reply(
           `Checking song ${song}`,
-          'You asked a question, so I’ll answer from this moment as it stands and change nothing.',
-          ['Read the moment’s images and look'],
-          `Song ${song} · ${moment.title} has ${all.length} ${all.length === 1 ? 'image' : 'images'}${look ? `, and #${look.n} is its look` : ', and no look yet'}.${focus ? ` #${focus.n} is open: describe a change (“narrower, warmer”) and I’ll make it as a new image.` : ''}`,
+          'You asked a question, so I’ll answer from this song as it stands and change nothing.',
+          ['Read the song’s images and look'],
+          `Song ${song} · ${moment.title} has ${all.length} ${all.length === 1 ? 'image' : 'images'}${look ? `, and #${look.n} is its look` : ', and nothing in motion yet'}.${focus ? ` #${focus.n} is open: describe a change (“narrower, warmer”) and I’ll make it as a new image.` : ''}`,
         )
       } else if (/\b(kit|assets?)\b/i.test(value) && look) {
         // “Build the kit” makes the moment's asset kit from its look.
         void project.buildKit(song)
       } else if (/\b(kit|assets?)\b/i.test(value)) {
-        void reply('Reading your request', 'The asset kit is made from the look, and this moment has none yet.', ['Checked the moment’s look'], 'Choose a look first; the asset kit is made from it.')
+        void reply('Reading your request', 'The asset kit is made from the look, and this song has none yet.', ['Checked the song’s look'], 'Put an image into motion first. The asset kit is made from it.')
       } else if (/\b(clip|camera|motion|pace|pacing|slower|faster|cut|beats?|push-in|crane)\b/i.test(value) && clip?.status === 'ready') {
         // Words about motion change the moment's clip.
         void project.editClip(song, value, false)
@@ -156,7 +157,7 @@ export function ChatPanel() {
         // Anything else changes the open image, as a new image (#13 from #12).
         void project.refine(focus.id, value.replace(/^\s*#\d+\s*[:,-]?\s*/, '') || value)
       } else {
-        void reply('Reading your request', 'Nothing is open on this moment yet.', ['Checked the moment'], 'Nothing is explored here yet. Explore four directions first, then tell me what to change.')
+        void reply('Reading your request', 'Nothing is open on this song yet.', ['Checked the song'], 'There are no images here yet. Explore four designs first, then tell me what to change.')
       }
       return
     }
@@ -165,7 +166,7 @@ export function ChatPanel() {
       say('user', value)
       const source = project.set ? genById(project, project.set.fromId) : undefined
       if (!source) {
-        void reply('Checking the set', 'The set isn’t locked, so there’s no structure to check yet.', ['Looked for the set'], 'The set isn’t locked yet. Every image has its own check on its badge; lock the set from a look and I’ll check it against the venue.')
+        void reply('Checking the stage set', 'The stage set isn’t locked, so there’s no structure to check yet.', ['Looked for the stage set'], 'The stage set isn’t locked yet. Each image shows its own checks on its badge. Lock the stage set from a look and I’ll check it against the venue.')
         return
       }
       const checks = venueChecks(source.spec, project.brief, source.reworked)
@@ -173,10 +174,10 @@ export function ChatPanel() {
       const flagged = issues(checks)
       const wind = checks.find((c) => c.label === 'Wind')
       void reply(
-        'Checking the set against the venue',
-        'You asked about the set in the venue, so I’ll check its footprint against the venue’s limits. The limits are sample specs.',
+        'Checking the stage set against the venue',
+        'You asked how the stage set fits the venue, so I’ll check its footprint against the venue’s limits. The limits are sample specs.',
         ['Estimated the footprint', ...checks.map((c) => `${c.label}: ${c.status === 'pass' ? 'passes' : c.status === 'warn' ? 'needs a plan' : 'fails'}`)],
-        `The set is ${fp.width} m wide, ${fp.height} m tall and ${fp.weight} t (${fp.flown} t flown). ${flagged.length ? `${checks.length - flagged.length} of ${checks.length} checks pass. ${flagged.map((c) => `${c.label}: ${c.detail}`).join(' ')}` : `Every check passes.${wind ? ` Wind: ${lowerFirst(wind.detail)}` : ''}`}${!wind && /wind|gust/i.test(value) ? ' It’s under a roof, so wind doesn’t apply.' : ''} These are estimates from sample specs; production confirms them with the venue.`,
+        `The stage set is ${fp.width} m wide, ${fp.height} m tall and ${fp.weight} t (${fp.flown} t hung from the ${isCovered(project.brief.venueId) ? 'grid' : 'roof'}). ${flagged.length ? `${checks.length - flagged.length} of ${checks.length} checks pass. ${flagged.map((c) => `${c.label}: ${c.detail}`).join(' ')}` : `Every check passes.${wind ? ` Wind: ${lowerFirst(wind.detail)}` : ''}`}${!wind && /wind|gust/i.test(value) ? ' It’s under a roof, so wind doesn’t apply.' : ''} These are estimates from sample specs; production confirms them with the venue.`,
       )
       return
     }
@@ -186,9 +187,9 @@ export function ChatPanel() {
       const open = project.moments.filter((m) => momentStatus(project, m.number) !== 'chosen')
       void reply(
         'Checking the show',
-        isQuestion(value) ? 'You asked about the show, so here is where it stands.' : 'Changes happen one moment at a time, so I’ll point you to the right one.',
-        ['Read every moment’s status', 'Checked the set'],
-        `${looksChosen(project)} of ${project.moments.length} moments have a look${project.set ? `, and the set is locked (${lowerFirst(project.set.title)})` : '; the set isn’t locked yet'}.${open.length ? ` Still open: ${open.map((m) => `song ${m.number} (${MOMENT_STATUS[momentStatus(project, m.number)].text.toLowerCase()})`).join(', ')}.` : ' Every moment is ready to send.'} To change a look, open its moment and tell me there.`,
+        isQuestion(value) ? 'You asked about the show, so here is where it stands.' : 'Changes happen one song at a time, so I’ll point you to the right one.',
+        ['Read every song’s status', 'Checked the stage set'],
+        `${looksChosen(project)} of ${project.moments.length} songs are in motion${project.set ? `, and the stage set is locked (${lowerFirst(project.set.title)})` : '; the stage set isn’t locked yet'}.${open.length ? ` Still open: ${open.map((m) => `song ${m.number} (${MOMENT_STATUS[momentStatus(project, m.number)].text.toLowerCase()})`).join(', ')}.` : ' Every song is ready to send.'} To change a song’s look, open the song and tell me there.`,
       )
       return
     }
@@ -199,13 +200,13 @@ export function ChatPanel() {
       const n = /\b(\d+)\b/.exec(value)
       const comment = n ? project.review.find((c) => c.number === Number(n[1])) : undefined
       if (!project.review.length) {
-        void reply('Checking the review', 'There are no artist comments yet.', ['Looked for artist comments'], project.status === 'awaiting-artist' ? 'The artist hasn’t replied yet. I’ll post here as soon as they do.' : 'Nothing has been sent to the artist yet. Send the show from the show board.')
+        void reply('Checking the review', 'There are no artist comments yet.', ['Looked for artist comments'], project.status === 'awaiting-artist' ? 'The artist hasn’t replied yet. I’ll post here as soon as they do.' : 'You haven’t sent the show to the artist yet. Send it from the show board.')
       } else if (comment) {
         void reply(
           `Reading comment ${comment.number}`,
           `Comment ${comment.number} is about the song ${comment.song} ${comment.target.kind === 'clip' ? 'clip' : 'look'}.`,
           ['Found the comment', 'Checked what it points at'],
-          `Comment ${comment.number}: “${comment.text}” ${comment.target.kind === 'clip' ? 'Request changes with it and I’ll edit that clip.' : 'Request changes with it and I’ll explore new looks for that moment with it applied.'}`,
+          `Comment ${comment.number}: “${comment.text}” ${comment.target.kind === 'clip' ? 'Request changes with it and I’ll edit that clip.' : 'Request changes with it and I’ll make new images for that song with it applied.'}`,
         )
       } else {
         void reply(
@@ -213,7 +214,7 @@ export function ChatPanel() {
           'You asked about the review, so here is where it stands.',
           ['Counted open comments', 'Checked what is ready to hand off'],
           open.length
-            ? `${open.length} of ${project.review.length} comments are open. The first: “${open[0]!.text}” Approve the show if they can wait, or request changes to rework those moments.`
+            ? `${open.length} of ${project.review.length} comments are open. The first: “${open[0]!.text}” Approve the show if they can wait, or request changes to rework those songs.`
             : 'All comments are resolved. You can approve the show.',
         )
       }
@@ -229,7 +230,7 @@ export function ChatPanel() {
         'You asked about the handoff, so I’ll answer from the package as it stands and change nothing.',
         ['Read the package contents', 'Checked rights and provenance', 'Counted open comments'],
         project.status === 'approved'
-          ? `Before production builds it: legal should confirm C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the placeholders.${open ? ` ${open} artist comment${open === 1 ? ' was left open; it’s' : 's were left open; they’re'} in the decision log.` : ''}`
+          ? `Before production builds it: legal should confirm C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the samples.${open ? ` ${open} artist comment${open === 1 ? ' was left open; it’s' : 's were left open; they’re'} in the decision log.` : ''}`
           : 'The package comes together once the artist approves. Finish the review first.',
       )
       return

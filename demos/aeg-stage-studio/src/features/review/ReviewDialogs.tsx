@@ -40,7 +40,7 @@ export function RequestChangesDialog({
         <DialogHeader>
           <DialogTitle>Request changes</DialogTitle>
           <DialogDescription>
-            Choose the comments to take on. A comment on a look starts new images for that moment; a comment on a clip edits
+            Choose the comments to take on. A comment on an image starts new images for that song; a comment on a clip edits
             the clip. Comments you leave out stay open here.
           </DialogDescription>
         </DialogHeader>
@@ -124,7 +124,7 @@ export function ArtistApproveDialog({ name, disabled, onApprove }: { name: strin
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Approve {name}</DialogTitle>
-          <DialogDescription>Every moment, with its look and clip, goes to the production team. One question first.</DialogDescription>
+          <DialogDescription>Every song, with its look and clip, goes to the production team. One question first.</DialogDescription>
         </DialogHeader>
         <DialogBody>
           <Rating

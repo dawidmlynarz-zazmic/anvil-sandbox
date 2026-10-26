@@ -135,7 +135,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const light = momentLight(s.brief, song, s.moments.length)
     const { drafts, summary } = planBatch(kind, { light, covered: isCovered(s.brief.venueId), set: s.set, existing, base, notes: opts.notes })
     if (!drafts.length) return
-    const label = base && kind !== 'directions' ? `${BATCH_LABEL[kind]} · #${base.n}` : s.set ? 'New looks on the set' : BATCH_LABEL[kind]
+    const label = base && kind !== 'directions' ? `${BATCH_LABEL[kind]} · #${base.n}` : s.set ? 'New looks on the stage set' : BATCH_LABEL[kind]
     const started = Date.now()
     const batch = nextBatch(existing)
     d({ type: 'pending/set', song, pending: { label, count: drafts.length, batch } })
@@ -194,7 +194,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const set = get().set
     const shown = set ? applied.filter((a) => !/centrepiece/.test(a)) : applied
     if (!shown.length) {
-      say('assistant', `The set is locked, so #${parent.n} keeps its size and height. Unlock the set on the show board to change the structure, or ask for a change to the light, colour or haze.`)
+      say('assistant', `The stage set is locked, so #${parent.n} keeps its size and height. To change the structure, unlock the stage set on the show board. Or ask me to change the light, colour or haze.`)
       return
     }
     const { child, msg, thinking } = await makeChild(
@@ -206,7 +206,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       'you',
     )
     d({ type: 'version/add', summary: `Song ${parent.song} #${child.n}: “${change}” on #${parent.n}`, author: 'You' })
-    updateMessage(msg, { pending: false, thinking, text: `#${child.n} is #${parent.n} with ${listing(shown)}. #${parent.n} is kept; compare them on the contact sheet.` })
+    updateMessage(msg, { pending: false, thinking, text: `Here’s #${child.n}: #${parent.n} with ${listing(shown)}. #${parent.n} is still there if you prefer it.` })
   }
 
   const addAnnotation: ProjectApi['addAnnotation'] = (genId, text, at) => {
@@ -255,7 +255,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     updateMessage(msg, {
       pending: false,
       thinking,
-      text: `#${child.n} is #${parent.n} with ${listing(shown)}.${notShown.length ? ` This preview can't show “${notShown.join('”, “')}”; the pilot model applies it.` : ''} #${parent.n} is kept.`,
+      text: `#${child.n} is #${parent.n} with ${listing(shown)}.${notShown.length ? ` This preview can’t show “${notShown.join('”, “')}”; in the pilot, the model applies it.` : ''} #${parent.n} is still there if you prefer it.`,
     })
   }
 
@@ -276,7 +276,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       'you',
     )
     d({ type: 'version/add', summary: `Song ${parent.song} #${child.n}: another take on #${parent.n}`, author: 'You' })
-    updateMessage(msg, { pending: false, thinking, text: `#${child.n} is another take on #${parent.n}: ${child.caption.toLowerCase()}. #${parent.n} is kept.` })
+    updateMessage(msg, { pending: false, thinking, text: `Here’s #${child.n}, another take on #${parent.n}: ${child.caption.toLowerCase()}. #${parent.n} is still there if you prefer it.` })
   }
 
   /** Renders a moment's clip. Pass the look when it was just chosen (the store hasn't caught up yet). */
@@ -296,12 +296,12 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const g = find(genId)
     if (!g) return
     if (!matchesSet(g.spec, s.set)) {
-      say('assistant', `#${g.n} was made before the set was locked, so its structure differs from the set. Ask for more like it to restage it on the set, then put one of those into motion.`)
+      say('assistant', `#${g.n} was made before the stage set was locked, so its structure is different. Ask for more like it to redo it on the locked set, then put one of those into motion.`)
       return
     }
     const redo = s.redo.includes(g.song)
     d({ type: 'look/set', song: g.song, id: genId })
-    d({ type: 'version/add', summary: `Song ${g.song} · look chosen: #${g.n} (${g.caption.toLowerCase()})`, author: 'You' })
+    d({ type: 'version/add', summary: `Song ${g.song} · #${g.n} put into motion (${g.caption.toLowerCase()})`, author: 'You' })
     if (!s.clips[clipKey(genId, g.song)]) void renderClip(g.song, g)
     const after = { ...s, looks: { ...s.looks, [g.song]: genId }, redo: s.redo.filter((x) => x !== g.song) }
     const next = nextOpenMoment(after, g.song)
@@ -309,9 +309,8 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     say(
       'assistant',
       [
-        `You put #${g.n} into motion for ${momentName(g.song)}${redo ? ', taking on the artist’s comments' : ''}. It’s the moment’s look now, and its eight-second clip leads the page.`,
-        s.set ? '' : 'When you’re happy with its structure, lock the set from it: every other moment then keeps that structure and varies only the look.',
-        next ? `${left === 1 ? 'One moment' : `${capitalise(String(left))} moments`} to go; next is ${momentName(next.number)}.` : 'Every moment is in motion. Check the show board, then send the show to the artist.',
+        `You put #${g.n} into motion for ${momentName(g.song)}${redo ? ', taking on the artist’s comments' : ''}. Its eight-second clip is at the top of the page.`,
+        next ? `${plural(left, 'song')} to go. Next: ${momentName(next.number)}.` : 'Every song is in motion. Check the show board, then send the show to the artist.',
       ]
         .filter(Boolean)
         .join(' '),
@@ -337,10 +336,10 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const checked = flagged.length
       ? ` Against ${venue} (sample specs), ${checks.length - flagged.length} of ${checks.length} checks pass; ${listing(flagged.map((c) => `${c.label.toLowerCase()}: ${lowerFirst(c.detail.replace(/\.$/, ''))}`))}. Production will need a plan for ${flagged.length === 1 ? 'it' : 'them'}.`
       : ` It passes every check against ${venue} (sample specs).`
-    d({ type: 'version/add', summary: `Set locked from song ${g.song} #${g.n} · ${g.title}${flagged.length ? ` (${flagged.length} to resolve)` : ''}`, author: 'You' })
+    d({ type: 'version/add', summary: `Stage set locked from song ${g.song}, #${g.n} · ${g.title}${flagged.length ? ` (${plural(flagged.length, 'issue')})` : ''}`, author: 'You' })
     say(
       'assistant',
-      `${alsoLook ? `#${g.n} is now the look for ${momentName(g.song)}, and I’m rendering its clip. ` : ''}You locked the set from #${g.n}: ${lowerFirst(g.title)}${describeTweaks({ width: set.width, lift: set.lift }) ? `, ${describeTweaks({ width: set.width, lift: set.lift })}` : ''}. From now on, new images for every moment keep this structure and vary the look: light, colour and haze.${checked}${off.length ? ` ${capitalise(songs(off))} ${off.length === 1 ? 'has a look' : 'have looks'} with another structure; ask for more like ${off.length === 1 ? 'it' : 'them'} to restage on the set.` : ''}`,
+      `${alsoLook ? `#${g.n} is now the look for ${momentName(g.song)}, and its clip is rendering. ` : ''}You locked the stage set from #${g.n}: ${lowerFirst(g.title)}${describeTweaks({ width: set.width, lift: set.lift }) ? `, ${describeTweaks({ width: set.width, lift: set.lift })}` : ''}. From now on, new images for every song keep this structure and change only light, colour and haze.${checked}${off.length ? ` ${capitalise(songs(off))} ${off.length === 1 ? 'has a look' : 'have looks'} with another structure; ask for more like ${off.length === 1 ? 'it' : 'them'} to restage on the set.` : ''}`,
     )
   }
 
@@ -379,7 +378,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     updateMessage(msg, {
       pending: false,
       thinking: { ...done(thinking, started, 'SynthID watermarked · stored in your project'), title: `Built the kit for song ${song}` },
-      text: `The kit for ${momentName(song)} is ready, all from #${look.n}: ${plural(count('angle'), 'angle')}, ${plural(count('light'), 'light state')} and ${plural(count('motion'), 'motion variant')}. Each shows where it came from. LED wall loops and performer stand-ins come with the pilot models.`,
+      text: `The asset kit for ${momentName(song)} is ready, all from #${look.n}: ${plural(count('angle'), 'extra angle')}, ${plural(count('light'), 'light state')} and ${plural(count('motion'), 'extra camera move')}. Each one shows where it came from. LED wall loops and performer stand-ins come with the pilot models.`,
     })
   }
 
@@ -427,7 +426,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       say(
         'assistant',
         flagged.length
-          ? `The venue is now ${venue}. The locked set doesn’t fit as it is (sample specs): ${listing(flagged.map((c) => `${c.label.toLowerCase()}, ${lowerFirst(c.detail.replace(/\.$/, ''))}`))}. Unlock the set on the show board and change its look${flagged[0]!.fix ? ` (try “${flagged[0]!.fix}”)` : ''}, then lock it again.`
+          ? `The venue is now ${venue}. The locked stage set doesn’t fit there as it is (sample specs): ${listing(flagged.map((c) => `${c.label.toLowerCase()}, ${lowerFirst(c.detail.replace(/\.$/, ''))}`))}. Unlock the stage set on the show board and change its look${flagged[0]!.fix ? ` (try “${flagged[0]!.fix}”)` : ''}, then lock it again.`
           : `The venue is now ${venue}. The locked set still passes every check there (sample specs).`,
       )
     },
@@ -441,7 +440,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       }
       const question = QUESTIONS[s.setupStep]
       if (!question) {
-        say('assistant', 'The brief is ready. Build the show when you’re ready, or tell me what to change.')
+        say('assistant', 'The brief is ready. Generate the show when you’re ready, or tell me what to change.')
         return
       }
       const result = applyAnswer(question.section, text, s.brief, s.meta.event)
@@ -499,7 +498,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       const s = get()
       const shown = Object.fromEntries(Object.entries(s.provenance).map(([k, v]) => [k, v === 'pending' ? 'blank' : v])) as typeof s.provenance
       const left = briefReadiness({ ...s, provenance: shown }).left.map((i) => i.label.toLowerCase())
-      say('assistant', left.length ? `Sure, use the form in the brief. Still to set: ${listing(left)}. You can keep answering here too.` : 'The brief is ready. Build the show when you’re ready.')
+      say('assistant', left.length ? `Sure, use the form in the brief. Still to set: ${listing(left)}. You can keep answering here too.` : 'The brief is ready. Generate the show when you’re ready.')
     },
     startProject: () => {
       const s = get()
@@ -508,12 +507,12 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       d({ type: 'meta/patch', patch: { briefDate: Date.now() } })
       const moments = s.moments.length ? s.moments : draftMoments(s.brief)
       d({ type: 'moments/set', moments })
-      d({ type: 'version/add', summary: `Show built · ${plural(moments.length, 'key moment')} drafted from the setlist`, author: 'Stage agent' })
+      d({ type: 'version/add', summary: `Show generated · ${plural(moments.length, 'key moment')} drafted from the setlist`, author: 'Stage agent' })
       const first = moments[0]
       if (!first) return undefined
       say(
         'assistant',
-        `I drafted ${plural(moments.length, 'key moment')} from the setlist: ${listing(moments.map((m) => `${m.number} ${m.title}`))}. Change them on the show board any time. Starting with song ${first.number} · ${first.title}, which plays in ${TIME_LABEL[momentLight(s.brief, first.number, moments.length)].toLowerCase()}.`,
+        `I drafted ${plural(moments.length, 'key moment')} from the setlist: ${listing(moments.map((m) => `${m.number} ${m.title}`))}. You can change them on the show board. Starting with song ${first.number} · ${first.title}, which plays in ${TIME_LABEL[momentLight(s.brief, first.number, moments.length)].toLowerCase()}.`,
       )
       // The batch reads the moments from the store, which has them once this render lands.
       window.setTimeout(() => void runBatch(first.number, 'directions', { author: 'agent' }), 300)
@@ -540,7 +539,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     unlockSet: () => {
       d({ type: 'set/lock', set: null })
       d({ type: 'version/add', summary: 'Set unlocked', author: 'You' })
-      say('assistant', 'You unlocked the set. New images can change the structure again; lock it from a look when you’re ready.')
+      say('assistant', 'You unlocked the stage set. New images can change the structure again. Lock it from a look when you’re ready.')
     },
     setFocus: (song, genId) => {
       const f = get().focus
@@ -564,15 +563,15 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       d({ type: 'clip/set', key, slot: { status: 'ready', clip } })
       d({ type: 'version/add', summary: `Song ${song} · ${title} clip: “${instruction}”`, author: 'You' })
       thinking = { ...done(thinking, started, `Clip v${clip.version} · 8 s · SynthID watermarked`), title: `Edited song ${song}` }
-      updateMessage(msg, { pending: false, thinking, text: `Done: the song ${song} clip now has “${instruction}” applied (clip v${clip.version}). The earlier version is kept.` })
+      updateMessage(msg, { pending: false, thinking, text: `Done. The song ${song} clip now has “${instruction}” (clip v${clip.version}). The earlier version is kept.` })
     },
     sendToArtist: (note) => {
       const s = get()
       const chosen = looksChosen(s)
       const ready = s.moments.filter((m) => { const l = lookFor(s, m.number); return l && s.clips[clipKey(l.id, m.number)]?.status === 'ready' }).length
       d({ type: 'status/set', status: 'awaiting-artist' })
-      d({ type: 'version/add', summary: `Sent to the artist · ${plural(chosen, 'moment')}, ${plural(ready, 'clip')}${note ? ', with a note' : ''}`, author: 'You', sent: true })
-      say('assistant', `Sent the show to ${s.meta.artist}: ${plural(chosen, 'moment')}, each with its look, and ${plural(ready, 'clip')}.${note ? ` Your note: “${note}”.` : ''} I’ll tell you here as soon as they reply.`)
+      d({ type: 'version/add', summary: `Sent to the artist · ${plural(chosen, 'song')}, ${plural(ready, 'clip')}${note ? ', with a note' : ''}`, author: 'You', sent: true })
+      say('assistant', `Sent the show to ${s.meta.artist}: ${plural(chosen, 'song')}, each with its look, and ${plural(ready, 'clip')}.${note ? ` Your note: “${note}”.` : ''} I’ll tell you here as soon as they reply.`)
       scheduleReply()
     },
     exportPackage: () => {
@@ -582,13 +581,13 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       d({ type: 'version/add', summary: 'Package sent to production', author: 'You' })
       say(
         'assistant',
-        `The package is with the production team: the set, ${plural(s.moments.length, 'moment')} with their looks and clips, the cue sheet and the decision log. Three things are still with legal before anything is built: C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the samples.`,
+        `The package is with the production team: the stage set, ${plural(s.moments.length, 'song')} with their looks and clips, the cue sheet and the decision log. Three things are still with legal before anything is built: C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the samples.`,
       )
     },
     attachReferences: () => {
       d({ type: 'chat/add', turn: { id: store.nextId(), role: 'user', text: 'Here’s the mood board.', attachments: true } })
       d({ type: 'brief/patch', patch: { referenceCount: get().brief.referenceCount + 3 }, source: 'you' })
-      say('assistant', 'Got 3 reference images. They’re added to the visual direction, and I’ll use them in every image and video prompt.')
+      say('assistant', 'Got 3 reference images. I added them to the visual direction and will use them for every image and clip.')
     },
     toggleResolved: (commentId) => d({ type: 'review/resolve', id: commentId }),
     requestChanges: (commentIds) => {
@@ -605,7 +604,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       say(
         'assistant',
         [
-          redo.length ? `${capitalise(songs(redo))} ${redo.length === 1 ? 'needs' : 'need'} a new look. I’m exploring three more like each current look, with the artist’s comments applied; choose one as the new look.` : '',
+          redo.length ? `${capitalise(songs(redo))} ${redo.length === 1 ? 'needs' : 'need'} a new look. I’m making three new images from each current look with the artist’s comments applied. Put the one you like into motion.` : '',
           onClips.length ? `The artist’s note on the ${songs(onClips.map((c) => c.song))} clip ${onClips.some((c) => redo.includes(c.song)) ? 'goes into the clip for the new look' : 'is being applied to the clip now'}.` : '',
           'Then send the show again.',
         ]
@@ -625,7 +624,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       const open = s.review.filter((c) => !c.resolved).length
       say(
         'assistant',
-        `${rating ? `The artist approved the show and rated it ${rating}/5.` : 'You approved the show for production.'} The handoff package is ready: ${plural(s.moments.length, 'moment')}, each with its look, and ${plural(s.moments.filter((m) => { const l = lookFor(s, m.number); return l && s.clips[clipKey(l.id, m.number)]?.status === 'ready' }).length, 'clip')}.${open ? ` ${open === 1 ? '1 comment was' : `${open} comments were`} left open and ${open === 1 ? 'is' : 'are'} in the decision log.` : ''}`,
+        `${rating ? `The artist approved the show and rated it ${rating}/5.` : 'You approved the show for production.'} The handoff package is ready: ${plural(s.moments.length, 'song')}, each with its look, and ${plural(s.moments.filter((m) => { const l = lookFor(s, m.number); return l && s.clips[clipKey(l.id, m.number)]?.status === 'ready' }).length, 'clip')}.${open ? ` ${open === 1 ? '1 comment was' : `${open} comments were`} left open and ${open === 1 ? 'is' : 'are'} in the decision log.` : ''}`,
       )
     },
     takeOverReview: () => {

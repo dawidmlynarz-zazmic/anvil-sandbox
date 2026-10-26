@@ -48,8 +48,8 @@ export function SendDialog({
         <DialogHeader>
           <DialogTitle>Send the show to {artist}</DialogTitle>
           <DialogDescription>
-            {artist} sees {items.length === 1 ? 'the key moment' : `all ${items.length} key moments`}, each with its look and {clips === items.length ? 'its clip' : `${clips} of ${items.length} clips`}.
-            They can comment on any moment, then approve the show once.
+            {artist} sees {items.length === 1 ? 'the song' : `all ${items.length} songs`}, each with its look and {clips === items.length ? 'its clip' : `${clips} of ${items.length} clips`}.
+            They can comment on any song, then approve the whole show.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
@@ -60,14 +60,14 @@ export function SendDialog({
                   Song {item.song} · {item.title}
                 </span>
                 <span className="text-muted-foreground type-text-xs-normal">
-                  Look {item.look} · {item.clip ? `clip v${item.clip}` : 'clip not ready: the artist sees the still only'}
+                  {item.look} · {item.clip ? `clip v${item.clip}` : 'no clip yet, so the artist sees the image only'}
                 </span>
               </li>
             ))}
           </ul>
           <Textarea
             label={`A note for ${artist}`}
-            hint="Optional. e.g. “The set stays the same all night; each moment changes its light.”"
+            hint="Optional. e.g. “The stage set stays the same all night; each song changes its light.”"
             rows={2}
             value={note}
             onChange={(e) => setNote(e.target.value)}

@@ -78,12 +78,12 @@ export function venueChecks(spec: StillSpec, brief: Brief, reworked = false, ven
   )
   checks.push(
     fp.flown > l.rigging
-      ? { label: 'Rigging', status: 'fail', detail: `${fp.flown} t flown; the ${venue.covered ? 'grid' : 'roof'} takes ${l.rigging} t.`, fix: 'narrower' }
+      ? { label: 'Rigging', status: 'fail', detail: `${fp.flown} t hangs from the ${venue.covered ? 'grid' : 'roof'}, which holds ${l.rigging} t.`, fix: 'narrower' }
       : fp.flown > l.rigging * 0.85
-        ? { label: 'Rigging', status: 'warn', detail: `${fp.flown} of ${l.rigging} t flown: little left for lighting and audio.`, fix: 'narrower' }
-        : { label: 'Rigging', status: 'pass', detail: `${fp.flown} of ${l.rigging} t flown.` },
+        ? { label: 'Rigging', status: 'warn', detail: `${fp.flown} of the ${l.rigging} t the ${venue.covered ? 'grid' : 'roof'} holds: little left for lighting and audio.`, fix: 'narrower' }
+        : { label: 'Rigging', status: 'pass', detail: `${fp.flown} of the ${l.rigging} t the ${venue.covered ? 'grid' : 'roof'} holds.` },
   )
-  checks.push({ label: 'LED wall', status: 'pass', detail: spec.concept === 'monolith' ? `Carries its own screen; the ${l.led[0]} × ${l.led[1]} m wall stays free for IMAG.` : `Works with the ${l.led[0]} × ${l.led[1]} m main wall.` })
+  checks.push({ label: 'LED wall', status: 'pass', detail: spec.concept === 'monolith' ? `Carries its own screen; the ${l.led[0]} × ${l.led[1]} m wall stays free for the camera feed.` : `Works with the ${l.led[0]} × ${l.led[1]} m main wall.` })
 
   // Sightlines and no-gos: a design's known risk, cleared by a visible change that addresses it or by a rework.
   const blocks = spec.concept === 'monolith' && !reworked && (t.width ?? 1) >= 1 && (t.lift ?? 0) <= 0
@@ -103,7 +103,7 @@ export function venueChecks(spec: StillSpec, brief: Brief, reworked = false, ven
     const hold = holdsTo(fp)
     checks.push(
       hold < l.gusts
-        ? { label: 'Wind', status: 'fail', detail: `Holds to ${hold} m/s; evening gusts reach ${l.gusts} m/s. It would come down mid-set.`, fix: 'narrower' }
+        ? { label: 'Wind', status: 'fail', detail: `Holds to ${hold} m/s; evening gusts reach ${l.gusts} m/s. It would have to come down mid-show.`, fix: 'narrower' }
         : hold < l.gusts + 3
           ? { label: 'Wind', status: 'warn', detail: `Holds to ${hold} m/s; evening gusts reach ${l.gusts} m/s. Needs a wind plan: lower it at ${hold - 2} m/s.`, fix: 'narrower' }
           : { label: 'Wind', status: 'pass', detail: `Holds to ${hold} m/s; evening gusts reach ${l.gusts} m/s.` },

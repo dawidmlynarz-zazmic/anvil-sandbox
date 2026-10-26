@@ -79,7 +79,7 @@ export function VenueCard() {
                 <KeyValueRow label="City">{venue.city}</KeyValueRow>
                 {venue.capacity && <KeyValueRow label="Capacity">{venue.capacity}</KeyValueRow>}
                 {venue.opened && <KeyValueRow label="Opened">{venue.opened}</KeyValueRow>}
-                <KeyValueRow label="Roof">{venue.covered ? 'Covered: lit as night all show' : 'Open air: the sun sets during some slots'}</KeyValueRow>
+                <KeyValueRow label="Roof">{venue.covered ? 'Covered: lit as night all show' : 'Open air: daylight depends on the slot'}</KeyValueRow>
               </KeyValueList>
               <p className="text-muted-foreground type-text-xs-normal">Source: {venue.source}</p>
             </section>
@@ -150,7 +150,7 @@ export function SlotCard() {
         </div>
         <DaylightTimeline start={start} end={end} sunset={SUNSET} />
         <p className="text-muted-foreground type-text-xs-normal">
-          Shows your set against the day’s light. Sunset is a placeholder until the real date and venue are set.
+          Your slot against the day’s light. The sunset time is an estimate until the date and venue are confirmed.
         </p>
       </CardContent>
     </Card>
@@ -183,7 +183,7 @@ export function ConstraintsCard() {
   const set = (key: keyof typeof constraints, value: string) => patchBrief({ constraints: { ...constraints, [key]: value } })
   return (
     <Card>
-      <SectionHeader title="Constraints" section="constraints">
+      <SectionHeader title="No-gos and budget" section="constraints">
           The no-gos and budget every design stays inside.
         </SectionHeader>
       <CardContent className="flex flex-col gap-4">

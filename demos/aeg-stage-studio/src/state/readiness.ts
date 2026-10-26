@@ -23,7 +23,7 @@ export function briefReadiness(p: Pick<ProjectState, 'brief' | 'provenance'>) {
     { key: 'venue', label: 'Venue', done: shown('venue') },
     { key: 'slot', label: 'Performance time slot', done: shown('slot') },
     { key: 'visual', label: 'Visual direction', done: p.brief.keywords.length > 0 },
-    { key: 'constraints', label: 'Constraints', done: shown('constraints'), optional: true },
+    { key: 'constraints', label: 'No-gos and budget', done: shown('constraints'), optional: true },
   ]
   const required = items.filter((i) => !i.optional)
   const left = required.filter((i) => !i.done)

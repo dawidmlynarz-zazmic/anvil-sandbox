@@ -73,9 +73,9 @@ export function planBatch(kind: BatchKind, ctx: BatchContext): { drafts: Draft[]
     if (set) {
       const drafts = [0, 1, 2, 3].map((i): Draft => {
         const spec = onSet(fresh({ concept: set.concept, with: set.with }, i), set, withNotes(take(n + i).tweaks))
-        return { spec, title: set.title, caption: capitalise(describeLook(spec.tweaks) || 'as designed'), source: 'directions' }
+        return { spec, title: set.title, caption: capitalise(describeLook(spec.tweaks) || 'original light'), source: 'directions' }
       })
-      return { drafts, summary: `Four new looks on the set: ${quoted(drafts.map((d) => d.caption))}. The structure stays as locked.` }
+      return { drafts, summary: `Four new looks on the stage set: ${quoted(drafts.map((d) => d.caption))}. The structure stays as locked.` }
     }
     const dismissed = [...new Set(ctx.existing.filter((g) => g.dismissed).map((g) => g.spec.concept))]
     const allowed = SHAPES.filter((s) => !dismissed.includes(s))
@@ -85,7 +85,7 @@ export function planBatch(kind: BatchKind, ctx: BatchContext): { drafts: Draft[]
       const shape = pool[i % pool.length]!
       // The first batch shows each direction as designed; later ones vary them, so nothing repeats.
       const tweaks = withNotes(first && i < pool.length ? {} : take(n + i).tweaks)
-      return { spec: fresh({ concept: shape, tweaks }, i), title: conceptTitle(shape), caption: capitalise(describeTweaks(tweaks) || 'as designed'), source: 'directions' }
+      return { spec: fresh({ concept: shape, tweaks }, i), title: conceptTitle(shape), caption: describeTweaks(tweaks) ? `${conceptTitle(shape)}, ${describeTweaks(tweaks)}` : conceptTitle(shape), source: 'directions' }
     })
     const left = dismissed.length && allowed.length ? ` I left out the ${listing(dismissed.map((s) => SHAPE_SHORT[s]))} you set aside.` : ''
     return {
@@ -106,7 +106,7 @@ export function planBatch(kind: BatchKind, ctx: BatchContext): { drafts: Draft[]
     })
     return {
       drafts,
-      summary: `Three more like ${code}: ${quoted(drafts.map((d) => d.caption))}.${set ? ' Each keeps the set’s structure.' : ''}${notes ? ` Each takes on the artist’s note: “${ctx.notes!.map((n) => n.replace(/[.!]+$/, '')).join('”, “')}”.` : ''}`,
+      summary: `Three more like ${code}: ${quoted(drafts.map((d) => d.caption))}.${set ? ' Each keeps the stage set’s structure.' : ''}${notes ? ` Each takes on the artist’s note: “${ctx.notes!.map((n) => n.replace(/[.!]+$/, '')).join('”, “')}”.` : ''}`,
     }
   }
 
@@ -173,7 +173,7 @@ export function batchLabel(first: Generation, parent: Generation | undefined, se
   const of = parent ? ` #${parent.n}` : ''
   switch (first.source) {
     case 'directions':
-      return set && matchesSet(first.spec, set) ? 'New looks on the set' : 'New directions'
+      return set && matchesSet(first.spec, set) ? 'New looks on the stage set' : 'New directions'
     case 'more':
       return `More like${of}`
     case 'angles':

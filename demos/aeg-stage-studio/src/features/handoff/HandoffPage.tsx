@@ -111,7 +111,7 @@ export function HandoffPage() {
           <EmptyStateHeader>
             <EmptyStateTitle>Handoff unlocks on approval</EmptyStateTitle>
             <EmptyStateDescription>
-              Once the artist approves the show, the package comes together here, organised for each trade that builds it: staging and rigging,
+              Once the artist approves the show, its package comes together here, organised for each team that builds it: staging and rigging,
               lighting, video and LED, camera, and legal.
             </EmptyStateDescription>
           </EmptyStateHeader>
@@ -138,7 +138,7 @@ export function HandoffPage() {
               </Badge>
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
-              Everything production needs to build the approved show, organised for each trade.
+              Everything production needs to build the approved show, organised by team.
             </p>
           </div>
 
@@ -156,14 +156,14 @@ export function HandoffPage() {
               <Icon icon={CheckIcon} />
               <AlertTitle>Sent to the production team</AlertTitle>
               <AlertDescription>
-                Each trade has its part: the set and its checks, every moment’s look, clip and kit, the cue sheet and the decision log. Legal still
+                Each team has its part: the stage set and its checks, every song’s look, clip and asset kit, the cue sheet and the decision log. Legal still
                 confirms the pending items. This is a demo, so nothing left the app.
               </AlertDescription>
             </Alert>
           )}
 
           <Tabs value={trade} onValueChange={(next) => setParams(next === 'overview' ? {} : { trade: next }, { replace: true })}>
-            <TabsList variant="line" aria-label="Package by trade" className="max-w-full overflow-x-auto">
+            <TabsList variant="line" aria-label="Package by team" className="max-w-full overflow-x-auto">
               {TRADES.map((t) => (
                 <TabsTrigger key={t.id} value={t.id}>
                   {t.label}
@@ -193,11 +193,11 @@ export function HandoffPage() {
                 <CardHeader>
                   <CardTitle>The show</CardTitle>
                   <CardDescription>
-                    {set && setSource ? `${set.title}, locked from song ${setSource.song} #${setSource.n}, with a look for every key moment.` : 'Each key moment with its look.'}
+                    {set && setSource ? `Stage set: ${set.title}, from song ${setSource.song}, image #${setSource.n}. Every song has its own look on it.` : 'Every song with its look.'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
-                  {setSource && <StillImage still={setSource} alt={`The set: ${set?.title}`} model={MODEL.still} className="aspect-[21/9] w-full rounded-lg object-cover" />}
+                  {setSource && <StillImage still={setSource} alt={`Stage set: ${set?.title}`} model={MODEL.still} className="aspect-[21/9] w-full rounded-lg object-cover" />}
                   <ul className="grid grid-cols-2 gap-4">
                     {rows.map(({ moment, look, clip, kit }) => (
                       <li key={moment.number} className="flex flex-col gap-1">
@@ -217,10 +217,10 @@ export function HandoffPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Package</CardTitle>
-                  <CardDescription>What the export contains, split by trade.</CardDescription>
+                  <CardDescription>What the export contains.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
-                  <CheckRow>The set and {rows.length} looks, hi-res</CheckRow>
+                  <CheckRow>The stage set and {rows.length} looks, hi-res</CheckRow>
                   <CheckRow>Motion previews ({rows.filter((r) => r.clip).length} clips)</CheckRow>
                   <CheckRow status={withKits === rows.length ? 'included' : 'pending'}>
                     Asset kits ({kitAssets} assets across {withKits} of {rows.length} moments)
@@ -238,16 +238,16 @@ export function HandoffPage() {
             <Card>
               <CardHeader>
                 <CardTitle>For the production manager and stage builder</CardTitle>
-                <CardDescription>The set, its footprint and how it sits in {venue.name}. Every moment uses this structure.</CardDescription>
+                <CardDescription>The stage set, its footprint and how it fits {venue.name}. Every song uses this structure.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-5">
                 {setSource ? (
                   <>
-                    <StillImage still={setSource} alt={`The set: ${set?.title}`} model={MODEL.still} className="aspect-[21/9] w-full rounded-lg object-cover" />
+                    <StillImage still={setSource} alt={`Stage set: ${set?.title}`} model={MODEL.still} className="aspect-[21/9] w-full rounded-lg object-cover" />
                     <SetChecks spec={setSource.spec} brief={p.brief} reworked={setSource.reworked} locked />
                   </>
                 ) : (
-                  <p className="text-muted-foreground type-text-sm-normal">The set wasn’t locked: each moment’s look carries its own structure. Check each one before building.</p>
+                  <p className="text-muted-foreground type-text-sm-normal">The stage set wasn’t locked, so each song’s look has its own structure. Check each one before building.</p>
                 )}
                 <section aria-label="Venue limits" className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
@@ -273,7 +273,7 @@ export function HandoffPage() {
             <Card>
               <CardHeader>
                 <CardTitle>For the lighting designer</CardTitle>
-                <CardDescription>Each moment’s light, its lighting cue, and the light states from its kit.</CardDescription>
+                <CardDescription>Each song’s light, its lighting cue, and the light states from its asset kit.</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="flex flex-col gap-4">
@@ -284,7 +284,7 @@ export function HandoffPage() {
                         <KeyValueRow label="Cue">{row.clip?.cue.lighting ?? 'No clip yet'}</KeyValueRow>
                         <KeyValueRow label="Look">{row.look.caption}</KeyValueRow>
                       </KeyValueList>
-                      <Thumbs look={row.look} assets={of(row, 'light')} empty="No light states yet: build the kit on the moment’s Look and assets tab." />
+                      <Thumbs look={row.look} assets={of(row, 'light')} empty="No light states yet. Build the asset kit on the song’s page." />
                     </MomentRow>
                   ))}
                 </ul>
@@ -296,7 +296,7 @@ export function HandoffPage() {
             <Card>
               <CardHeader>
                 <CardTitle>For the video and LED team</CardTitle>
-                <CardDescription>Each moment’s LED content, its clip and the motion variants from its kit.</CardDescription>
+                <CardDescription>Each song’s LED content, its clip, and the extra camera moves from its asset kit.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-5">
                 <ul className="flex flex-col gap-4">
@@ -327,7 +327,7 @@ export function HandoffPage() {
             <Card>
               <CardHeader>
                 <CardTitle>For the camera director and livestream</CardTitle>
-                <CardDescription>Each moment’s camera move, and the angles from its kit.</CardDescription>
+                <CardDescription>Each song’s camera move, and the extra angles from its asset kit.</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="flex flex-col gap-4">
@@ -336,7 +336,7 @@ export function HandoffPage() {
                       <KeyValueList>
                         <KeyValueRow label="Move">{row.clip ? `${MOVE_TITLE[moveOf(row.clip)]}, 8 s` : 'No clip yet'}</KeyValueRow>
                       </KeyValueList>
-                      <Thumbs look={row.look} assets={of(row, 'angle')} empty="No angles yet: build the kit on the moment’s Look and assets tab." />
+                      <Thumbs look={row.look} assets={of(row, 'angle')} empty="No extra angles yet. Build the asset kit on the song’s page." />
                     </MomentRow>
                   ))}
                 </ul>
@@ -355,7 +355,7 @@ export function HandoffPage() {
                   <CardContent>
                     <KeyValueList>
                       <KeyValueRow label="Creative direction">
-                        AEG Presents creative team: chose {rows.length} looks, {set ? 'locked the set, ' : ''}
+                        AEG Presents creative team: chose {rows.length} looks, {set ? 'locked the stage set, ' : ''}
                         {yours ? `asked for ${yours} of the ${generations.length} images, ` : ''}sent {sends} {sends === 1 ? 'review' : 'reviews'} to the artist
                       </KeyValueRow>
                       <KeyValueRow label="Artist">

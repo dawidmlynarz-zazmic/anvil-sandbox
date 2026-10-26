@@ -16,7 +16,7 @@ const SECTIONS: { key: BriefSection; label: string; Card: () => React.ReactNode 
   { key: 'venue', label: 'Venue', Card: VenueCard },
   { key: 'slot', label: 'Performance time slot', Card: SlotCard },
   { key: 'visual', label: 'Visual direction', Card: VisualDirectionCard },
-  { key: 'constraints', label: 'Constraints', Card: ConstraintsCard },
+  { key: 'constraints', label: 'No-gos and budget', Card: ConstraintsCard },
 ]
 
 /**
@@ -64,7 +64,7 @@ export function BriefPage() {
               <CardHeader>
                 <CardTitle>Still to cover</CardTitle>
                 <CardDescription>
-                  {readiness.done} of {readiness.total} done.{formOpen ? ' Fill in the rest below, or keep answering in the chat.' : ' Prefer a form? Fill in the rest yourself.'}
+                  {readiness.done} of {readiness.total} done.{formOpen ? ' Fill in the rest below, or keep answering in the chat.' : ''}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
@@ -96,7 +96,7 @@ export function BriefPage() {
       </div>
       {setup ? (
         <StepFooter
-          note={readiness.ready ? 'Brief ready · drafts the key moments and explores the first' : `${readiness.left.length} part${readiness.left.length === 1 ? '' : 's'} of the brief to go`}
+          note={readiness.ready ? 'Brief ready. Next, the agent drafts your key moments.' : `${readiness.left.length} part${readiness.left.length === 1 ? '' : 's'} of the brief to go`}
         >
           <Button
             disabled={!readiness.ready}
@@ -106,7 +106,7 @@ export function BriefPage() {
             }}
           >
             <Icon icon={SparklesIcon} />
-            Build the show
+            Generate show
           </Button>
         </StepFooter>
       ) : (
