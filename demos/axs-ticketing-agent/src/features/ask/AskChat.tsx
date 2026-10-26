@@ -8,7 +8,7 @@ import { ToolLogLine } from '@anvil/components/agent/tool-log-line'
 import { WelcomeState } from '@anvil/components/agent/welcome-state'
 import { Button } from '@anvil/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@anvil/components/ui/dropdown-menu'
-import { CompassIcon, EllipsisIcon, Icon, MapPinIcon, MoonIcon, PoundSterlingIcon, RotateCcwIcon, SunIcon, XIcon } from '@anvil/components/ui/icon'
+import { EllipsisIcon, Icon, MoonIcon, RotateCcwIcon, SunIcon, XIcon } from '@anvil/components/ui/icon'
 import { MessageScrollerItem, useMessageScroller } from '@anvil/components/ui/message-scroller'
 import { useTheme } from '~/app/useTheme'
 import { GeminiIcon } from '~/components/GeminiIcon'
@@ -38,7 +38,6 @@ function FollowEnd({ signal, empty }: { signal: string; empty: boolean }) {
   return null
 }
 
-const STARTER_ICONS = [CompassIcon, MapPinIcon, PoundSterlingIcon]
 const STARTER_NOTES = ['See what’s on, then narrow it down', 'Pick a venue and a season', 'Start from what you want to spend']
 
 export function AskChat({ onClose }: { onClose: () => void }) {
@@ -89,7 +88,6 @@ export function AskChat({ onClose }: { onClose: () => void }) {
             {STARTERS.map((s, i) => (
               <StarterPromptCard
                 key={s}
-                icon={STARTER_ICONS[i]}
                 title={s}
                 description={STARTER_NOTES[i]}
                 onClick={() => void send({ type: 'text', text: s })}

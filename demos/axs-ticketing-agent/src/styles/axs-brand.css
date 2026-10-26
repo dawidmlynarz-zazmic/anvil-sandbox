@@ -86,3 +86,8 @@
 [data-brand='axs'] [data-slot='welcome-state'] [data-slot='icon-tile'] {
   background: transparent;
 }
+
+/* The starter prompts are text only. Anvil's Starter Prompt Card always draws its icon tile, even without an icon, so it is hidden here. */
+[data-brand='axs'] [data-slot='starter-prompt-card'] [data-slot='icon-tile'] {
+  display: none;
+}
