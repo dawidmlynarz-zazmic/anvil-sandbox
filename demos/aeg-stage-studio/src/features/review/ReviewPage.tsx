@@ -13,7 +13,6 @@ import { Tabs, TabsList, TabsTrigger } from '@anvil/components/ui/tabs'
 import { ClipPlayer } from '~/components/local/ClipPlayer/ClipPlayer'
 import { PinnedImage } from '~/components/local/PinnedImage/PinnedImage'
 import { STEP_CONTENT } from '~/components/layout'
-import { StepFooter } from '~/components/StepFooter'
 import { clipFrame, useMomentThumb } from '~/components/clipFrame'
 import { StillImage, useStillUrl } from '~/components/StillImage'
 import { ModelBadge, MODEL } from '~/components/ModelBadge'
@@ -49,7 +48,9 @@ export function ReviewPage() {
   const [activeId, setActiveId] = useState<string | null>(null)
   // Open on the first moment with open comments, else the first.
   const firstOpen = review.find((c) => !c.resolved)?.song
-  const song = songParam ?? firstOpen ?? moments[0]?.number ?? 0
+  // Only songs with a look were sent; the rest stay out of the review.
+  const sentMoments = moments.filter((m) => lookFor(p, m.number))
+  const song = songParam ?? firstOpen ?? sentMoments[0]?.number ?? 0
   const moment = moments.find((m) => m.number === song)
   const look = lookFor(p, song)
 
@@ -75,6 +76,7 @@ export function ReviewPage() {
   const waiting = status === 'awaiting-artist'
   const approved = status === 'approved'
   const changesRequested = status === 'draft'
+  const sentCount = sentMoments.length
   const forMoment = review.filter((c) => c.song === song)
   const open = review.filter((c) => !c.resolved)
   // The pins drawn on the look the artist commented on; a comment on an older look stays in the list.
@@ -94,13 +96,37 @@ export function ReviewPage() {
       <div className="step-scroll relative min-h-0 flex-1 overflow-y-auto p-6">
         <div className={`${STEP_CONTENT} gap-6`}>
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3">
-              <h1 tabIndex={-1} className="type-heading-2xl outline-none">
-                Review and sign-off
-              </h1>
-              <Badge tone="agent" variant="subtle">
-                Review {reviewNumber}
-              </Badge>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <h1 tabIndex={-1} className="type-heading-2xl outline-none">
+                  Review and sign-off
+                </h1>
+                <Badge tone="agent" variant="subtle">
+                  Review {reviewNumber}
+                </Badge>
+              </div>
+              {/* Once approved, or once changes are requested, the alert below says what's next instead. */}
+              {(waiting || status === 'feedback') && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <RequestChangesDialog
+                    open={open}
+                    disabled={status !== 'feedback' || open.length === 0}
+                    onConfirm={(ids) => {
+                      p.requestChanges(ids)
+                      navigate(path('show'))
+                    }}
+                  />
+                  <ApproveButton
+                    name="the show"
+                    openCount={open.length}
+                    disabled={status !== 'feedback'}
+                    onApprove={() => {
+                      p.approve()
+                      navigate(path('handoff'))
+                    }}
+                  />
+                </div>
+              )}
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
               What the artist saw and said, song by song.
@@ -114,7 +140,7 @@ export function ReviewPage() {
                 <div className="flex flex-col gap-1" aria-live="polite">
                   <p className="type-text-base-semibold">Waiting for the artist</p>
                   <p className="text-muted-foreground type-text-sm-normal">
-                    Sent: {moments.length} songs, each with its look and clip. Artists usually reply within a day. In this demo their comments arrive in a few seconds.
+                    Sent: {sentCount === 1 ? '1 song' : `${sentCount} songs`}, {sentCount === 1 ? 'with its look' : 'each with its look'}. Artists usually reply within a day. In this demo their comments arrive in a few seconds.
                   </p>
                 </div>
                 <ul className="flex flex-wrap justify-center gap-2">
@@ -154,7 +180,7 @@ export function ReviewPage() {
               <AlertTitle>Changes requested</AlertTitle>
               <AlertDescription>
                 {p.redo.length
-                  ? `The agent is exploring new looks for ${p.redo.length === 1 ? `song ${p.redo[0]}` : `${p.redo.length} songs`} with the artist’s comments. Put the new images you like into motion, then send the show again.`
+                  ? `The agent is exploring new looks for ${p.redo.length === 1 ? `song ${p.redo[0]}` : `${p.redo.length} songs`} with the artist’s comments. Choose Generate motion on the new images you like, then send the show again.`
                   : 'Every song the artist commented on has a new look. Send the show again from the show board.'}
               </AlertDescription>
             </Alert>
@@ -164,7 +190,7 @@ export function ReviewPage() {
             <>
               <Tabs value={String(song)} onValueChange={(v) => pick(Number(v))}>
                 <TabsList variant="line" aria-label="Songs" className="max-w-full overflow-x-auto">
-                  {moments.map((m) => {
+                  {sentMoments.map((m) => {
                     const count = review.filter((c) => c.song === m.number && !c.resolved).length
                     return (
                       <TabsTrigger key={m.number} value={String(m.number)}>
@@ -257,28 +283,6 @@ export function ReviewPage() {
           )}
         </div>
       </div>
-      <StepFooter
-        note={approved ? 'The show is approved.' : waiting ? 'You can keep working while you wait.' : 'Approving signs off every song and prepares the handoff package.'}
-        status={waiting ? 'Waiting for the artist’s reply' : approved || changesRequested ? undefined : open.length ? `${open.length} open comment${open.length === 1 ? '' : 's'}` : 'All comments resolved'}
-      >
-        <RequestChangesDialog
-          open={open}
-          disabled={status !== 'feedback' || open.length === 0}
-          onConfirm={(ids) => {
-            p.requestChanges(ids)
-            navigate(path('show'))
-          }}
-        />
-        <ApproveButton
-          name="the show"
-          openCount={open.length}
-          disabled={status !== 'feedback'}
-          onApprove={() => {
-            p.approve()
-            navigate(path('handoff'))
-          }}
-        />
-      </StepFooter>
     </section>
   )
 }

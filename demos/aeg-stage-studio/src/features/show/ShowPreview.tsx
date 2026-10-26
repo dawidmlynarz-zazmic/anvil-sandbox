@@ -61,9 +61,9 @@ export function ShowPreview() {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" intent="neutral" size="sm" disabled={!scenes.length}>
+        <Button variant="outline" intent="neutral" disabled={!scenes.length}>
           <Icon icon={PlayIcon} />
-          Preview the show
+          Preview
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl">

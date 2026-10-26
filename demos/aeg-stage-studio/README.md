@@ -26,20 +26,20 @@ The show is designed one key moment (a song) at a time. See `docs/plan-moments.m
   project; **Reset the demo** at its bottom restores the seeded start.
 - **Brief**: the agent asks three questions in one card (stage, roughly when, the look), then any no-gos. Venues are
   real AEG venues and festival stages, with the facts aegworldwide.com publishes; technical specs are labelled samples.
-  **Generate show** drafts the key moments from the setlist and starts exploring the first.
+  **Generate show** (top right) drafts the key moments from the setlist, opens the show board and starts exploring the first.
 - **Show board** (`/show`): one line of running numbers, every key moment
-  in setlist order (its look, one status and one line of detail), and **Send for review** once every
-  moment has a look.
+  in setlist order (its look, one status and one line of detail). Top right: **Preview** and **Send for review**
+  (once at least one song is in motion; songs not in motion stay out of that review).
 - **Moment page** (`/m/:song`). A song with no images opens on a prompt: describe the stage (or start from a
   suggestion) and the agent makes four images from it; naming a design or a colour, size, haze or brightness steers
   them, and the agent says what the preview couldn't show. Then two tabs. **Explore**: new directions, or more like / other angles / other light of the
   open image from one menu; change an image in words (each change is a new image; its lineage,
-  provenance and compare-with-parent are in the card's menu); **Put #n into motion** makes it the moment's look and its
+  provenance and compare-with-parent are in the card's menu); **Generate motion** (on the open image's card) makes it the moment's look and its
   clip then leads the page (cues, plain-word edits). **Asset kit**: angles, light states and
   motion variants, each with provenance (LED loops and performer stand-ins come with the pilot models).
 - Key moments are numbered 1, 2, 3… in setlist order. Each one's light comes from where it falls in the set (the
   moments are spread across the slot), so the first moments of a sunset set play in golden hour and the last at night.
-- **Preview the show** (on the show board) plays every moment's clip in setlist order.
+- **Preview** (on the show board) plays every moment's clip in setlist order.
 - **Venue checks**: every design's footprint (size, weight, flown load, wind area) is checked against the venue's
   sample limits: stage width, trim, rigging, sightlines, no-gos and, for open-air stages, evening gusts. The checks show
   on each image's badge, on the show board and in Handoff (`src/services/venueCheck.ts`).

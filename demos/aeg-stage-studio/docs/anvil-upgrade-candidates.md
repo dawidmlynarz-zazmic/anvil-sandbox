@@ -55,11 +55,12 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 - Proposed API: `title`, `rationale`, `version`, `change`, `mediaSrc`, `mediaAlt`, `previousMedia`, `checks`,
   `selected` + `onSelectedChange`, `dismissed`, `busy`, `variants` + `onPickVariant` / `onCloseVariants`,
   `annotations` + `onAddAnnotation(text, at?)` / `onRemoveAnnotation` / `onApplyAnnotations`, `onMoreLikeThis`,
-  `onRegenerate`, `onRestorePrevious`, `onToggleDismissed`, `readOnly`
+  `onRegenerate`, `onRestorePrevious`, `onToggleDismissed`, `readOnly`, `primaryAction` (the card's main action, on the
+  footer's left in place of Select, e.g. “Generate motion”)
 - Built from: `ui/card` (+ `CardAction`, `CardFooter`), `ui/checkbox`, `ui/input`, local `PinnedImage`, `ui/dropdown-menu`, `ui/popover`,
   `anvil/check-row`, `ui/badge`, `ui/skeleton`, `ui/spinner`
 - States covered: default, selected, annotating with pinned and whole-concept changes, v2 with compare, refining,
-  variations (loading and ready), dismissed, read-only;
+  variations (loading and ready), dismissed, read-only, with a primary action;
   plus `ConceptCardPending` while generating
 - Accessibility notes: Select is a checkbox named per concept; Annotate is a toggle (`aria-pressed`); the change field
   is labelled with the pin number or “whole concept”; pins are numbered buttons; the

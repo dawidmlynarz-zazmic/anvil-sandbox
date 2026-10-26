@@ -53,7 +53,7 @@ mocked: no real model calls. The repo is public, and so are the hosted previews.
 ## How the user likes to work
 
 - Light mode by default; dark mode must work too.
-- One primary button per screen, bottom-right in the step footer.
+- One primary button per screen, top right in the page header, next to its secondary actions. No sticky footer bar.
 - A persistent agent chat on the left (always open), the work in the middle (shared max width, responsive below it),
   progress on the right. Agent messages must match what the screen shows: never claim what the mock doesn't do.
 - UX writing: plain, specific, active voice; name things as users know them; no em-dash asides; proper plurals.

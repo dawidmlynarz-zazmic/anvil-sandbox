@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { ButtonGroup } from '@anvil/components/ui/button-group'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@anvil/components/ui/dropdown-menu'
 import {
   ArrowLeftIcon,
-  ArrowRightIcon,
   CameraIcon,
   CheckIcon,
   ClapperboardIcon,
@@ -26,14 +25,13 @@ import { ContactSheetGroup, ContactSheetTile } from '~/components/local/ContactS
 import { STEP_CONTENT } from '~/components/layout'
 import { ModelBadge, MODEL } from '~/components/ModelBadge'
 import { ProvenanceDialog } from '~/components/ProvenanceButton'
-import { StepFooter } from '~/components/StepFooter'
 import { useStillUrl } from '~/components/StillImage'
 import { briefCheck } from '~/services/briefCheck'
 import { batchLabel } from '~/services/explore'
 import { momentLight } from '~/services/light'
 import { ofGeneration } from '~/services/provenance'
 import { useProject } from '~/state/ProjectContext'
-import { defaultFocus, genById, gensFor, kitStatus, lineage, lookFor, MOMENT_STATUS, momentStatus, nextOpenMoment } from '~/state/show'
+import { defaultFocus, genById, gensFor, lineage, lookFor, MOMENT_STATUS, momentStatus } from '~/state/show'
 import { TIME_LABEL, type Generation } from '~/state/types'
 import { AssetKit } from './AssetKit'
 import { LookMotion } from './LookMotion'
@@ -46,7 +44,7 @@ function Tile({ gen, ...props }: { gen: Generation } & Omit<React.ComponentProps
 }
 
 /** The image open for work: what it is, its check, and what you can do to it. Reference (lineage, provenance) is in its menu. */
-function Focus({ gen, readOnly }: { gen: Generation; readOnly: boolean }) {
+function Focus({ gen, readOnly, action }: { gen: Generation; readOnly: boolean; action?: React.ReactNode }) {
   const p = useProject()
   const src = useStillUrl(gen)
   const parent = genById(p, gen.parentId)
@@ -89,15 +87,14 @@ function Focus({ gen, readOnly }: { gen: Generation; readOnly: boolean }) {
         onRegenerate={() => void p.anotherTake(gen.id)}
         onToggleDismissed={() => p.toggleDismissed(gen.id)}
         readOnly={readOnly}
-      >
-      </ConceptCard>
+        primaryAction={action}
+      />
       <ProvenanceDialog name={`#${gen.n}`} provenance={ofGeneration(gen, lineage(p, gen))} open={provenance} onOpenChange={setProvenance} />
     </>
   )
 }
 
 export function MomentPage() {
-  const navigate = useNavigate()
   const { song: param } = useParams()
   const song = Number(param)
   const p = useProject()
@@ -135,9 +132,7 @@ export function MomentPage() {
   // A batch on its way: its placeholders join its group, or stand alone until its first image lands.
   const newBatch = pending && !all.some((g) => g.batch === pending.batch)
 
-  const openMoment = nextOpenMoment(p, song)
   const choosable = focus && focus.id !== look?.id && !focus.dismissed
-  const kit = kitStatus(p, song)
 
   return (
     <section aria-labelledby="moment-title" className="flex h-full min-w-0 flex-col">
@@ -152,7 +147,7 @@ export function MomentPage() {
                 </Link>
               </Button>
               <div className="flex items-center gap-1">
-                <Button asChild={!!prev} variant="ghost" intent="neutral" size="icon-sm" disabled={!prev} aria-label={prev ? `Previous: song ${prev.number}` : 'No previous song'}>
+                <Button asChild={!!prev} variant="outline" intent="neutral" size="icon-sm" disabled={!prev} aria-label={prev ? `Previous: song ${prev.number}` : 'No previous song'}>
                   {prev ? (
                     <Link to={p.momentPath(prev.number)}>
                       <Icon icon={ChevronLeftIcon} />
@@ -161,10 +156,10 @@ export function MomentPage() {
                     <Icon icon={ChevronLeftIcon} />
                   )}
                 </Button>
-                <span className="text-muted-foreground type-text-xs-normal">
+                <span className="text-muted-foreground px-1 type-text-xs-normal">
                   {index + 1} of {p.moments.length}
                 </span>
-                <Button asChild={!!next} variant="ghost" intent="neutral" size="icon-sm" disabled={!next} aria-label={next ? `Next: song ${next.number}` : 'No next song'}>
+                <Button asChild={!!next} variant="outline" intent="neutral" size="icon-sm" disabled={!next} aria-label={next ? `Next: song ${next.number}` : 'No next song'}>
                   {next ? (
                     <Link to={p.momentPath(next.number)}>
                       <Icon icon={ChevronRightIcon} />
@@ -211,7 +206,20 @@ export function MomentPage() {
                 <>
                   {/* Motion first: once the open image is the look, its clip leads the page. */}
                   {look && focus?.id === look.id && <LookMotion moment={moment} look={look} readOnly={locked} />}
-                  {focus && <Focus gen={focus} readOnly={locked} />}
+                  {focus && (
+                    <Focus
+                      gen={focus}
+                      readOnly={locked}
+                      action={
+                        choosable && !locked ? (
+                          <Button size="sm" disabled={sent || !!pending} onClick={() => p.chooseLook(focus.id)}>
+                            <Icon icon={ClapperboardIcon} />
+                            Generate motion
+                          </Button>
+                        ) : undefined
+                      }
+                    />
+                  )}
 
                   <section aria-labelledby="explore-title" className="flex flex-col gap-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -290,32 +298,6 @@ export function MomentPage() {
           )}
         </div>
       </div>
-      <StepFooter
-        note={look ? `In motion: #${look.n} · ${look.caption}` : 'Nothing in motion yet'}
-        status={sent ? 'With the artist. You can put a new image into motion after they reply.' : undefined}
-      >
-        {tab === 'assets' && look && (kit === 'none' || kit === 'stale') ? (
-          <Button disabled={locked} onClick={() => void p.buildKit(song)}>
-            <Icon icon={PackageIcon} />
-            {kit === 'stale' ? 'Rebuild the asset kit' : 'Build the asset kit'}
-          </Button>
-        ) : tab === 'explore' && choosable ? (
-          <Button disabled={locked || sent || !!pending} onClick={() => p.chooseLook(focus.id)}>
-            <Icon icon={ClapperboardIcon} />
-            Put #{focus.n} into motion
-          </Button>
-        ) : openMoment && openMoment.number !== song ? (
-          <Button onClick={() => navigate(p.momentPath(openMoment.number))}>
-            Next: song {openMoment.number}
-            <Icon icon={ArrowRightIcon} />
-          </Button>
-        ) : (
-          <Button onClick={() => navigate(p.path('show'))}>
-            Back to the show
-            <Icon icon={ArrowRightIcon} />
-          </Button>
-        )}
-      </StepFooter>
     </section>
   )
 }

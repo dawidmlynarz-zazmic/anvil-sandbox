@@ -106,6 +106,8 @@ export interface ConceptCardProps {
   compareInMenu?: boolean
   /** More items for the “More actions” menu, before “Not this direction”. */
   menuItems?: { label: string; icon: LucideIcon; onSelect: () => void }[]
+  /** The card's main action, on the footer's left (where the select checkbox would be), e.g. “Generate motion”. */
+  primaryAction?: ReactNode
   /** Extra content under the image, e.g. lineage or a call to action. */
   children?: ReactNode
   className?: string
@@ -151,6 +153,7 @@ export function ConceptCard({
   compareInMenu,
   menuItems = [],
   children,
+  primaryAction,
   className,
 }: ConceptCardProps) {
   const v = (n: number) => `${versionPrefix}${n}`
@@ -397,7 +400,7 @@ export function ConceptCard({
             {selectLabel}
           </label>
         ) : (
-          <span />
+          (primaryAction ?? <span />)
         )}
         <div className="flex items-center gap-1">
           {editable && onAddAnnotation && (

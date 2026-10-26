@@ -81,7 +81,7 @@ Stills and Motion screens below are replaced by the Show board and the Moment pa
 | Moment card (look, light, status, clip) | `ui/card` `size="sm"`, `ui/badge` | | No |
 | Add a key moment | `ui/card` + `ui/input` | | No |
 | Send the show | `ui/dialog` (SendDialog) | | No |
-| Preview the show (clips in order) | `ui/dialog` + local `ClipPlayer` (`autoPlay`, `onEnded`) + local `ClipTile` | | Yes (local parts) |
+| Preview (the show's clips in order) | `ui/dialog` + local `ClipPlayer` (`autoPlay`, `onEnded`) + local `ClipTile` | | Yes (local parts) |
 | Kit status on a moment card | `ui/badge` | `variant="outline"` | No |
 
 ## Moment page (`/m/:song`)

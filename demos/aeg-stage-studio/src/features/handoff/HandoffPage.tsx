@@ -13,11 +13,9 @@ import { KeyValueList, KeyValueRow } from '@anvil/components/anvil/key-value-row
 import { Timeline, TimelineItem } from '@anvil/components/anvil/timeline'
 import { NewProjectDialog } from '~/app/NewProjectDialog'
 import { STEP_CONTENT } from '~/components/layout'
-import { StepFooter } from '~/components/StepFooter'
 import { StillImage } from '~/components/StillImage'
 import { MODEL } from '~/components/ModelBadge'
 import { VenueChecks } from './VenueChecks'
-import { revealTop } from '~/lib/reveal'
 import { venueOf } from '~/mocks/venues'
 import { MOVE_TITLE, moveOf } from '~/services/generation'
 import { PILOT_ONLY } from '~/services/kit'
@@ -128,13 +126,19 @@ export function HandoffPage() {
       <div className="step-scroll relative min-h-0 flex-1 overflow-y-auto p-6">
         <div className={`${STEP_CONTENT} gap-6`}>
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3">
-              <h1 id="handoff-title" tabIndex={-1} className="type-heading-2xl outline-none">
-                Handoff
-              </h1>
-              <Badge tone="success" variant="subtle">
-                Show approved
-              </Badge>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <h1 id="handoff-title" tabIndex={-1} className="type-heading-2xl outline-none">
+                  Handoff
+                </h1>
+                <Badge tone="success" variant="subtle">
+                  Show approved
+                </Badge>
+              </div>
+              <Button onClick={exportPackage} disabled={exported}>
+                <Icon icon={DownloadIcon} />
+                {exported ? 'Exported' : 'Export package'}
+              </Button>
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
               Everything production needs to build the approved show, organised by team.
@@ -413,19 +417,6 @@ export function HandoffPage() {
           )}
         </div>
       </div>
-      <StepFooter note="The artist owns everything in the package." status={exported ? 'Sent to production' : 'Ready to export'}>
-        <Button
-          onClick={() => {
-            exportPackage()
-            // The confirmation sits at the top of the page: bring it into view.
-            revealTop(document.querySelector('.step-scroll'))
-          }}
-          disabled={exported}
-        >
-          <Icon icon={DownloadIcon} />
-          {exported ? 'Exported' : 'Export package'}
-        </Button>
-      </StepFooter>
     </section>
   )
 }
