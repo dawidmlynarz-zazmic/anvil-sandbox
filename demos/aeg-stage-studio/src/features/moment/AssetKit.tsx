@@ -66,7 +66,7 @@ export function AssetKit({ moment }: { moment: SetlistMoment }) {
           <Icon icon={PackageIcon} />
         </EmptyStateMedia>
         <EmptyStateHeader>
-          <EmptyStateTitle>Put an image into motion first</EmptyStateTitle>
+          <EmptyStateTitle>Generate motion for an image first</EmptyStateTitle>
           <EmptyStateDescription>The kit is made from the song’s look: other camera angles, light states and camera moves.</EmptyStateDescription>
         </EmptyStateHeader>
       </EmptyState>
@@ -91,9 +91,15 @@ export function AssetKit({ moment }: { moment: SetlistMoment }) {
         </div>
 
         {status === 'none' && (
-          <p className="text-muted-foreground type-text-sm-normal">
-            Other camera angles, light states and camera moves of #{look.n}, for production and content teams. Build it once you’re happy with the look.
-          </p>
+          <div className="flex flex-col items-start gap-3">
+            <p className="text-muted-foreground type-text-sm-normal">
+              Other camera angles, light states and camera moves of #{look.n}, for production and content teams. Build it once you’re happy with the look.
+            </p>
+            <Button disabled={p.status === 'approved'} onClick={() => void p.buildKit(song)}>
+              <Icon icon={PackageIcon} />
+              Build the asset kit
+            </Button>
+          </div>
         )}
 
         {status === 'stale' && built && (

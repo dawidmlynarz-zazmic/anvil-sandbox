@@ -152,7 +152,7 @@ export function ChatPanel() {
         // “Build the kit” makes the moment's asset kit from its look.
         void project.buildKit(song)
       } else if (/\b(kit|assets?)\b/i.test(value)) {
-        void reply('Reading your request', 'The asset kit is made from the look, and this song has none yet.', ['Checked the song’s look'], 'Put an image into motion first. The asset kit is made from it.')
+        void reply('Reading your request', 'The asset kit is made from the look, and this song has none yet.', ['Checked the song’s look'], 'Open an image and choose Generate motion first. The asset kit is made from it.')
       } else if (/\b(clip|camera|motion|pace|pacing|slower|faster|cut|beats?|push-in|crane)\b/i.test(value) && clip?.status === 'ready') {
         // Words about motion change the moment's clip.
         void project.editClip(song, value, false)
@@ -173,7 +173,7 @@ export function ChatPanel() {
         return look ? [{ m, look, checks: venueChecks(look.spec, project.brief, look.reworked) }] : []
       })
       if (!looks.length) {
-        void reply('Checking the venue', 'No song is in motion yet, so there’s no look to check.', ['Looked for looks in motion'], 'No song is in motion yet. Each image shows its own venue checks on its badge; put one into motion and ask me again.')
+        void reply('Checking the venue', 'No song is in motion yet, so there’s no look to check.', ['Looked for looks in motion'], 'No song is in motion yet. Each image shows its own venue checks on its badge; choose Generate motion on one and ask me again.')
         return
       }
       const lines = looks.map(({ m, look, checks }) => {

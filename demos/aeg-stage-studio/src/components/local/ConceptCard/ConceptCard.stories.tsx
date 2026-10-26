@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { stageArt } from '~/mocks/art'
+import { Button } from '@anvil/components/ui/button'
+import { ClapperboardIcon, Icon } from '@anvil/components/ui/icon'
 import { ConceptCard } from './ConceptCard'
 
 const img = (seed: string, time: 'golden-hour' | 'night' = 'golden-hour') => <img src={stageArt(seed, 'monolith', time)} alt="" />
@@ -53,3 +55,15 @@ export const Variations: Story = { args: { variants: [img('x'), img('y'), img('z
 export const VariationsLoading: Story = { args: { variants: 'generating' } }
 export const Dismissed: Story = { args: { dismissed: true } }
 export const ReadOnly: Story = { args: { readOnly: true } }
+/** The card's main action on the footer's left, in place of Select. */
+export const WithPrimaryAction: Story = {
+  args: {
+    onSelectedChange: undefined,
+    primaryAction: (
+      <Button size="sm">
+        <Icon icon={ClapperboardIcon} />
+        Generate motion
+      </Button>
+    ),
+  },
+}

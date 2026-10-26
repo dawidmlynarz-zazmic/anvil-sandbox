@@ -2,10 +2,9 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@anvil/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anvil/components/ui/card'
-import { ArrowRightIcon, Icon, PencilIcon, SparklesIcon } from '@anvil/components/ui/icon'
+import { Icon, PencilIcon, SparklesIcon } from '@anvil/components/ui/icon'
 import { CheckRow } from '@anvil/components/anvil/check-row'
 import { STEP_CONTENT } from '~/components/layout'
-import { StepFooter } from '~/components/StepFooter'
 import { useProject } from '~/state/ProjectContext'
 import { briefReadiness } from '~/state/readiness'
 import { reveal } from '~/lib/reveal'
@@ -26,11 +25,11 @@ const SECTIONS: { key: BriefSection; label: string; Card: () => React.ReactNode 
 export function BriefPage() {
   const navigate = useNavigate()
   const p = useProject()
-  const { phase, provenance, path, momentPath, startProject, revealBrief } = p
+  const { phase, provenance, path, startProject, revealBrief } = p
   const setup = phase === 'setup'
   const visible = SECTIONS.filter((s) => provenance[s.key] !== 'pending')
   const formOpen = SECTIONS.every((s) => provenance[s.key] !== 'pending')
-  // One readiness rule for the checklist, the footer, the header steps and the agent.
+  // One readiness rule for the checklist, Generate show, the header steps and the agent.
   const readiness = briefReadiness(p)
 
   // When the agent fills in one more section, bring it into view, so what it talks about is on screen.
@@ -49,9 +48,21 @@ export function BriefPage() {
       <div className="step-scroll relative min-h-0 flex-1 overflow-y-auto p-6">
         <div className={`${STEP_CONTENT} gap-4`}>
           <div className="flex flex-col gap-2">
-            <h1 id="brief-title" tabIndex={-1} className="type-heading-2xl outline-none">
-              {setup ? 'New project brief' : 'Project brief'}
-            </h1>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h1 id="brief-title" tabIndex={-1} className="type-heading-2xl outline-none">
+                {setup ? 'New project brief' : 'Project brief'}
+              </h1>
+              <Button
+                disabled={setup && !readiness.ready}
+                onClick={() => {
+                  if (setup) startProject()
+                  navigate(path('show'))
+                }}
+              >
+                <Icon icon={SparklesIcon} />
+                Generate show
+              </Button>
+            </div>
             <p className="text-muted-foreground type-text-sm-normal">
               {setup
                 ? 'Answer the agent in the chat, or fill it in here.'
@@ -94,30 +105,6 @@ export function BriefPage() {
           ))}
         </div>
       </div>
-      {setup ? (
-        <StepFooter
-          note={readiness.ready ? 'Brief ready. Next, the agent drafts your key moments.' : `${readiness.left.length} part${readiness.left.length === 1 ? '' : 's'} of the brief to go`}
-        >
-          <Button
-            disabled={!readiness.ready}
-            onClick={() => {
-              const first = startProject()
-              navigate(first === undefined ? path('show') : momentPath(first))
-            }}
-          >
-            <Icon icon={SparklesIcon} />
-            Generate show
-          </Button>
-        </StepFooter>
-      ) : (
-        <StepFooter
-        >
-          <Button onClick={() => navigate(path('show'))}>
-            Generate show
-            <Icon icon={ArrowRightIcon} />
-          </Button>
-        </StepFooter>
-      )}
     </section>
   )
 }

@@ -7,7 +7,6 @@ import { Dialog, DialogBody, DialogClose, DialogContent, DialogFooter, DialogHea
 import { ArrowRightIcon, Icon, ImageIcon, PlusIcon, XIcon } from '@anvil/components/ui/icon'
 import { Input } from '@anvil/components/ui/input'
 import { STEP_CONTENT } from '~/components/layout'
-import { StepFooter } from '~/components/StepFooter'
 import { useMomentThumb } from '~/components/clipFrame'
 import { momentLight } from '~/services/light'
 import { looksChosen } from '~/state/project'
@@ -147,8 +146,6 @@ export function ShowPage() {
     return [{ song: m.number, title: m.title, look: `#${look.n} · ${look.caption}`, clip: c?.status === 'ready' ? c.clip.version : undefined }]
   })
   const waiting = p.status === 'awaiting-artist'
-  const sent = p.sentVersion !== null
-  const left = p.moments.length - chosen
 
   return (
     <section aria-labelledby="show-title" className="flex h-full min-w-0 flex-col">
@@ -159,7 +156,26 @@ export function ShowPage() {
               <h1 id="show-title" tabIndex={-1} className="type-heading-2xl outline-none">
                 The show
               </h1>
-              <ShowPreview />
+              <div className="flex flex-wrap items-center gap-2">
+                <ShowPreview />
+                {p.status === 'approved' ? (
+                  <Button onClick={() => navigate(p.path('handoff'))}>
+                    Go to handoff
+                    <Icon icon={ArrowRightIcon} />
+                  </Button>
+                ) : (
+                  <SendDialog
+                    items={sendItems}
+                    left={p.moments.length - sendItems.length}
+                    label="Send for review"
+                    disabled={waiting || sendItems.length === 0}
+                    onSend={(note) => {
+                      p.sendToArtist(note || undefined)
+                      navigate(p.path('review'))
+                    }}
+                  />
+                )}
+              </div>
             </div>
             {/* The running numbers, in one line. The full measures are in Handoff. */}
             <p className="text-muted-foreground type-text-sm-normal tabular-nums">
@@ -185,36 +201,6 @@ export function ShowPage() {
           </section>
         </div>
       </div>
-      <StepFooter
-        note={
-          waiting
-            ? 'With the artist'
-            : left > 0
-              ? `Put ${left} more ${left === 1 ? 'song' : 'songs'} into motion to send`
-              : p.redo.length
-                ? `${p.redo.length} ${p.redo.length === 1 ? 'song still needs' : 'songs still need'} the artist’s changes`
-                : sent
-                  ? 'Sending again shares the latest looks and clips'
-                  : 'Every song is in motion'
-        }
-      >
-        {p.status === 'approved' ? (
-          <Button onClick={() => navigate(p.path('handoff'))}>
-            Go to handoff
-            <Icon icon={ArrowRightIcon} />
-          </Button>
-        ) : (
-          <SendDialog
-            items={sendItems}
-            label="Send for review"
-            disabled={waiting || chosen < p.moments.length || p.moments.length === 0}
-            onSend={(note) => {
-              p.sendToArtist(note || undefined)
-              navigate(p.path('review'))
-            }}
-          />
-        )}
-      </StepFooter>
     </section>
   )
 }

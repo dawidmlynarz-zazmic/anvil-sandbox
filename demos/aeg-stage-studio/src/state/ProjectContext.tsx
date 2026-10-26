@@ -144,7 +144,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     updateMessage(msg, {
       pending: false,
       thinking: { ...done(thinking, started, `${plural(made.length, 'image')} · SynthID watermarked · stored in your project`), title: `Explored song ${song}` },
-      text: `${capitalise(momentName(song))}. ${summary} Open the one you like and put it into motion.`,
+      text: `${capitalise(momentName(song))}. ${summary} Open the one you like and choose Generate motion.`,
     })
   }
 
@@ -290,7 +290,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       'assistant',
       [
         `You put #${g.n} into motion for ${momentName(g.song)}${redo ? ', taking on the artist’s comments' : ''}. Its eight-second clip is at the top of the page.`,
-        next ? `${plural(left, 'song')} to go. Next: ${momentName(next.number)}.` : 'Every song is in motion. Check the show board, then send the show to the artist.',
+        next ? `${plural(left, 'song')} to go, starting with ${momentName(next.number)}. You can send the songs in motion for review from the show board at any time.` : 'Every song is in motion. Check the show board, then send it for review.',
       ]
         .filter(Boolean)
         .join(' '),
@@ -519,7 +519,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       const ready = s.moments.filter((m) => { const l = lookFor(s, m.number); return l && s.clips[clipKey(l.id, m.number)]?.status === 'ready' }).length
       d({ type: 'status/set', status: 'awaiting-artist' })
       d({ type: 'version/add', summary: `Sent to the artist · ${plural(chosen, 'song')}, ${plural(ready, 'clip')}${note ? ', with a note' : ''}`, author: 'You', sent: true })
-      say('assistant', `Sent the show to ${s.meta.artist}: ${plural(chosen, 'song')}, each with its look, and ${plural(ready, 'clip')}.${note ? ` Your note: “${note}”.` : ''} I’ll tell you here as soon as they reply.`)
+      say('assistant', `Sent the show to ${s.meta.artist}: ${plural(chosen, 'song')}, ${chosen === 1 ? 'with its look' : 'each with its look'}, and ${plural(ready, 'clip')}.${note ? ` Your note: “${note}”.` : ''} I’ll tell you here as soon as they reply.`)
       scheduleReply()
     },
     exportPackage: () => {
@@ -552,7 +552,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       say(
         'assistant',
         [
-          redo.length ? `${capitalise(songs(redo))} ${redo.length === 1 ? 'needs' : 'need'} a new look. I’m making three new images from each current look with the artist’s comments applied. Put the one you like into motion.` : '',
+          redo.length ? `${capitalise(songs(redo))} ${redo.length === 1 ? 'needs' : 'need'} a new look. I’m making three new images from each current look with the artist’s comments applied. Open the one you like and choose Generate motion.` : '',
           onClips.length ? `The artist’s note on the ${songs(onClips.map((c) => c.song))} clip ${onClips.some((c) => redo.includes(c.song)) ? 'goes into the clip for the new look' : 'is being applied to the clip now'}.` : '',
           'Then send the show again.',
         ]

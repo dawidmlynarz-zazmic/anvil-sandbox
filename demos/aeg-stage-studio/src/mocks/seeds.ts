@@ -86,7 +86,7 @@ function coachella(): ProjectState {
         [
           ['assistant', 'Four directions for song 1 · Opening reveal: open-air arch, stone monolith, kinetic LED ribbons and floating halo.'],
           ['user', 'More like the monolith.'],
-          ['assistant', 'Three more like #2 for song 1. Open the one you like and put it into motion.'],
+          ['assistant', 'Three more like #2 for song 1. Open the one you like and choose Generate motion.'],
         ],
         3,
       ),

@@ -16,11 +16,14 @@ export interface SendItem {
 /** The one step that leaves the building: shows exactly what's being sent for review, with an optional note, before sending. */
 export function SendDialog({
   items,
+  left = 0,
   label,
   disabled,
   onSend,
 }: {
   items: SendItem[]
+  /** Songs not in motion yet: they stay out of this review. */
+  left?: number
   label: string
   disabled?: boolean
   onSend: (note: string) => void
@@ -46,8 +49,11 @@ export function SendDialog({
         <DialogHeader>
           <DialogTitle>Send for review</DialogTitle>
           <DialogDescription>
-            You’re sending {items.length === 1 ? '1 song' : `${items.length} songs`}, each with its look{clips === items.length ? ' and clip' : ` (${clips} with a clip)`}. The reviewer can
-            comment on any song, then approve the show or ask for changes.
+            {items.length === 1
+              ? `You’re sending 1 song, with its look${clips ? ' and clip' : ''}.`
+              : `You’re sending ${items.length} songs, each with its look${clips === items.length ? ' and clip' : ` (${clips} with a clip)`}.`}{' '}
+            {left > 0 && `${left === 1 ? '1 song isn’t' : `${left} songs aren’t`} in motion yet, so ${left === 1 ? 'it stays' : 'they stay'} out of this review. `}
+            The reviewer can comment on any song, then approve the show or ask for changes.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
