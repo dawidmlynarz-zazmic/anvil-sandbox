@@ -9,8 +9,7 @@ import { ChatPanel } from '~/features/chat/ChatPanel'
 import { statusBadge } from '~/state/project'
 import { useProject } from '~/state/ProjectContext'
 import { AboutDemo } from './AboutDemo'
-import { InviteDialog } from './InviteDialog'
-import { StepNav } from './StepNav'
+import { ShareDialog } from './ShareDialog'
 import { ProjectsSidebar } from './ProjectsSidebar'
 
 const CHAT_WIDTH_KEY = 'stage-studio:chat-width'
@@ -28,12 +27,13 @@ const readChatWidth = () => {
 
 
 /**
- * Projects (collapsible, like a chat history) · the project's conversation · the step's work. The steps are in the
- * header.
+ * Projects (collapsible, like a chat history) · the project's conversation · the work. Each page links to the next
+ * (brief → show → handoff), so the header holds only the project, its status and Share.
  * The projects list starts collapsed to icons so the work keeps its room.
  */
 export function AppShell() {
-  const { meta, status } = useProject()
+  const project = useProject()
+  const { meta } = project
   const { pathname } = useLocation()
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
   // The agent is always open: it's how you work with the project.
@@ -71,7 +71,7 @@ export function AppShell() {
     }
   }
 
-  const badge = statusBadge(status)
+  const badge = statusBadge(project)
 
   return (
     <SidebarProvider defaultOpen={false} className="h-svh min-h-0 min-w-3xl">
@@ -82,13 +82,12 @@ export function AppShell() {
           <span className="ms-1 min-w-0 truncate type-text-sm-semibold">
             {meta.artist} · {meta.event}
           </span>
-          <Badge tone={badge.tone} variant="subtle" shape="pill" indicator className="hidden shrink-0 xl:inline-flex">
+          <Badge tone={badge.tone} variant="subtle" shape="pill" indicator className="shrink-0">
             {badge.text}
           </Badge>
-          {/* Keeps its own width; the project name truncates first. */}
-          <div className="flex flex-1 justify-center"><StepNav /></div>
+          <div className="flex-1" />
           <AboutDemo />
-          <InviteDialog />
+          <ShareDialog />
           <Button
             variant="ghost"
             intent="neutral"

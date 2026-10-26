@@ -15,7 +15,7 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 
 ## clip-player
 - Type: new component
-- Needed for: the Motion card on a moment page, and `/review`
+- Needed for: the Motion card on a moment page, and the show preview
 - Closest Anvil option checked: `agent/widget-media` (audio player: play, waveform, duration) and `ui/slider` — no video preview with a scrubber and a before/after comparison
 - Proposed API: `poster`, `comparePoster`, `compare`, `seconds`, `label`, `busy`, `renderFrame(t, variant)` (draws the frame live, e.g. a 3D scene), `compareLabels`, `autoPlay` and `onEnded` (play clips in sequence, as the show preview does), `model` (names the model over the clip)
 - Built from: `ui/button`, `ui/slider`, tokens only
@@ -26,7 +26,7 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 
 ## clip-tile
 - Type: new component
-- Needed for: the motion variants on a moment's Assets tab, and the show preview's moment strip
+- Needed for: the show preview's moment strip
 - Closest Anvil option checked: `anvil/choice-card`, `ui/card` interactive, `agent/task-card` — none is a selectable thumbnail with a render status
 - Proposed API: `song`, `title`, `status` ready · generating · not-started, `poster`, `selected`
 - Built from: `ui/card` (asChild button), `ui/badge`, `ui/spinner`
@@ -37,7 +37,7 @@ Local components built in `src/components/local/` that Anvil doesn't have. Dawid
 
 ## pinned-image
 - Type: new component
-- Needed for: `/review` (stills tab)
+- Needed for: notes pinned on an image in `ConceptCard` (Annotate); first built for the review step, since removed
 - Closest Anvil option checked: `agent/element-spotlight`, `agent/widget-media`, `agent/media-gallery` — none places numbered markers on an image or links them to a comment list
 - Proposed API: `src`, `alt`, `pins` (`id`, `number`, `x`, `y`), `activeId`, `onActiveChange`, `resolvedIds`
 - Built from: `ui/button` (circle, icon-xs), tokens only

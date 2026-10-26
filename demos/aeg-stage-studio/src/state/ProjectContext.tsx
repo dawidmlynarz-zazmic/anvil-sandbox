@@ -1,18 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
-import { artistFeedback, artistPraise } from '~/mocks/review'
 import { isCovered, venueOf } from '~/mocks/venues'
 import { issues, venueChecks } from '~/services/venueCheck'
 import { applyAnswer, DONE_TEXT, draftMoments, profileQuestions, QUESTIONS, SLOT_TIMES } from '~/services/interview'
 import { generation } from '~/services/generation'
 import { listing, take, tweaksFrom } from '~/services/changes'
-import { BATCH_LABEL, materialize, planBatch, stamp, type BatchKind, type Draft } from '~/services/explore'
-import { KIT_LABEL, planKit } from '~/services/kit'
-import { moveOf } from '~/services/generation'
+import { BATCH_LABEL, materialize, planBatch, type BatchKind, type Draft } from '~/services/explore'
 import { momentLight } from '~/services/light'
 import { capitalise, describeTweaks } from '~/services/shapes'
 import { batchThinking, motionThinking } from '~/services/reasoning'
 import { TIME_LABEL } from './types'
-import { ALL_SECTIONS, clipKey, looksChosen, type Action, type ProjectState } from './project'
+import { ALL_SECTIONS, clipKey, clock, handoffOutOfDate, showComplete, type Action, type ProjectState } from './project'
 import { briefReadiness } from './readiness'
 import { genById, gensFor, lookFor, momentStatus, nextOpenMoment } from './show'
 import { useStore } from './store'
@@ -21,7 +18,7 @@ import type { Brief, ChatTurn, Generation, MotionClip, Thinking } from './types'
 // eslint-disable-next-line react-refresh/only-export-components
 export { clipKey }
 
-export type Step = 'brief' | 'show' | 'review' | 'handoff'
+export type Step = 'brief' | 'show' | 'handoff'
 
 interface ProjectApi extends ProjectState {
   projectId: string
@@ -62,23 +59,17 @@ interface ProjectApi extends ProjectState {
   /** The image open on a moment page, so the chat changes that one. */
   setFocus: (song: number, genId: string) => void
   generateClip: (song: number) => Promise<void>
-  /** Builds a moment's asset kit from its look: angles, light states and motion variants. */
-  buildKit: (song: number) => Promise<void>
   editClip: (song: number, instruction: string, echo?: boolean) => Promise<void>
-  /** Sends every moment's look and clip to the artist, with an optional note from you. */
-  sendToArtist: (note?: string) => void
+  /** Makes the handoff package from the show as it is now: a new version when there was one already. */
+  generateHandoff: () => void
+  /** Leaves the show as edited without a new handoff; the agent says when the handoff no longer matches. */
+  saveShow: () => void
   /** Sends the handoff package to the production team. */
   exportPackage: () => void
   /** Attaches reference images (mocked: the sample mood board) to the conversation and the brief. */
   attachReferences: () => void
-  toggleResolved: (commentId: string) => void
-  requestChanges: (commentIds: string[]) => void
-  /** Signs off the whole show, with the artist's rating when they gave one. */
-  approve: (rating?: number) => void
   say: (role: ChatTurn['role'], text: string, pending?: boolean) => number
   updateMessage: (id: number, patch: Partial<ChatTurn>) => void
-  /** Re-arms the simulated artist reply after a reload. */
-  resumeReply: () => void
 }
 
 const ProjectContext = createContext<ProjectApi | null>(null)
@@ -90,9 +81,6 @@ const cantShow = (change: string, code: string) =>
   `I kept ${code} as it is: this preview can't show “${change}”. In the pilot, Nano Banana Pro edits exactly what you describe. Here I can change size, height, colour, haze and brightness, e.g. “narrower, warmer”.`
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const nextBatch = (gens: Generation[]) => Math.max(0, ...gens.map((g) => g.batch)) + 1
-
-/** Projects waiting on a (simulated) artist reply, so a reply is scheduled only once. */
-const pendingReplies = new Set<string>()
 
 type Store = ReturnType<typeof useStore>
 
@@ -140,7 +128,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       updateMessage(msg, { thinking })
     }
     d({ type: 'pending/set', song, pending: undefined })
-    d({ type: 'version/add', summary: `Song ${song} · ${label} (${plural(made.length, 'image')})`, author: opts.author === 'you' ? 'You' : 'Stage agent' })
+    d({ type: 'version/add', summary: `Song ${song} · ${label} (${plural(made.length, 'image')})`, author: opts.author === 'you' ? 'You' : 'Gemini' })
     updateMessage(msg, {
       pending: false,
       thinking: { ...done(thinking, started, `${plural(made.length, 'image')} · SynthID watermarked · stored in your project`), title: `Explored song ${song}` },
@@ -270,99 +258,28 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const key = clipKey(look.id, song)
     d({ type: 'clip/set', key, slot: { status: 'generating' } })
     const clip = await generation.generateMotion(look, song)
-    // The artist's notes on this moment's clip carry over to the new look's clip.
-    const notes = get().review.filter((c) => c.song === song && c.target.kind === 'clip' && c.addressed).map((c) => c.text)
-    d({ type: 'clip/set', key, slot: { status: 'ready', clip: notes.length ? { ...clip, edits: notes } : clip } })
+    d({ type: 'clip/set', key, slot: { status: 'ready', clip } })
   }
 
   const chooseLook: ProjectApi['chooseLook'] = (genId) => {
     const s = get()
     const g = find(genId)
     if (!g) return
-    const redo = s.redo.includes(g.song)
     d({ type: 'look/set', song: g.song, id: genId })
     d({ type: 'version/add', summary: `Song ${g.song} · #${g.n} put into motion (${g.caption.toLowerCase()})`, author: 'You' })
     if (!s.clips[clipKey(genId, g.song)]) void renderClip(g.song, g)
-    const after = { ...s, looks: { ...s.looks, [g.song]: genId }, redo: s.redo.filter((x) => x !== g.song) }
+    const after = { ...s, looks: { ...s.looks, [g.song]: genId } }
     const next = nextOpenMoment(after, g.song)
     const left = after.moments.filter((m) => momentStatus(after, m.number) !== 'chosen').length
     say(
       'assistant',
       [
-        `You put #${g.n} into motion for ${momentName(g.song)}${redo ? ', taking on the artist’s comments' : ''}. Its eight-second clip is at the top of the page.`,
-        next ? `${plural(left, 'song')} to go, starting with ${momentName(next.number)}. You can send the songs in motion for review from the show board at any time.` : 'Every song is in motion. Check the show board, then send it for review.',
+        `You put #${g.n} into motion for ${momentName(g.song)}. Its eight-second clip is at the top of the page.`,
+        next ? `${plural(left, 'song')} to go, starting with ${momentName(next.number)}.` : s.handoff ? `Every song is in motion. Generate the handoff again on the show board to include this look.` : 'Every song is in motion. Generate the handoff on the show board when you’re ready.',
       ]
         .filter(Boolean)
         .join(' '),
     )
-  }
-
-  const buildKit: ProjectApi['buildKit'] = async (song) => {
-    const s = get()
-    const look = lookFor(s, song)
-    const moment = momentOf(song)
-    if (!look || !moment || s.kitPending[song]) return
-    const slot = s.clips[clipKey(look.id, song)]
-    const mainMove = slot?.status === 'ready' ? moveOf(slot.clip) : song % 3
-    const planned = planKit(look, song, s.moments.length, s.brief, isCovered(s.brief.venueId), mainMove)
-    const stills = planned.filter((a) => a.kind !== 'motion').length
-    const clips = planned.length - stills
-    const started = Date.now()
-    d({ type: 'kit/start', song, lookId: look.id, count: planned.length })
-    let thinking: Thinking = {
-      title: `Building the kit for song ${song}`,
-      reasoning: `#${look.n} is the look for ${momentName(song)}. I’ll make what production and content teams build from: the look from every camera position, in every light state it might meet, and in motion with the other camera moves. Everything keeps the look exactly as chosen.`,
-      steps: [`Read #${look.n} and its clip`],
-      tools: [
-        { name: 'generate_stills', summary: `Nano Banana Pro · ${plural(stills, 'image')}`, input: planned.filter((a) => a.kind !== 'motion').map((a) => a.prompt).join('\n'), status: 'running' },
-        { name: 'generate_motion', summary: `Veo 3.1 · ${plural(clips, 'clip')}`, input: planned.filter((a) => a.kind === 'motion').map((a) => a.prompt).join('\n'), status: 'running' },
-      ],
-    }
-    const msg = say('assistant', '', true)
-    updateMessage(msg, { thinking })
-    for (const [i, a] of planned.entries()) {
-      await sleep(a.kind === 'motion' ? 1200 + Math.random() * 600 : 450 + Math.random() * 400)
-      d({ type: 'kit/asset', song, asset: { ...a, id: `${look.id}.kit.${i + 1}`, at: stamp() } })
-      thinking = { ...thinking, steps: [...thinking.steps, `${KIT_LABEL[a.kind].replace(/s$/, '')}: ${a.title.toLowerCase()}`] }
-      updateMessage(msg, { thinking })
-    }
-    d({ type: 'kit/done', song })
-    d({ type: 'version/add', summary: `Song ${song} · asset kit built from #${look.n} (${plural(planned.length, 'asset')})`, author: 'Stage agent' })
-    const count = (kind: string) => planned.filter((a) => a.kind === kind).length
-    updateMessage(msg, {
-      pending: false,
-      thinking: { ...done(thinking, started, 'SynthID watermarked · stored in your project'), title: `Built the kit for song ${song}` },
-      text: `The asset kit for ${momentName(song)} is ready, all from #${look.n}: ${plural(count('angle'), 'extra angle')}, ${plural(count('light'), 'light state')} and ${plural(count('motion'), 'extra camera move')}. Each one shows where it came from. LED wall loops and performer stand-ins come with the pilot models.`,
-    })
-  }
-
-  const scheduleReply = () => {
-    if (pendingReplies.has(id)) return
-    pendingReplies.add(id)
-    window.setTimeout(() => {
-      pendingReplies.delete(id)
-      const now = get()
-      if (now.status !== 'awaiting-artist') return
-      const looks = now.moments.flatMap((moment) => {
-        const look = lookFor(now, moment.number)
-        return look ? [{ moment, look }] : []
-      })
-      // The artist reacts to what changed since they last saw it; on the first send, to the show.
-      const addressed = now.review.filter((c) => c.addressed)
-      const reworked = looks.filter((l) => addressed.some((c) => c.song === l.moment.number && c.genId !== l.look.id))
-      const edited = looks.filter((l) => { const c = now.clips[clipKey(l.look.id, l.moment.number)]; return c?.status === 'ready' && c.clip.edits.length > 0 }).map((l) => l.moment.number)
-      const praise = addressed.length > 0 && reworked.length > 0
-      const reply = praise ? artistPraise(reworked) : artistFeedback(looks, edited)
-      const comments = reply.map((c, i) => ({ ...c, id: `${c.id}-${now.review.length + i}`, number: now.review.length + i + 1 }))
-      d({ type: 'review/set', comments: [...now.review, ...comments] })
-      d({ type: 'status/set', status: 'feedback' })
-      say(
-        'assistant',
-        praise
-          ? `The artist replied: the new looks for ${songs(reworked.map((l) => l.moment.number))} take on their notes, and they’re happy. Approve the show in Review, or request more changes.`
-          : `The artist replied with ${plural(comments.length, 'comment')} on ${songs([...new Set(comments.map((c) => c.song))])}. Open Review to go through them, then approve the show or request changes.`,
-      )
-    }, 6000)
   }
 
   return {
@@ -458,7 +375,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       d({ type: 'meta/patch', patch: { briefDate: Date.now() } })
       const moments = s.moments.length ? s.moments : draftMoments(s.brief)
       d({ type: 'moments/set', moments })
-      d({ type: 'version/add', summary: `Show generated · ${plural(moments.length, 'key moment')} drafted from the setlist`, author: 'Stage agent' })
+      d({ type: 'version/add', summary: `Show generated · ${plural(moments.length, 'key moment')} drafted from the setlist`, author: 'Gemini' })
       const first = moments[0]
       if (!first) return undefined
       say(
@@ -494,7 +411,6 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       if (f?.song !== song || f.genId !== genId) d({ type: 'focus/set', song, genId })
     },
     generateClip: (song) => renderClip(song),
-    buildKit,
     editClip: async (song, instruction, echo = true) => {
       const look = lookFor(get(), song)
       const key = look ? clipKey(look.id, song) : ''
@@ -513,23 +429,38 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       thinking = { ...done(thinking, started, `Clip v${clip.version} · 8 s · SynthID watermarked`), title: `Edited song ${song}` }
       updateMessage(msg, { pending: false, thinking, text: `Done. The song ${song} clip now has “${instruction}” (clip v${clip.version}). The earlier version is kept.` })
     },
-    sendToArtist: (note) => {
+    generateHandoff: () => {
       const s = get()
-      const chosen = looksChosen(s)
-      const ready = s.moments.filter((m) => { const l = lookFor(s, m.number); return l && s.clips[clipKey(l.id, m.number)]?.status === 'ready' }).length
-      d({ type: 'status/set', status: 'awaiting-artist' })
-      d({ type: 'version/add', summary: `Sent to the artist · ${plural(chosen, 'song')}, ${plural(ready, 'clip')}${note ? ', with a note' : ''}`, author: 'You', sent: true })
-      say('assistant', `Sent the show to ${s.meta.artist}: ${plural(chosen, 'song')}, ${chosen === 1 ? 'with its look' : 'each with its look'}, and ${plural(ready, 'clip')}.${note ? ` Your note: “${note}”.` : ''} I’ll tell you here as soon as they reply.`)
-      scheduleReply()
+      if (!showComplete(s)) return
+      const songs = s.moments.map((moment) => {
+        const lookId = s.looks[moment.number]!
+        const slot = s.clips[clipKey(lookId, moment.number)]
+        return { moment, lookId, clip: slot?.status === 'ready' ? slot.clip : undefined }
+      })
+      const clips = songs.filter((x) => x.clip).length
+      const before = s.handoff?.version
+      const version = (before ?? 0) + 1
+      d({ type: 'handoff/set', handoff: { version, at: clock(), songs, exported: false } })
+      d({ type: 'version/add', summary: `Handoff v${version} generated · ${plural(songs.length, 'song')}, ${plural(clips, 'clip')}`, author: 'You' })
+      say(
+        'assistant',
+        `${before ? `Handoff v${version} is ready with your changes.` : 'The handoff is ready.'} ${plural(songs.length, 'song')}, each with its look, and ${plural(clips, 'clip')}, organised for each team: staging and rigging, lighting, video and LED, camera, and rights. Export the package when you’re ready.`,
+      )
+    },
+    saveShow: () => {
+      const s = get()
+      if (s.handoff && handoffOutOfDate(s)) {
+        say('assistant', `Saved. The handoff still shows v${s.handoff.version}, without your latest changes. Generate the handoff again to include them.`)
+      }
     },
     exportPackage: () => {
       const s = get()
-      if (s.exported) return
+      if (!s.handoff || s.handoff.exported) return
       d({ type: 'export/done' })
       d({ type: 'version/add', summary: 'Package sent to production', author: 'You' })
       say(
         'assistant',
-        `The package is with the production team: ${plural(s.moments.length, 'song')} with their looks and clips, the cue sheet and the decision log. Three things are still with legal before anything is built: C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the samples.`,
+        `Handoff v${s.handoff.version} is with the production team: ${plural(s.handoff.songs.length, 'song')} with their looks and clips, and the cue sheet. Three things are still with legal before anything is built: C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the samples.`,
       )
     },
     attachReferences: () => {
@@ -537,44 +468,6 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       d({ type: 'brief/patch', patch: { referenceCount: get().brief.referenceCount + 3 }, source: 'you' })
       say('assistant', 'Got 3 reference images. I added them to the visual direction and will use them for every image and clip.')
     },
-    toggleResolved: (commentId) => d({ type: 'review/resolve', id: commentId }),
-    requestChanges: (commentIds) => {
-      const s = get()
-      const chosen = s.review.filter((c) => commentIds.includes(c.id))
-      // Comments on a look start a new batch for that moment; comments on a clip edit the clip.
-      const onLooks = chosen.filter((c) => c.target.kind === 'look')
-      const onClips = chosen.filter((c) => c.target.kind === 'clip')
-      const redo = [...new Set(onLooks.map((c) => c.song))]
-      d({ type: 'review/set', comments: s.review.map((c) => (commentIds.includes(c.id) ? { ...c, resolved: true, addressed: true } : c)) })
-      d({ type: 'status/set', status: 'draft' })
-      d({ type: 'redo/set', songs: redo })
-      d({ type: 'version/add', summary: `Changes requested · ${plural(chosen.length, 'artist comment')}${redo.length ? ` on ${songs(redo)}` : ''}`, author: 'You' })
-      say(
-        'assistant',
-        [
-          redo.length ? `${capitalise(songs(redo))} ${redo.length === 1 ? 'needs' : 'need'} a new look. I’m making three new images from each current look with the artist’s comments applied. Open the one you like and choose Generate motion.` : '',
-          onClips.length ? `The artist’s note on the ${songs(onClips.map((c) => c.song))} clip ${onClips.some((c) => redo.includes(c.song)) ? 'goes into the clip for the new look' : 'is being applied to the clip now'}.` : '',
-          'Then send the show again.',
-        ]
-          .filter(Boolean)
-          .join(' '),
-      )
-      for (const song of redo) void runBatch(song, 'more', { baseId: s.looks[song], notes: onLooks.filter((c) => c.song === song).map((c) => c.text), author: 'agent' })
-      // A moment getting a new look gets the clip note on its new clip; the others have their clip edited now.
-      for (const c of onClips) if (!redo.includes(c.song)) editClipQuiet(c.song, c.text)
-    },
-    approve: (rating) => {
-      const s = get()
-      d({ type: 'status/set', status: 'approved' })
-      if (rating) d({ type: 'rating/set', rating })
-      d({ type: 'version/add', summary: rating ? `Show approved by the artist · rated ${rating}/5` : 'Show approved for production', author: rating ? 'Artist' : 'You' })
-      const open = s.review.filter((c) => !c.resolved).length
-      say(
-        'assistant',
-        `${rating ? `The artist approved the show and rated it ${rating}/5.` : 'You approved the show for production.'} The handoff package is ready: ${plural(s.moments.length, 'song')}, each with its look, and ${plural(s.moments.filter((m) => { const l = lookFor(s, m.number); return l && s.clips[clipKey(l.id, m.number)]?.status === 'ready' }).length, 'clip')}.${open ? ` ${open === 1 ? '1 comment was' : `${open} comments were`} left open and ${open === 1 ? 'is' : 'are'} in the decision log.` : ''}`,
-      )
-    },
-    resumeReply: scheduleReply,
   }
 
   /** The next chat question that's still open (the optional no-gos), from `from` on. */
@@ -585,18 +478,6 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
   }
   function closing(left: string[]) {
     return left.length ? `Still missing in the brief: ${listing(left)}.` : DONE_TEXT
-  }
-  /** A clip edit from an artist's comment: no echo of the text as if you'd typed it. */
-  function editClipQuiet(song: number, text: string) {
-    const look = lookFor(get(), song)
-    const slot = look && get().clips[clipKey(look.id, song)]
-    if (!look || slot?.status !== 'ready') return
-    const key = clipKey(look.id, song)
-    d({ type: 'clip/set', key, slot: { status: 'generating', previous: slot.clip } })
-    void generation.editMotion(look, slot.clip, text).then((clip) => {
-      d({ type: 'clip/set', key, slot: { status: 'ready', clip } })
-      d({ type: 'version/add', summary: `Song ${song} clip: the artist’s note applied`, author: 'Stage agent' })
-    })
   }
 }
 
@@ -630,11 +511,6 @@ export function ProjectScope({ id, children }: { id: string; children: ReactNode
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
-
-  // A reply that was on its way when the page reloaded: schedule it again.
-  useEffect(() => {
-    if (project?.status === 'awaiting-artist') actions.resumeReply()
-  }, [project?.status, actions])
 
   if (!api) return null
   return <ProjectContext value={api}>{children}</ProjectContext>

@@ -29,15 +29,15 @@ export function AboutDemo() {
           <div>
             <dt className="type-text-sm-semibold">Who decides</dt>
             <dd className="text-muted-foreground">
-              People do. The agent explores, drafts prompts, builds kits and checks designs against the venue; the creative
-              team chooses every look and sends the show, and the artist approves it.
+              People do. Gemini explores, drafts prompts and checks designs against the venue; the creative team
+              chooses every look and generates the handoff for production.
             </dd>
           </div>
           <div>
             <dt className="type-text-sm-semibold">In this demo</dt>
             <dd className="text-muted-foreground">
-              Nothing calls a model. Stills and clips are illustrative 3D previews, the agent’s replies and the artist’s
-              comments are simulated, and artists, specs and budgets are placeholders.
+              Nothing calls a model. Stills and clips are illustrative 3D previews, and Gemini’s replies are
+              simulated, and artists, specs and budgets are placeholders.
             </dd>
           </div>
         </dl>

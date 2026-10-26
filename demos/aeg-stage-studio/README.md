@@ -24,34 +24,34 @@ The show is designed one key moment (a song) at a time. See `docs/plan-moments.m
 
 - **Home** (`/`): every project as a card, plus **New project**. The sidebar keeps the projects at hand inside a
   project; **Reset the demo** at its bottom restores the seeded start.
-- **Brief**: the agent asks three questions in one card (stage, roughly when, the look), then any no-gos. Venues are
+- **Brief**: Gemini (the agent in the chat) asks three questions in one card (stage, roughly when, the look), then any no-gos. Venues are
   real AEG venues and festival stages, with the facts aegworldwide.com publishes; technical specs are labelled samples.
   **Generate show** (top right) drafts the key moments from the setlist, opens the show board and starts exploring the first.
-- **Show board** (`/show`): one line of running numbers, every key moment
-  in setlist order (its look, one status and one line of detail). Top right: **Preview** and **Send for review**
-  (once at least one song is in motion; songs not in motion stay out of that review).
+- **Show board** (`/show`): one line of running numbers (with a link back to the brief), every key moment in setlist
+  order (its look, one status and one line of detail). Top right: **Preview** and **Generate handoff** (once every song
+  is in motion). After a handoff, the board also offers **Save** (keep the edits, leave the handoff as it was) and says
+  when the show no longer matches the latest handoff.
 - **Moment page** (`/m/:song`). A song with no images opens on a prompt: describe the stage (or start from a
   suggestion) and the agent makes four images from it; naming a design or a colour, size, haze or brightness steers
-  them, and the agent says what the preview couldn't show. Then two tabs. **Explore**: new directions, or more like / other angles / other light of the
+  them, and the agent says what the preview couldn't show. Then the images: new directions, or more like / other angles / other light of the
   open image from one menu; change an image in words (each change is a new image; its lineage,
-  provenance and compare-with-parent are in the card's menu); **Generate motion** (on the open image's card) makes it the moment's look and its
-  clip then leads the page (cues, plain-word edits). **Asset kit**: angles, light states and
-  motion variants, each with provenance (LED loops and performer stand-ins come with the pilot models).
+  provenance and compare-with-parent are in the card's menu); **Generate motion** (on the open image's card) makes it the moment's look, scrolls up to
+  its clip and the clip leads the page from then on (cues, plain-word edits).
 - Key moments are numbered 1, 2, 3… in setlist order. Each one's light comes from where it falls in the set (the
   moments are spread across the slot), so the first moments of a sunset set play in golden hour and the last at night.
 - **Preview** (on the show board) plays every moment's clip in setlist order.
 - **Venue checks**: every design's footprint (size, weight, flown load, wind area) is checked against the venue's
   sample limits: stage width, trim, rigging, sightlines, no-gos and, for open-air stages, evening gusts. The checks show
   on each image's badge, on the show board and in Handoff (`src/services/venueCheck.ts`).
-- **Review**: the artist comments per moment (on the look or the clip) and approves the show once. **Request changes**
-  starts new looks for the moments they commented on.
-- **Handoff**, organised by trade: an overview with the value to prove and the credits (who decided what), then
-  staging and rigging, lighting, video and LED, camera, and rights with the decision log.
-- The steps (Brief · Show · Review · Handoff) are in the header, each with a status dot. Generated media carries a
-  small badge naming its model: Nano Banana Pro on stills, Veo 3.1 on clips.
+- **Handoff** (`/handoff`): the package as it was generated (a snapshot; versions v1, v2…), organised by trade: an
+  overview (every song's look and what the package contains), then staging and rigging, lighting, video and LED,
+  camera, and rights with the credits. Top right: **Edit show** (back to the show board), **Preview** and **Export package**.
+- There is no review step: the team hands the show off directly. The header holds the project, its status (In progress
+  or Handed off) and **Share** (invite collaborators). Generated media carries a small badge naming its model: Nano
+  Banana Pro on stills, Veo 3.1 on clips.
 - The screens were simplified after a UX reduction audit (23 Oct 2026): one place per fact, three regions (agent,
   work, projects), detail one click away.
-- State is kept in `sessionStorage` (key `stage-studio:v5`): a reload keeps the demo where it was; a new tab starts fresh.
+- State is kept in `sessionStorage` (key `stage-studio:v7`): a reload keeps the demo where it was; a new tab starts fresh.
 
 ## Concept images
 

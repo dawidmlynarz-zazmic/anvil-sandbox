@@ -82,7 +82,6 @@ Stills and Motion screens below are replaced by the Show board and the Moment pa
 | Add a key moment | `ui/card` + `ui/input` | | No |
 | Send the show | `ui/dialog` (SendDialog) | | No |
 | Preview (the show's clips in order) | `ui/dialog` + local `ClipPlayer` (`autoPlay`, `onEnded`) + local `ClipTile` | | Yes (local parts) |
-| Kit status on a moment card | `ui/badge` | `variant="outline"` | No |
 
 ## Moment page (`/m/:song`)
 
@@ -96,28 +95,20 @@ Stills and Motion screens below are replaced by the Show board and the Moment pa
 | Motion | `ui/card` + local `ClipPlayer` + `anvil/key-value-row` + `ui/input` | | Yes (ClipPlayer) |
 | Previous / next moment | `ui/button` `size="icon-sm"` | | No |
 | Describe the stage (empty song) | `agent/prompt-input` + `agent/quick-reply` suggestions that fill it | | No |
-| Explore / Asset kit | `ui/tabs` `variant="line"` | in the URL (`?tab=assets`) | No |
 | The look in motion, first on the page | `ui/card` + local `ClipPlayer` + `anvil/key-value-row` + `ui/input` | | Yes (ClipPlayer) |
-| Asset kit (stills, motion variants, pilot-only items) | `ui/card`, local `ClipPlayer` + `ClipTile`, `anvil/check-row` | | Yes (ClipPlayer, ClipTile) |
-| Kit out of date | `ui/alert` `tone="warning"` with action | | No |
 | Provenance on every image and asset | `ui/popover` + `anvil/key-value-row` + `anvil/check-row` | | No |
 
-## Review (`/review`), moments-first
-
-| Element | Anvil component | Props | Gap? |
-| --- | --- | --- | --- |
-| A tab per moment, with open-comment count | `ui/tabs` `variant="line"` + `ui/badge` | | No |
-| Look with the artist's pins | local `PinnedImage` | | Yes |
-| Approve the show (one sign-off) | `ui/alert-dialog` | | No |
+Review (`/review`) was removed on 26 Oct 2026: the show goes straight to its handoff.
 
 ## Handoff (`/handoff`), by trade
 
 | Element | Anvil component | Props | Gap? |
 | --- | --- | --- | --- |
+| Edit show · Preview · Export package (header actions) | `ui/button` outline + outline + primary | | No |
+| Handoff version, out-of-date notice | `ui/badge` `tone="success"` (v1, v2…), `ui/alert` `tone="warning"` | | No |
 | A tab per trade | `ui/tabs` `variant="line"` | in the URL (`?trade=`) | No |
 | Credits (who decided what) | `ui/card` + `anvil/key-value-row` | | No |
-| Per-moment rows for a trade | `ui/card`, `anvil/key-value-row`, kit thumbnails | | No |
-| Decision log | `anvil/timeline` | | No |
+| Per-moment rows for a trade | `ui/card`, `anvil/key-value-row` | | No |
 
 ## Header (after the reduction audit)
 
@@ -125,7 +116,9 @@ The progress rail was removed; its parts live where they're used.
 
 | Element | Anvil component | Props | Gap? |
 | --- | --- | --- | --- |
-| Steps with a status dot | `ui/button` `variant="ghost"` `asChild` (NavLink), `aria-current="page"` | | No |
+| Project status (In progress, Handed off) | `ui/badge` `shape="pill"` `indicator` | | No |
+| Share (invite collaborators) | `ui/dialog` + `ui/input` + `ui/alert` | | No |
+| Generate handoff, disabled until every song is in motion | `ui/button` in a `ui/tooltip` that says why | | No |
 | Model on generated media | `ui/badge` `tone="neutral"` `size="xs"`, 75% opacity, over the corner | | No |
 | Running numbers | One line of text on the show board | | No |
 | Explore (split button) | `ui/button-group` + `ui/dropdown-menu` | | No |

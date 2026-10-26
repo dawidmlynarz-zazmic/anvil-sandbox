@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@anvil/components/ui/alert'
 import { Button } from '@anvil/components/ui/button'
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@anvil/components/ui/dialog'
-import { CheckIcon, Icon, UserPlusIcon } from '@anvil/components/ui/icon'
+import { CheckIcon, Icon, Share2Icon } from '@anvil/components/ui/icon'
 import { Input } from '@anvil/components/ui/input'
 
-/** Invites the artist to review. In the demo nothing is sent; the dialog says so. */
-export function InviteDialog() {
+/** Invites collaborators to the project. In the demo nothing is sent; the dialog says so. */
+export function ShareDialog() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState<string | null>(null)
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -14,15 +14,15 @@ export function InviteDialog() {
     <Dialog onOpenChange={(open) => !open && setSent(null)}>
       <DialogTrigger asChild>
         <Button variant="outline" intent="neutral" size="sm">
-          <Icon icon={UserPlusIcon} />
-          Invite artist
+          <Icon icon={Share2Icon} />
+          Share
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invite the artist</DialogTitle>
+          <DialogTitle>Invite collaborators</DialogTitle>
           <DialogDescription>
-            They can see what you send them, comment on concepts and clips, and approve. They don’t see drafts or this chat.
+            People you invite can open this project and work on it with you: the brief, the show and the handoff.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -42,9 +42,9 @@ export function InviteDialog() {
               </Alert>
             ) : (
               <Input
-                label="Artist’s email"
+                label="Email"
                 type="email"
-                placeholder="name@management.com"
+                placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />

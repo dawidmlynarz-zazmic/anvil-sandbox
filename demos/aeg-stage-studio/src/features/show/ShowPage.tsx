@@ -4,16 +4,17 @@ import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card, CardContent } from '@anvil/components/ui/card'
 import { Dialog, DialogBody, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@anvil/components/ui/dialog'
-import { ArrowRightIcon, Icon, ImageIcon, PlusIcon, XIcon } from '@anvil/components/ui/icon'
+import { Alert, AlertDescription, AlertTitle } from '@anvil/components/ui/alert'
+import { CheckIcon, Icon, ImageIcon, PackageIcon, PencilIcon, PlusIcon, SaveIcon, XIcon } from '@anvil/components/ui/icon'
 import { Input } from '@anvil/components/ui/input'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@anvil/components/ui/tooltip'
 import { STEP_CONTENT } from '~/components/layout'
 import { useMomentThumb } from '~/components/clipFrame'
 import { momentLight } from '~/services/light'
-import { looksChosen } from '~/state/project'
+import { handoffOutOfDate, looksChosen, showComplete } from '~/state/project'
 import { clipKey, useProject } from '~/state/ProjectContext'
-import { gensFor, kitStatus, lookFor, MOMENT_STATUS, momentStatus } from '~/state/show'
+import { gensFor, lookFor, MOMENT_STATUS, momentStatus } from '~/state/show'
 import { TIME_LABEL, type SetlistMoment } from '~/state/types'
-import { SendDialog } from './SendDialog'
 import { ShowPreview } from './ShowPreview'
 
 /** One key moment on the board: its look (or latest image), one status, and one line of detail. The card opens it. */
@@ -25,13 +26,11 @@ function MomentCard({ moment, canRemove }: { moment: SetlistMoment; canRemove: b
   const thumb = useMomentThumb(shown, p.brief, moment.number, p.moments.length)
   const status = momentStatus(p, moment.number)
   const clip = look ? p.clips[clipKey(look.id, moment.number)] : undefined
-  const kit = kitStatus(p, moment.number)
   const pending = p.pending[moment.number]
   const meta = [
     TIME_LABEL[momentLight(p.brief, moment.number, p.moments.length)],
     gens.length ? `${gens.length} ${gens.length === 1 ? 'image' : 'images'}` : '',
     clip ? (clip.status === 'ready' ? 'clip ready' : 'clip rendering') : '',
-    kit === 'ready' ? 'asset kit' : kit === 'stale' ? 'asset kit out of date' : kit === 'building' ? 'asset kit building' : '',
   ].filter(Boolean)
   return (
     <Card size="sm" className="h-full min-w-0">
@@ -137,15 +136,12 @@ export function ShowPage() {
   if (p.phase === 'setup') return <Navigate to={p.path('brief')} replace />
 
   const chosen = looksChosen(p)
-  const sends = p.versions.filter((v) => v.summary.startsWith('Sent to the artist')).length
-  const editable = p.status === 'draft' || p.status === 'feedback'
-  const sendItems = p.moments.flatMap((m) => {
-    const look = lookFor(p, m.number)
-    if (!look) return []
-    const c = p.clips[clipKey(look.id, m.number)]
-    return [{ song: m.number, title: m.title, look: `#${look.n} · ${look.caption}`, clip: c?.status === 'ready' ? c.clip.version : undefined }]
-  })
-  const waiting = p.status === 'awaiting-artist'
+  const complete = showComplete(p)
+  const changed = handoffOutOfDate(p)
+  const generate = () => {
+    p.generateHandoff()
+    navigate(p.path('handoff'))
+  }
 
   return (
     <section aria-labelledby="show-title" className="flex h-full min-w-0 flex-col">
@@ -158,43 +154,72 @@ export function ShowPage() {
               </h1>
               <div className="flex flex-wrap items-center gap-2">
                 <ShowPreview />
-                {p.status === 'approved' ? (
-                  <Button onClick={() => navigate(p.path('handoff'))}>
-                    Go to handoff
-                    <Icon icon={ArrowRightIcon} />
+                {p.handoff && (
+                  <Button
+                    variant="outline"
+                    intent="neutral"
+                    onClick={() => {
+                      p.saveShow()
+                      navigate(p.path('handoff'))
+                    }}
+                  >
+                    <Icon icon={SaveIcon} />
+                    Save
+                  </Button>
+                )}
+                {complete ? (
+                  <Button onClick={generate}>
+                    <Icon icon={PackageIcon} />
+                    Generate handoff
                   </Button>
                 ) : (
-                  <SendDialog
-                    items={sendItems}
-                    left={p.moments.length - sendItems.length}
-                    label="Send for review"
-                    disabled={waiting || sendItems.length === 0}
-                    onSend={(note) => {
-                      p.sendToArtist(note || undefined)
-                      navigate(p.path('review'))
-                    }}
-                  />
+                  // A disabled button gets no pointer events: the wrapper carries the tooltip that says why.
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0} className="focus-visible:focus-ring rounded-md outline-none">
+                        <Button disabled>
+                          <Icon icon={PackageIcon} />
+                          Generate handoff
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>Put every song into motion first</TooltipContent>
+                  </Tooltip>
                 )}
               </div>
             </div>
             {/* The running numbers, in one line. The full measures are in Handoff. */}
             <p className="text-muted-foreground type-text-sm-normal tabular-nums">
-              {chosen} of {p.moments.length} songs in motion · {p.generations.length} images · {sends ? `${sends} ${sends === 1 ? 'review' : 'reviews'} with the artist` : 'not sent yet'}
-              {p.artistRating ? ` · rated ${p.artistRating}/5` : ''} · day {p.daysSinceBrief} since the brief
+              {chosen} of {p.moments.length} songs in motion · {p.generations.length} images · day {p.daysSinceBrief} since the{' '}
+              <Link to={p.path('brief')} className="focus-visible:focus-ring rounded-sm underline underline-offset-2 outline-none hover:text-foreground">
+                brief
+              </Link>
             </p>
           </div>
+
+          {p.handoff && (
+            <Alert tone={changed ? 'warning' : 'neutral'} role="status">
+              <Icon icon={changed ? PencilIcon : CheckIcon} />
+              <AlertTitle>{changed ? `Not in handoff v${p.handoff.version} yet` : `Handed off as v${p.handoff.version}`}</AlertTitle>
+              <AlertDescription>
+                {changed
+                  ? `Save keeps v${p.handoff.version} as it is. Generate handoff makes v${p.handoff.version + 1} with your changes.`
+                  : 'Change any song here, then generate the handoff again to update the package.'}
+              </AlertDescription>
+            </Alert>
+          )}
 
           <section aria-labelledby="moments-title" className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
               <h2 id="moments-title" className="type-text-base-semibold">
                 Key moments
               </h2>
-              {editable && <AddMomentDialog />}
+              <AddMomentDialog />
             </div>
             <ul className="grid grid-cols-1 gap-3 @lg:grid-cols-2">
               {p.moments.map((m) => (
                 <li key={m.number} className="min-w-0">
-                  <MomentCard moment={m} canRemove={editable && !gensFor(p, m.number).length} />
+                  <MomentCard moment={m} canRemove={!gensFor(p, m.number).length} />
                 </li>
               ))}
             </ul>

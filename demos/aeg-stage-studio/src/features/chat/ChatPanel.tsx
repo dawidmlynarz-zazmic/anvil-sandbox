@@ -19,7 +19,7 @@ import { ToolCallItem, ToolCallItemCode, ToolCallItemContent, ToolCallItemSectio
 import type { ChatTurn } from '~/state/types'
 import { lowerFirst } from '~/services/shapes'
 import { clipKey, useProject } from '~/state/ProjectContext'
-import { looksChosen } from '~/state/project'
+import { handoffOutOfDate, looksChosen } from '~/state/project'
 import { footprint, issues, venueChecks } from '~/services/venueCheck'
 import { isCovered } from '~/mocks/venues'
 import { genById, gensFor, lookFor, MOMENT_STATUS, momentStatus } from '~/state/show'
@@ -29,8 +29,7 @@ const PLACEHOLDER: Record<string, string> = {
   brief: 'Describe the show, or ask me to change the brief…',
   show: 'Ask about the show, e.g. “will it hold in the wind?”',
   m: 'Change the open image, e.g. “narrower, warmer”',
-  review: 'Ask about the review, e.g. “what’s comment 2?”',
-  handoff: 'Ask about the package or the decision log',
+  handoff: 'Ask about the package, e.g. “what does legal still check?”',
 }
 
 /** The step in a project URL: …/p/:id/<step> (the app may be served from a sub-folder). */
@@ -148,11 +147,6 @@ export function ChatPanel() {
           ['Read the song’s images and look'],
           `Song ${song} · ${moment.title} has ${all.length} ${all.length === 1 ? 'image' : 'images'}${look ? `, and #${look.n} is its look` : ', and nothing in motion yet'}.${focus ? ` #${focus.n} is open: describe a change (“narrower, warmer”) and I’ll make it as a new image.` : ''}`,
         )
-      } else if (/\b(kit|assets?)\b/i.test(value) && look) {
-        // “Build the kit” makes the moment's asset kit from its look.
-        void project.buildKit(song)
-      } else if (/\b(kit|assets?)\b/i.test(value)) {
-        void reply('Reading your request', 'The asset kit is made from the look, and this song has none yet.', ['Checked the song’s look'], 'Open an image and choose Generate motion first. The asset kit is made from it.')
       } else if (/\b(clip|camera|motion|pace|pacing|slower|faster|cut|beats?|push-in|crane)\b/i.test(value) && clip?.status === 'ready') {
         // Words about motion change the moment's clip.
         void project.editClip(song, value, false)
@@ -198,58 +192,26 @@ export function ChatPanel() {
         'Checking the show',
         isQuestion(value) ? 'You asked about the show, so here is where it stands.' : 'Changes happen one song at a time, so I’ll point you to the right one.',
         ['Read every song’s status'],
-        `${looksChosen(project)} of ${project.moments.length} songs are in motion.${open.length ? ` Still open: ${open.map((m) => `song ${m.number} (${MOMENT_STATUS[momentStatus(project, m.number)].text.toLowerCase()})`).join(', ')}.` : ' Every song is ready to send.'} To change a song’s look, open the song and tell me there.`,
+        `${looksChosen(project)} of ${project.moments.length} songs are in motion.${open.length ? ` Still open: ${open.map((m) => `song ${m.number} (${MOMENT_STATUS[momentStatus(project, m.number)].text.toLowerCase()})`).join(', ')}.` : project.handoff ? (handoffOutOfDate(project) ? ` The handoff (v${project.handoff.version}) doesn’t have your latest changes yet; generate it again to include them.` : ` The handoff (v${project.handoff.version}) is up to date.`) : ' You can generate the handoff.'} To change a song’s look, open the song and tell me there.`,
       )
-      return
-    }
-
-    if (step === 'review') {
-      say('user', value)
-      const open = project.review.filter((c) => !c.resolved)
-      const n = /\b(\d+)\b/.exec(value)
-      const comment = n ? project.review.find((c) => c.number === Number(n[1])) : undefined
-      if (!project.review.length) {
-        void reply('Checking the review', 'There are no artist comments yet.', ['Looked for artist comments'], project.status === 'awaiting-artist' ? 'The artist hasn’t replied yet. I’ll post here as soon as they do.' : 'You haven’t sent the show to the artist yet. Send it from the show board.')
-      } else if (comment) {
-        void reply(
-          `Reading comment ${comment.number}`,
-          `Comment ${comment.number} is about the song ${comment.song} ${comment.target.kind === 'clip' ? 'clip' : 'look'}.`,
-          ['Found the comment', 'Checked what it points at'],
-          `Comment ${comment.number}: “${comment.text}” ${comment.target.kind === 'clip' ? 'Request changes with it and I’ll edit that clip.' : 'Request changes with it and I’ll make new images for that song with it applied.'}`,
-        )
-      } else {
-        void reply(
-          'Summarising the review',
-          'You asked about the review, so here is where it stands.',
-          ['Counted open comments', 'Checked what is ready to hand off'],
-          open.length
-            ? `${open.length} of ${project.review.length} comments are open. The first: “${open[0]!.text}” Approve the show if they can wait, or request changes to rework those songs.`
-            : 'All comments are resolved. You can approve the show.',
-        )
-      }
       return
     }
 
     say('user', value)
 
     if (step === 'handoff') {
-      const open = project.review.filter((c) => !c.resolved).length
       void reply(
         'Checking the package',
         'You asked about the handoff, so I’ll answer from the package as it stands and change nothing.',
-        ['Read the package contents', 'Checked rights and provenance', 'Counted open comments'],
-        project.status === 'approved'
-          ? `Before production builds it: legal should confirm C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the samples.${open ? ` ${open} artist comment${open === 1 ? ' was left open; it’s' : 's were left open; they’re'} in the decision log.` : ''}`
-          : 'The package comes together once the artist approves. Finish the review first.',
+        ['Read the package contents', 'Checked rights and provenance'],
+        project.handoff
+          ? `Before production builds it: legal should confirm C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the samples.${handoffOutOfDate(project) ? ` The show has changed since v${project.handoff.version}: choose Edit show, then Generate handoff to include the changes.` : ''}`
+          : 'There’s no handoff yet. Put every song into motion, then choose Generate handoff on the show board.',
       )
       return
     }
 
     // The brief: a question gets an answer; a short look ("warmer, more haze") becomes a keyword; "avoid …" a no-go.
-    if (project.status === 'approved') {
-      void reply('Checking the brief', 'The show is approved, so the brief is locked.', ['Checked the project status'], 'The brief is locked because the artist approved the show. Start a new project for changes.')
-      return
-    }
     if (isQuestion(value)) {
       void reply(
         'Reading the brief',
@@ -297,9 +259,9 @@ export function ChatPanel() {
   }
 
   return (
-    <aside aria-label="Stage agent" className="h-full w-full">
+    <aside aria-label="Gemini" className="h-full w-full">
       <ChatShell surface="side-panel">
-        <ChatShellHeader title="Stage agent" subtitle={latest.phase === 'setup' ? 'Setting up the brief with you' : 'Explores and checks; you decide'} online />
+        <ChatShellHeader title="Gemini" subtitle={latest.phase === 'setup' ? 'Setting up the brief with you' : 'Explores and checks; you decide'} online />
         <ChatShellThread>
           <FollowEnd
             signal={turns
@@ -339,7 +301,7 @@ export function ChatPanel() {
             ) : (
               <MessageRow
                 role="assistant"
-                author="Stage agent"
+                author="Gemini"
                 status={turn.pending && !turn.thinking ? 'streaming' : 'complete'}
                 thinking={<Reasoning turn={turn} />}
                 widget={
@@ -366,9 +328,9 @@ export function ChatPanel() {
             </MessageScrollerItem>
           ))}
         </ChatShellThread>
-        <ChatShellComposer disclaimer="Powered by Gemini. The agent can make mistakes.">
+        <ChatShellComposer disclaimer="Powered by Gemini. AI can make mistakes.">
           <PromptInput
-            aria-label="Message the stage agent"
+            aria-label="Message Gemini"
             placeholder={latest.phase === 'setup' ? PLACEHOLDER.setup : emptySong ? 'Describe the stage for this song, e.g. “a halo in warm haze”' : (PLACEHOLDER[stepOf(pathname)] ?? PLACEHOLDER.brief)}
             onSubmit={(text) => void send(text)}
             onAttach={() => live.current.attachReferences()}

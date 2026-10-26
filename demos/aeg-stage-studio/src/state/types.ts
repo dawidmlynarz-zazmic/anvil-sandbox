@@ -131,34 +131,21 @@ export interface Generation {
   at?: string
 }
 
-export type AssetKind = 'angle' | 'light' | 'motion'
-
-/**
- * One deliverable in a moment's asset kit, made from its look: the look from another camera position, in another light
- * state, or in motion with another camera move. Kits are what production and content teams build from.
- */
-export interface Asset {
-  id: string
-  kind: AssetKind
-  /** “Back of field”, “Night”, “Slow push-in”. */
-  title: string
-  /** What it shows, for stills (angles and light states). */
-  spec?: StillSpec
-  /** The clip, for motion variants. */
-  clip?: MotionClip
-  model: string
-  prompt: string
-  at: string
-}
-
-/** A moment's asset kit, built from one look. When the look changes, the kit is out of date until it's rebuilt. */
-export interface Kit {
+/** One song as it went into a handoff: its name, its look and its clip at that moment. */
+export interface HandoffSong {
+  moment: SetlistMoment
   lookId: string
-  assets: Asset[]
+  clip?: MotionClip
 }
 
-/** draft → awaiting-artist (sent, no reply yet) → feedback (the artist commented) → approved. Request changes goes back to draft. */
-export type ProjectStatus = 'draft' | 'awaiting-artist' | 'feedback' | 'approved'
+/** The package for production, made from the show when you generate it. Editing the show doesn't change it until you generate it again. */
+export interface Handoff {
+  version: number
+  at: string
+  songs: HandoffSong[]
+  /** Sent to the production team. */
+  exported: boolean
+}
 
 export interface MotionClip {
   id: string
@@ -225,22 +212,6 @@ export interface Thinking {
   steps: string[]
   tools: ToolCall[]
   seconds?: number
-}
-
-/** A comment from the artist on one key moment: pinned on its look, or on its clip. */
-export interface ReviewComment {
-  id: string
-  number: number
-  song: number
-  /** The look it was written on. */
-  genId: string
-  target: { kind: 'look'; x: number; y: number } | { kind: 'clip' }
-  author: string
-  time: string
-  text: string
-  resolved: boolean
-  /** Taken into changes (Request changes), shown as “Changes requested”. */
-  addressed?: boolean
 }
 
 /** One entry in the project's real history. Numbers count up from v1 as things happen. */
