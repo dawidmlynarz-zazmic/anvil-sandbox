@@ -30,7 +30,7 @@ export function AboutDemo() {
             <dt className="type-text-sm-semibold">Who decides</dt>
             <dd className="text-muted-foreground">
               People do. The agent explores, drafts prompts, builds kits and checks designs against the venue; the creative
-              team chooses every look, locks the set and sends the show, and the artist approves it.
+              team chooses every look and sends the show, and the artist approves it.
             </dd>
           </div>
           <div>

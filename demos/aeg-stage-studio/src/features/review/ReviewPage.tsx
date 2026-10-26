@@ -1,17 +1,13 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { reveal } from '~/lib/reveal'
 import { Alert, AlertDescription, AlertTitle } from '@anvil/components/ui/alert'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anvil/components/ui/card'
 import { Checkbox } from '@anvil/components/ui/checkbox'
-import { Input } from '@anvil/components/ui/input'
-import { Label } from '@anvil/components/ui/label'
-import { Switch } from '@anvil/components/ui/switch'
-import { Textarea } from '@anvil/components/ui/textarea'
 import { EmptyState, EmptyStateDescription, EmptyStateHeader, EmptyStateMedia, EmptyStateTitle } from '@anvil/components/ui/empty-state'
-import { ArrowRightIcon, CheckIcon, ClipboardCheckIcon, EyeIcon, Icon, PackageIcon, SendIcon, UserIcon } from '@anvil/components/ui/icon'
+import { ArrowRightIcon, CheckIcon, ClipboardCheckIcon, Icon, PackageIcon, UserIcon } from '@anvil/components/ui/icon'
 import { Spinner } from '@anvil/components/ui/spinner'
 import { Tabs, TabsList, TabsTrigger } from '@anvil/components/ui/tabs'
 import { ClipPlayer } from '~/components/local/ClipPlayer/ClipPlayer'
@@ -24,7 +20,7 @@ import { ModelBadge, MODEL } from '~/components/ModelBadge'
 import { clipKey, useProject } from '~/state/ProjectContext'
 import { genById, lookFor } from '~/state/show'
 import type { Brief, Generation, MotionClip, ReviewComment } from '~/state/types'
-import { ApproveButton, ArtistApproveDialog, RequestChangesDialog } from './ReviewDialogs'
+import { ApproveButton, RequestChangesDialog } from './ReviewDialogs'
 
 /** A look's 3D render with the artist's numbered pins on it. */
 function PinnedLook({ look, ...props }: Omit<React.ComponentProps<typeof PinnedImage>, 'src'> & { look: Generation }) {
@@ -46,29 +42,11 @@ function ReviewClip({ look, clip, brief, of }: { look: Generation; clip: MotionC
 export function ReviewPage() {
   const navigate = useNavigate()
   const p = useProject()
-  const { brief, moments, clips, status, review, sentVersion, versions, meta, path } = p
+  const { brief, moments, clips, status, review, sentVersion, versions, path } = p
   // Each time you send counts as one review: “Review 2”.
   const reviewNumber = Math.max(1, versions.filter((v) => v.summary.startsWith('Sent to the artist')).length)
   const [songParam, setSong] = useState<number | undefined>()
   const [activeId, setActiveId] = useState<string | null>(null)
-  // Artist preview: the presenter plays the artist (pins comments, approves with a rating). It's in the URL, so the
-  // app shell can hide everything the artist wouldn't see (the agent, the steps).
-  const [params, setParams] = useSearchParams()
-  const artistView = params.get('as') === 'artist'
-  const setArtistView = (on: boolean) =>
-    setParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        if (on) next.set('as', 'artist')
-        else next.delete('as')
-        return next
-      },
-      { replace: true },
-    )
-  const [draft, setDraft] = useState<{ x: number; y: number } | null>(null)
-  const [draftText, setDraftText] = useState('')
-  const [clipText, setClipText] = useState('')
-
   // Open on the first moment with open comments, else the first.
   const firstOpen = review.find((c) => !c.resolved)?.song
   const song = songParam ?? firstOpen ?? moments[0]?.number ?? 0
@@ -102,15 +80,9 @@ export function ReviewPage() {
   // The pins drawn on the look the artist commented on; a comment on an older look stays in the list.
   const pins = forMoment.flatMap((c) => (c.target.kind === 'look' && c.genId === look?.id ? [{ id: c.id, number: c.number, x: c.target.x, y: c.target.y }] : []))
   const slot = look ? clips[clipKey(look.id, song)] : undefined
-  const toggleArtist = (on: boolean) => {
-    setArtistView(on)
-    setDraft(null)
-    if (on && waiting) p.takeOverReview()
-  }
   const pick = (next: number) => {
     setSong(next)
     setActiveId(null)
-    setDraft(null)
   }
   const focusComment = (c: ReviewComment) => {
     setActiveId(c.id)
@@ -126,39 +98,23 @@ export function ReviewPage() {
               <h1 tabIndex={-1} className="type-heading-2xl outline-none">
                 Review and sign-off
               </h1>
-              {!artistView && (
-                <Badge tone="agent" variant="subtle">
-                  Review {reviewNumber}
-                </Badge>
-              )}
-              <div className="ms-auto flex items-center gap-2">
-                <Switch id="artist-view" checked={artistView} onCheckedChange={toggleArtist} disabled={approved} />
-                <Label htmlFor="artist-view">Preview as artist</Label>
-              </div>
+              <Badge tone="agent" variant="subtle">
+                Review {reviewNumber}
+              </Badge>
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
-              {artistView
-                ? 'Your show, song by song. Click an image to leave a comment on it, comment on a clip, or approve the show.'
-                : 'What the artist saw and said, song by song.'}
+              What the artist saw and said, song by song.
             </p>
           </div>
 
-          {artistView && (
-            <Alert tone="agent" role="status">
-              <Icon icon={EyeIcon} />
-              <AlertTitle>Previewing as {meta.artist}</AlertTitle>
-              <AlertDescription>This is what the artist sees. Leave comments on any song, then send them or approve the show.</AlertDescription>
-            </Alert>
-          )}
-
-          {waiting && !artistView && (
+          {waiting && (
             <Card>
               <CardContent className="flex flex-col items-center gap-4 py-6 text-center">
                 <Spinner className="text-agent size-6" />
                 <div className="flex flex-col gap-1" aria-live="polite">
                   <p className="type-text-base-semibold">Waiting for the artist</p>
                   <p className="text-muted-foreground type-text-sm-normal">
-                    Sent: {moments.length} moments, each with its look and clip. Artists usually reply within a day. In this demo their comments arrive in a few seconds.
+                    Sent: {moments.length} songs, each with its look and clip. Artists usually reply within a day. In this demo their comments arrive in a few seconds.
                   </p>
                 </div>
                 <ul className="flex flex-wrap justify-center gap-2">
@@ -204,7 +160,7 @@ export function ReviewPage() {
             </Alert>
           )}
 
-          {(!waiting || artistView) && (
+          {!waiting && (
             <>
               <Tabs value={String(song)} onValueChange={(v) => pick(Number(v))}>
                 <TabsList variant="line" aria-label="Songs" className="max-w-full overflow-x-auto">
@@ -236,35 +192,10 @@ export function ReviewPage() {
                     activeId={activeId}
                     onActiveChange={setActiveId}
                     resolvedIds={review.filter((c) => c.resolved).map((c) => c.id)}
-                    onPlace={artistView && !approved ? (x, y) => setDraft({ x, y }) : undefined}
-                    draft={draft ? { ...draft, number: review.length + 1 } : null}
                   />
                 ) : (
                   <p className="text-muted-foreground type-text-sm-normal">This song isn’t in motion yet.</p>
                 )}
-                {artistView && draft && look && (
-                  <form
-                    className="flex flex-col gap-2 pt-1"
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      if (!draftText.trim()) return
-                      p.addArtistComment(song, { kind: 'look', x: draft.x, y: draft.y }, draftText.trim())
-                      setDraft(null)
-                      setDraftText('')
-                    }}
-                  >
-                    <Textarea label={`Comment ${review.length + 1}`} hint="Placed where you clicked. Say what you’d change there." rows={2} autoFocus value={draftText} onChange={(e) => setDraftText(e.target.value)} />
-                    <div className="flex gap-2">
-                      <Button type="submit" size="sm" disabled={!draftText.trim()}>
-                        Add comment
-                      </Button>
-                      <Button type="button" variant="ghost" intent="neutral" size="sm" onClick={() => setDraft(null)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </form>
-                )}
-                {artistView && !draft && !approved && look && <p className="text-muted-foreground type-text-xs-normal">Click anywhere on the image to leave a comment there.</p>}
               </section>
 
               <section id="review-clip" aria-labelledby="clip-title" className="flex scroll-mt-4 flex-col gap-2">
@@ -276,31 +207,13 @@ export function ReviewPage() {
                 ) : (
                   <p className="text-muted-foreground type-text-sm-normal">{slot?.status === 'generating' ? 'This clip is being reworked.' : 'This clip wasn’t ready when you sent, so the artist hasn’t seen it.'}</p>
                 )}
-                {artistView && !approved && slot?.status === 'ready' && (
-                  <form
-                    className="flex items-end gap-2"
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      if (!clipText.trim()) return
-                      p.addArtistComment(song, { kind: 'clip' }, clipText.trim())
-                      setClipText('')
-                    }}
-                  >
-                    <Input className="flex-1" label={`Comment on the song ${song} clip`} value={clipText} onChange={(e) => setClipText(e.target.value)} />
-                    <Button type="submit" variant="outline" intent="neutral" disabled={!clipText.trim()}>
-                      Add comment
-                    </Button>
-                  </form>
-                )}
               </section>
 
               <Card>
                 <CardHeader>
                   <CardTitle>Comments on song {song}</CardTitle>
                   <CardDescription>
-                    {artistView
-                      ? `Your comments on this song (${forMoment.length}). The team sees them when you send.`
-                      : forMoment.length === 0
+                    {forMoment.length === 0
                         ? 'No comments on this song.'
                         : forMoment.filter((c) => !c.resolved).length
                           ? `${forMoment.filter((c) => !c.resolved).length} open. Tick a comment once it’s dealt with.`
@@ -314,9 +227,7 @@ export function ReviewPage() {
                         const on = genById(p, c.genId)
                         return (
                           <li key={c.id} className={`flex items-start gap-3 rounded-lg p-2 ${activeId === c.id ? 'bg-info-subtle' : ''}`}>
-                            {!artistView && (
-                              <Checkbox checked={c.resolved} disabled={approved} onCheckedChange={() => p.toggleResolved(c.id)} aria-label={`Mark comment ${c.number} resolved`} className="mt-0.5" />
-                            )}
+                            <Checkbox checked={c.resolved} disabled={approved} onCheckedChange={() => p.toggleResolved(c.id)} aria-label={`Mark comment ${c.number} resolved`} className="mt-0.5" />
                             <button type="button" className="focus-visible:focus-ring flex flex-1 flex-col gap-1 rounded-sm text-start outline-none" onClick={() => focusComment(c)}>
                               <span className="flex flex-wrap items-center gap-2 type-text-xs-medium">
                                 <Badge tone="brand" size="xs">
@@ -346,54 +257,28 @@ export function ReviewPage() {
           )}
         </div>
       </div>
-      {artistView ? (
-        <StepFooter note="You’re previewing the artist’s view." status={waiting ? `${review.length} comment${review.length === 1 ? '' : 's'} so far` : undefined}>
-          <Button
-            variant="outline"
-            intent="neutral"
-            disabled={!waiting || review.filter((c) => !c.resolved).length === 0}
-            onClick={() => {
-              p.sendArtistFeedback()
-              setArtistView(false)
-            }}
-          >
-            <Icon icon={SendIcon} />
-            Send comments to the team
-          </Button>
-          <ArtistApproveDialog
-            name="the show"
-            disabled={approved}
-            onApprove={(rating) => {
-              p.approve(rating)
-              setArtistView(false)
-              navigate(path('handoff'))
-            }}
-          />
-        </StepFooter>
-      ) : (
-        <StepFooter
-          note={approved ? 'The show is approved.' : waiting ? 'You can keep working while you wait.' : 'Approving signs off every song and prepares the handoff package.'}
-          status={waiting ? 'Waiting for the artist’s reply' : approved || changesRequested ? undefined : open.length ? `${open.length} open comment${open.length === 1 ? '' : 's'}` : 'All comments resolved'}
-        >
-          <RequestChangesDialog
-            open={open}
-            disabled={status !== 'feedback' || open.length === 0}
-            onConfirm={(ids) => {
-              p.requestChanges(ids)
-              navigate(path('show'))
-            }}
-          />
-          <ApproveButton
-            name="the show"
-            openCount={open.length}
-            disabled={status !== 'feedback'}
-            onApprove={() => {
-              p.approve()
-              navigate(path('handoff'))
-            }}
-          />
-        </StepFooter>
-      )}
+      <StepFooter
+        note={approved ? 'The show is approved.' : waiting ? 'You can keep working while you wait.' : 'Approving signs off every song and prepares the handoff package.'}
+        status={waiting ? 'Waiting for the artist’s reply' : approved || changesRequested ? undefined : open.length ? `${open.length} open comment${open.length === 1 ? '' : 's'}` : 'All comments resolved'}
+      >
+        <RequestChangesDialog
+          open={open}
+          disabled={status !== 'feedback' || open.length === 0}
+          onConfirm={(ids) => {
+            p.requestChanges(ids)
+            navigate(path('show'))
+          }}
+        />
+        <ApproveButton
+          name="the show"
+          openCount={open.length}
+          disabled={status !== 'feedback'}
+          onApprove={() => {
+            p.approve()
+            navigate(path('handoff'))
+          }}
+        />
+      </StepFooter>
     </section>
   )
 }

@@ -20,29 +20,29 @@ Consumed read-only from the sibling clone `~/anvil-ui` (override the path with `
 
 ## How the app is organised
 
-The show is designed one key moment (a song) at a time, on one shared set. See `docs/plan-moments.md`.
+The show is designed one key moment (a song) at a time. See `docs/plan-moments.md`.
 
 - **Home** (`/`): every project as a card, plus **New project**. The sidebar keeps the projects at hand inside a
   project; **Reset the demo** at its bottom restores the seeded start.
 - **Brief**: the agent asks three questions in one card (stage, roughly when, the look), then any no-gos. Venues are
   real AEG venues and festival stages, with the facts aegworldwide.com publishes; technical specs are labelled samples.
   **Generate show** drafts the key moments from the setlist and starts exploring the first.
-- **Show board** (`/show`): one line of running numbers, the set (its venue checks behind a badge), every key moment
+- **Show board** (`/show`): one line of running numbers, every key moment
   in setlist order (its look, one status and one line of detail), and **Send for review** once every
   moment has a look.
 - **Moment page** (`/m/:song`). A song with no images opens on a prompt: describe the stage (or start from a
   suggestion) and the agent makes four images from it; naming a design or a colour, size, haze or brightness steers
   them, and the agent says what the preview couldn't show. Then two tabs. **Explore**: new directions, or more like / other angles / other light of the
-  open image from one menu; change an image in words or with pinned notes (each change is a new image; its lineage,
+  open image from one menu; change an image in words (each change is a new image; its lineage,
   provenance and compare-with-parent are in the card's menu); **Put #n into motion** makes it the moment's look and its
-  clip then leads the page (cues, plain-word edits); lock the set from it. **Asset kit**: angles, light states and
+  clip then leads the page (cues, plain-word edits). **Asset kit**: angles, light states and
   motion variants, each with provenance (LED loops and performer stand-ins come with the pilot models).
 - Key moments are numbered 1, 2, 3… in setlist order. Each one's light comes from where it falls in the set (the
   moments are spread across the slot), so the first moments of a sunset set play in golden hour and the last at night.
 - **Preview the show** (on the show board) plays every moment's clip in setlist order.
 - **Venue checks**: every design's footprint (size, weight, flown load, wind area) is checked against the venue's
   sample limits: stage width, trim, rigging, sightlines, no-gos and, for open-air stages, evening gusts. The checks show
-  on each image's badge, before locking the set, on the show board and in Handoff (`src/services/venueCheck.ts`).
+  on each image's badge, on the show board and in Handoff (`src/services/venueCheck.ts`).
 - **Review**: the artist comments per moment (on the look or the clip) and approves the show once. **Request changes**
   starts new looks for the moments they commented on.
 - **Handoff**, organised by trade: an overview with the value to prove and the credits (who decided what), then
@@ -51,7 +51,7 @@ The show is designed one key moment (a song) at a time, on one shared set. See `
   small badge naming its model: Nano Banana Pro on stills, Veo 3.1 on clips.
 - The screens were simplified after a UX reduction audit (23 Oct 2026): one place per fact, three regions (agent,
   work, projects), detail one click away.
-- State is kept in `sessionStorage` (key `stage-studio:v4`): a reload keeps the demo where it was; a new tab starts fresh.
+- State is kept in `sessionStorage` (key `stage-studio:v5`): a reload keeps the demo where it was; a new tab starts fresh.
 
 ## Concept images
 

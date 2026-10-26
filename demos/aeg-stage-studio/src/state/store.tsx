@@ -13,7 +13,7 @@ interface StoreState {
 type StoreAction = { type: 'create'; project: ProjectState } | { type: 'in'; id: string; action: Action } | { type: 'reset'; state: StoreState }
 
 // v4: key moments numbered 1, 2, 3…, no pins. Older saved demos are dropped, not migrated.
-const KEY = 'stage-studio:v4'
+const KEY = 'stage-studio:v5'
 
 function reducer(state: StoreState, action: StoreAction): StoreState {
   switch (action.type) {

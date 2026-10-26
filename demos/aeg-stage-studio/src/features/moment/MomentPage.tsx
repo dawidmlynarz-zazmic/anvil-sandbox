@@ -15,7 +15,6 @@ import {
   ChevronRightIcon,
   Icon,
   LayersIcon,
-  LockIcon,
   PackageIcon,
   ShieldCheckIcon,
   SparklesIcon,
@@ -30,17 +29,15 @@ import { ProvenanceDialog } from '~/components/ProvenanceButton'
 import { StepFooter } from '~/components/StepFooter'
 import { useStillUrl } from '~/components/StillImage'
 import { briefCheck } from '~/services/briefCheck'
-import { batchLabel, matchesSet } from '~/services/explore'
+import { batchLabel } from '~/services/explore'
 import { momentLight } from '~/services/light'
 import { ofGeneration } from '~/services/provenance'
-import { lowerFirst } from '~/services/shapes'
 import { useProject } from '~/state/ProjectContext'
 import { defaultFocus, genById, gensFor, kitStatus, lineage, lookFor, MOMENT_STATUS, momentStatus, nextOpenMoment } from '~/state/show'
 import { TIME_LABEL, type Generation } from '~/state/types'
 import { AssetKit } from './AssetKit'
 import { LookMotion } from './LookMotion'
 import { SongPrompt } from './SongPrompt'
-import { LockSetDialog } from './LockSetDialog'
 
 /** One image on the contact sheet, with its own render. */
 function Tile({ gen, ...props }: { gen: Generation } & Omit<React.ComponentProps<typeof ContactSheetTile>, 'src' | 'label' | 'caption' | 'alt'>) {
@@ -57,9 +54,6 @@ function Focus({ gen, readOnly }: { gen: Generation; readOnly: boolean }) {
   const look = lookFor(p, gen.song)
   const pending = p.pending[gen.song]
   const [provenance, setProvenance] = useState(false)
-  const [locking, setLocking] = useState(false)
-  // Locking the stage set is offered from the look's menu, until a stage set is locked.
-  const canLock = !readOnly && !p.set && look?.id === gen.id
   return (
     <>
       <ConceptCard
@@ -81,7 +75,6 @@ function Focus({ gen, readOnly }: { gen: Generation; readOnly: boolean }) {
         previous={parent ? { version: parent.n, src: parentSrc } : undefined}
         compareInMenu
         menuItems={[
-          ...(canLock ? [{ label: `Lock the stage set from #${gen.n}`, icon: LockIcon, onSelect: () => setLocking(true) }] : []),
           { label: 'Provenance', icon: ShieldCheckIcon, onSelect: () => setProvenance(true) },
         ]}
         checks={briefCheck(gen, p.brief)}
@@ -97,11 +90,7 @@ function Focus({ gen, readOnly }: { gen: Generation; readOnly: boolean }) {
         onToggleDismissed={() => p.toggleDismissed(gen.id)}
         readOnly={readOnly}
       >
-        {!matchesSet(gen.spec, p.set) && (
-          <p className="text-muted-foreground type-text-xs-normal">Made before the stage set was locked, so its structure is different. Use “More like #{gen.n}” to redo it on the locked set.</p>
-        )}
       </ConceptCard>
-      {canLock && <LockSetDialog gen={gen} open={locking} onOpenChange={setLocking} />}
       <ProvenanceDialog name={`#${gen.n}`} provenance={ofGeneration(gen, lineage(p, gen))} open={provenance} onOpenChange={setProvenance} />
     </>
   )
@@ -147,7 +136,7 @@ export function MomentPage() {
   const newBatch = pending && !all.some((g) => g.batch === pending.batch)
 
   const openMoment = nextOpenMoment(p, song)
-  const choosable = focus && focus.id !== look?.id && !focus.dismissed && matchesSet(focus.spec, p.set)
+  const choosable = focus && focus.id !== look?.id && !focus.dismissed
   const kit = kitStatus(p, song)
 
   return (
@@ -195,7 +184,7 @@ export function MomentPage() {
               </Badge>
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
-              {moment.intent} · {TIME_LABEL[momentLight(p.brief, song, p.moments.length)].toLowerCase()} · {p.set ? `stage set locked: ${lowerFirst(p.set.title)}` : 'stage set not locked yet'}
+              {moment.intent} · {TIME_LABEL[momentLight(p.brief, song, p.moments.length)].toLowerCase()}
             </p>
           </div>
 
@@ -234,7 +223,7 @@ export function MomentPage() {
                         <ButtonGroup aria-label="Explore">
                           <Button variant="outline" intent="neutral" size="sm" disabled={busy} onClick={() => void p.explore(song, 'directions')}>
                             <Icon icon={SparklesIcon} />
-                            {p.set ? 'New looks' : 'New directions'}
+                            New directions
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -276,7 +265,7 @@ export function MomentPage() {
                         return (
                           <ContactSheetGroup
                             key={first.batch}
-                            title={batchLabel(first, parent, p.set)}
+                            title={batchLabel(first, parent)}
                             meta={`${gens.length} ${gens.length === 1 ? 'image' : 'images'} · ${first.author === 'you' ? 'you asked' : 'by the agent'}`}
                             pending={pending?.batch === first.batch ? pending.count : 0}
                           >

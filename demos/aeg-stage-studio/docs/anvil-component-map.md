@@ -78,7 +78,6 @@ Stills and Motion screens below are replaced by the Show board and the Moment pa
 | Element | Anvil component | Props | Gap? |
 | --- | --- | --- | --- |
 | Running metrics | `agent/widget-metric-card` + `WidgetMetricGroup` | | No |
-| The set (locked or not) | `ui/card` + `CardAction` (Unlock) | | No |
 | Moment card (look, light, status, clip) | `ui/card` `size="sm"`, `ui/badge` | | No |
 | Add a key moment | `ui/card` + `ui/input` | | No |
 | Send the show | `ui/dialog` (SendDialog) | | No |
@@ -93,8 +92,7 @@ Stills and Motion screens below are replaced by the Show board and the Moment pa
 | Lineage (#2 → #6 → #12) | `ui/breadcrumb` | `BreadcrumbLink asChild` buttons | No |
 | Batch toolbar | `ui/button-group` + `ui/button` | outline, sm; icon-only when narrow | No |
 | Contact sheet | local `ContactSheet` | | **Yes** (see candidates) |
-| Lock the stage set | `ui/dropdown-menu` item on the look's card, opening `ui/dialog` with the set checks | | No |
-| Set checks (footprint and venue checks) | `anvil/key-value-row` + `anvil/check-row` (included · pending · excluded) + `ui/badge` | | No |
+| Venue checks per look (footprint and checks) | `anvil/key-value-row` + `anvil/check-row` (included · pending · excluded) + `ui/badge` | | No |
 | Motion | `ui/card` + local `ClipPlayer` + `anvil/key-value-row` + `ui/input` | | Yes (ClipPlayer) |
 | Previous / next moment | `ui/button` `size="icon-sm"` | | No |
 | Describe the stage (empty song) | `agent/prompt-input` + `agent/quick-reply` suggestions that fill it | | No |
@@ -110,7 +108,7 @@ Stills and Motion screens below are replaced by the Show board and the Moment pa
 | --- | --- | --- | --- |
 | A tab per moment, with open-comment count | `ui/tabs` `variant="line"` + `ui/badge` | | No |
 | Look with the artist's pins | local `PinnedImage` | | Yes |
-| Approve the show (one sign-off) | `ui/alert-dialog`; artist view `ui/dialog` + `agent/rating` | | No |
+| Approve the show (one sign-off) | `ui/alert-dialog` | | No |
 
 ## Handoff (`/handoff`), by trade
 
@@ -131,6 +129,6 @@ The progress rail was removed; its parts live where they're used.
 | Model on generated media | `ui/badge` `tone="neutral"` `size="xs"`, 75% opacity, over the corner | | No |
 | Running numbers | One line of text on the show board | | No |
 | Explore (split button) | `ui/button-group` + `ui/dropdown-menu` | | No |
-| Set checks summary | `ui/badge` in a `ui/popover` trigger | | No |
+| Venue checks summary | `ui/badge` in a `ui/popover` trigger | | No |
 | Add a key moment | `ui/dialog` with `ui/input` | | No |
 | Venue details | `ui/collapsible` | | No |

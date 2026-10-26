@@ -1,8 +1,7 @@
-import { matchesSet } from '~/services/explore'
 import type { ProjectState } from './project'
 import type { Generation } from './types'
 
-type Show = Pick<ProjectState, 'generations' | 'looks' | 'set' | 'redo' | 'moments'>
+type Show = Pick<ProjectState, 'generations' | 'looks' | 'redo' | 'moments'>
 
 export const genById = (p: Pick<ProjectState, 'generations'>, id: string | undefined) => (id ? p.generations.find((g) => g.id === id) : undefined)
 export const gensFor = (p: Pick<ProjectState, 'generations'>, song: number) => p.generations.filter((g) => g.song === song)
@@ -19,20 +18,18 @@ export function lineage(p: Pick<ProjectState, 'generations'>, gen: Generation): 
   return chain
 }
 
-export type MomentStatus = 'not-started' | 'exploring' | 'chosen' | 'needs-changes' | 'off-set'
+export type MomentStatus = 'not-started' | 'exploring' | 'chosen' | 'needs-changes'
 
 export const MOMENT_STATUS: Record<MomentStatus, { text: string; tone: 'neutral' | 'agent' | 'success' | 'warning' }> = {
   'not-started': { text: 'Not started', tone: 'neutral' },
   exploring: { text: 'Exploring', tone: 'agent' },
   chosen: { text: 'In motion', tone: 'success' },
   'needs-changes': { text: 'Artist asked for changes', tone: 'warning' },
-  'off-set': { text: 'Doesn’t match the stage set', tone: 'warning' },
 }
 
 export function momentStatus(p: Show, song: number): MomentStatus {
   const look = lookFor(p, song)
   if (p.redo.includes(song)) return 'needs-changes'
-  if (look && !matchesSet(look.spec, p.set)) return 'off-set'
   if (look) return 'chosen'
   return gensFor(p, song).length ? 'exploring' : 'not-started'
 }

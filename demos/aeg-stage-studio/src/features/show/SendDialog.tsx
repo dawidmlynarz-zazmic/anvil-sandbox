@@ -13,15 +13,13 @@ export interface SendItem {
   clip?: number
 }
 
-/** The one step that leaves the building: shows exactly what the artist will get, with an optional note, before sending. */
+/** The one step that leaves the building: shows exactly what's being sent for review, with an optional note, before sending. */
 export function SendDialog({
-  artist,
   items,
   label,
   disabled,
   onSend,
 }: {
-  artist: string
   items: SendItem[]
   label: string
   disabled?: boolean
@@ -46,10 +44,10 @@ export function SendDialog({
       </DialogTrigger>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Send the show to {artist}</DialogTitle>
+          <DialogTitle>Send for review</DialogTitle>
           <DialogDescription>
-            {artist} sees {items.length === 1 ? 'the song' : `all ${items.length} songs`}, each with its look and {clips === items.length ? 'its clip' : `${clips} of ${items.length} clips`}.
-            They can comment on any song, then approve the whole show.
+            You’re sending {items.length === 1 ? '1 song' : `${items.length} songs`}, each with its look{clips === items.length ? ' and clip' : ` (${clips} with a clip)`}. The reviewer can
+            comment on any song, then approve the show or ask for changes.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
@@ -60,14 +58,14 @@ export function SendDialog({
                   Song {item.song} · {item.title}
                 </span>
                 <span className="text-muted-foreground type-text-xs-normal">
-                  {item.look} · {item.clip ? `clip v${item.clip}` : 'no clip yet, so the artist sees the image only'}
+                  {item.look} · {item.clip ? `clip v${item.clip}` : 'no clip yet, so only the image is sent'}
                 </span>
               </li>
             ))}
           </ul>
           <Textarea
-            label={`A note for ${artist}`}
-            hint="Optional. e.g. “The stage set stays the same all night; each song changes its light.”"
+            label="Note"
+            hint="Optional. e.g. “Songs 3 and 4 are the big moments; the rest stays simple.”"
             rows={2}
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -81,7 +79,7 @@ export function SendDialog({
             }}
           >
             <Icon icon={SendIcon} />
-            Send to {artist}
+            Send for review
           </Button>
         </DialogFooter>
       </DialogContent>

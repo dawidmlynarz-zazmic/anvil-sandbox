@@ -1,7 +1,7 @@
 import { artistFeedback } from '~/mocks/review'
 import { initialBrief, openingMessages } from '~/mocks/project'
 import { isCovered } from '~/mocks/venues'
-import { materialize, planBatch, setFrom, type BatchKind } from '~/services/explore'
+import { materialize, planBatch, type BatchKind } from '~/services/explore'
 import { clipFor } from '~/services/generation'
 import { planKit } from '~/services/kit'
 import { draftMoments } from '~/services/interview'
@@ -30,7 +30,6 @@ const base = (id: string, artist: string, event: string, brief: Brief, moments: 
   moments,
   generations: [],
   looks: {},
-  set: null,
   pending: {},
   clips: {},
   kits: {},
@@ -51,7 +50,6 @@ function explore(p: ProjectState, song: number, kind: BatchKind, baseN?: number)
   const { drafts } = planBatch(kind, {
     light: momentLight(p.brief, song, p.moments.length),
     covered: isCovered(p.brief.venueId),
-    set: p.set,
     existing,
     base: baseN ? existing.find((g) => g.n === baseN) : undefined,
   })
@@ -112,7 +110,6 @@ function o2(): ProjectState {
   explore(p, 1, 'directions')
   explore(p, 1, 'more', 3)
   choose(p, 1, 6)
-  p.set = setFrom(gen(p, 1, 6))
   for (const song of [2, 3, 4]) {
     explore(p, song, 'directions')
     choose(p, song, song === 3 ? 3 : 2)
@@ -124,10 +121,9 @@ function o2(): ProjectState {
     ...p,
     status: 'feedback',
     review,
-    sentVersion: 4,
+    sentVersion: 3,
     versions: versions([
       ['Song 1 · New directions, then more like #3', 'Stage agent'],
-      ['Stage set locked from song 1, #6 · Kinetic LED ribbons', 'You'],
       ['All 4 songs put into motion', 'You'],
       ['Sent to the artist · 4 songs, 4 clips', 'You'],
     ]),
@@ -135,7 +131,6 @@ function o2(): ProjectState {
       [
         ['user', 'Cold, industrial residency look for The O2. Chrome and neon, nothing warm until the ballad.'],
         ['assistant', 'Loaded The O2. It’s under a roof, so every song is lit as night. I drafted four key moments from the setlist.'],
-        ['assistant', 'You locked the stage set from song 1, image #6: kinetic LED ribbons. New looks for the other songs keep that structure.'],
         ['assistant', 'Sent the show to the artist: 4 songs, each with its look and clip.'],
         ['assistant', `The artist replied with ${review.length} comments. Open Review to go through them, then approve the show or request changes.`],
       ],
@@ -162,7 +157,6 @@ function arena(): ProjectState {
   explore(p, 1, 'directions')
   explore(p, 1, 'more', 4)
   choose(p, 1, 5)
-  p.set = setFrom(gen(p, 1, 5))
   for (const song of [2, 3, 4]) {
     explore(p, song, 'directions')
     choose(p, song, song === 3 ? 1 : 4)
@@ -175,10 +169,9 @@ function arena(): ProjectState {
     status: 'approved',
     review,
     artistRating: 4,
-    sentVersion: 6,
+    sentVersion: 5,
     versions: versions([
       ['Song 1 · New directions, then more like #4', 'Stage agent'],
-      ['Stage set locked from song 1, #5 · Floating halo', 'You'],
       ['All 4 songs put into motion', 'You'],
       ['Sent to the artist · 4 songs, 4 clips', 'You'],
       ['Changes requested · 1 song', 'You'],

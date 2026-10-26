@@ -1,7 +1,7 @@
 import type { ConceptShape, Generation, ReviewComment, SetlistMoment } from '~/state/types'
 
 // Example feedback the artist leaves on the show. It depends on each look's shape, so the comments make sense for
-// what's on screen. Comments on a look are about the look (light, haze, colour), which the set allows to change. A real build would load the artist's actual comments.
+// what's on screen. Comments on a look are about the look (light, haze, colour), which can change without rebuilding the stage. A real build would load the artist's actual comments.
 const ON_LOOK: Record<ConceptShape, { x: number; y: number; text: string }> = {
   arch: { x: 27, y: 36, text: 'Love the arch. Can it glow warmer here, more amber?' },
   monolith: { x: 50, y: 30, text: 'The monolith is right. The screen inside should glow warmer.' },

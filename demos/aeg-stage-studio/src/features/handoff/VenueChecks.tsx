@@ -11,21 +11,19 @@ const ROW: Record<CheckStatus, { status: 'included' | 'pending' | 'excluded'; la
   fail: { status: 'excluded', label: 'Fails' },
 }
 
-interface SetChecksProps {
+interface VenueChecksProps {
   spec: StillSpec
   brief: Brief
   reworked?: boolean
   /** Checks only, without the footprint. */
   compact?: boolean
-  /** The set is locked: a fix means unlocking it first. */
-  locked?: boolean
 }
 
 /**
- * A set (or a design about to become the set) against the venue: its footprint and every check, with numbers.
- * Everything here is a sample estimate, and says so.
+ * A design against the venue: its footprint and every check, with numbers. Everything here is a sample estimate, and
+ * says so.
  */
-export function SetChecks({ spec, brief, reworked, compact, locked }: SetChecksProps) {
+export function VenueChecks({ spec, brief, reworked, compact }: VenueChecksProps) {
   const venue = venueOf(brief.venueId)
   const fp = footprint(spec)
   const checks = venueChecks(spec, brief, reworked)
@@ -60,7 +58,7 @@ export function SetChecks({ spec, brief, reworked, compact, locked }: SetChecksP
             </CheckRow>
             <span className="text-muted-foreground ps-5 type-text-xs-normal">
               {c.detail}
-              {c.fix && c.status !== 'pass' ? (locked ? ` To fix it, unlock the stage set and try “${c.fix}” on its look.` : ` Try “${c.fix}”.`) : ''}
+              {c.fix && c.status !== 'pass' ? ` Try “${c.fix}” on the song’s page.` : ''}
             </span>
           </li>
         ))}
