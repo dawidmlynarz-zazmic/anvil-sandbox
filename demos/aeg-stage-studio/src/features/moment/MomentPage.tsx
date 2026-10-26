@@ -5,7 +5,6 @@ import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { ButtonGroup } from '@anvil/components/ui/button-group'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@anvil/components/ui/dropdown-menu'
-import { EmptyState, EmptyStateDescription, EmptyStateHeader, EmptyStateMedia, EmptyStateTitle } from '@anvil/components/ui/empty-state'
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -16,7 +15,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   Icon,
-  ImageIcon,
   LayersIcon,
   LockIcon,
   PackageIcon,
@@ -42,6 +40,7 @@ import { defaultFocus, genById, gensFor, kitStatus, lineage, lookFor, MOMENT_STA
 import { TIME_LABEL, type Generation } from '~/state/types'
 import { AssetKit } from './AssetKit'
 import { LookMotion } from './LookMotion'
+import { SongPrompt } from './SongPrompt'
 import { LockSetDialog } from './LockSetDialog'
 
 /** One image on the contact sheet, with its own render. */
@@ -195,21 +194,7 @@ export function MomentPage() {
           </div>
 
           {all.length === 0 && !pending ? (
-            <EmptyState className="py-10">
-              <EmptyStateMedia variant="icon">
-                <Icon icon={ImageIcon} />
-              </EmptyStateMedia>
-              <EmptyStateHeader>
-                <EmptyStateTitle>No images for this song yet</EmptyStateTitle>
-                <EmptyStateDescription>
-                  {p.set ? 'Start with four looks on the locked stage set, lit for this song.' : 'Start with four stage designs, lit for this song.'}
-                </EmptyStateDescription>
-              </EmptyStateHeader>
-              <Button variant="outline" intent="neutral" disabled={locked} onClick={() => void p.explore(song, 'directions')}>
-                <Icon icon={SparklesIcon} />
-                {p.set ? 'Explore four looks' : 'Explore four directions'}
-              </Button>
-            </EmptyState>
+            <SongPrompt moment={moment} disabled={locked} />
           ) : (
             <>
               <Tabs value={tab} onValueChange={setTab}>

@@ -15,6 +15,7 @@ export interface Provenance {
 
 const SOURCE: Record<Generation['source'], string> = {
   directions: 'a batch of new directions',
+  prompt: 'your description',
   more: 'a “more like this” batch',
   angles: 'an “other angles” batch',
   light: 'an “other light” batch',
@@ -25,7 +26,7 @@ const SOURCE: Record<Generation['source'], string> = {
 export function ofGeneration(gen: Generation, chain: Generation[]): Provenance {
   return {
     model: 'Nano Banana Pro',
-    prompt: `${gen.caption.startsWith(gen.title) ? gen.caption : `${gen.title}: ${gen.caption.toLowerCase()}`}. Song ${gen.song}, lit for its slot, from the brief’s visual direction and references.`,
+    prompt: gen.prompt ? `${gen.prompt}. Song ${gen.song}, lit for its slot, with the brief’s visual direction and references.` : `${gen.caption.startsWith(gen.title) ? gen.caption : `${gen.title}: ${gen.caption.toLowerCase()}`}. Song ${gen.song}, lit for its slot, from the brief’s visual direction and references.`,
     from: chain.length > 1 ? `${chain.map((g) => `#${g.n}`).join(' → ')}, via ${SOURCE[gen.source]}` : `The brief, via ${SOURCE[gen.source]}`,
     by: gen.author === 'you' ? 'You' : 'Stage agent',
     at: gen.at ?? 'Earlier',

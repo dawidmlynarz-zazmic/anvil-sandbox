@@ -44,7 +44,8 @@ interface ProjectApi extends ProjectState {
   /** Removes a key moment; the ones after it are renumbered. */
   removeMoment: (song: number) => void
   /** A batch of images for a moment: new directions, or more like / other angles / other light of `baseId`. */
-  explore: (song: number, kind: BatchKind, baseId?: string) => Promise<void>
+  /** A batch of images. `prompt` describes the stage (new directions); it's shown as your message unless `echo` is false. */
+  explore: (song: number, kind: BatchKind, baseId?: string, prompt?: string, echo?: boolean) => Promise<void>
   /** Applies a described change to one image, as a new image (its child). */
   refine: (genId: string, change: string) => Promise<void>
   /** Notes a change on an image, pinned to a spot or about the whole image. Not applied until applyAnnotations. */
@@ -126,20 +127,20 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
   }
 
   /** Makes a batch of images for a moment, one at a time, with the agent's reasoning shown as it goes. */
-  const runBatch = async (song: number, kind: BatchKind, opts: { baseId?: string; notes?: string[]; author: Generation['author'] }) => {
+  const runBatch = async (song: number, kind: BatchKind, opts: { baseId?: string; notes?: string[]; prompt?: string; author: Generation['author'] }) => {
     const s = get()
     const moment = momentOf(song)
     if (!moment || s.pending[song]) return
     const existing = gensFor(s, song)
     const base = genById(s, opts.baseId)
     const light = momentLight(s.brief, song, s.moments.length)
-    const { drafts, summary } = planBatch(kind, { light, covered: isCovered(s.brief.venueId), set: s.set, existing, base, notes: opts.notes })
+    const { drafts, summary } = planBatch(kind, { light, covered: isCovered(s.brief.venueId), set: s.set, existing, base, notes: opts.notes, prompt: opts.prompt })
     if (!drafts.length) return
     const label = base && kind !== 'directions' ? `${BATCH_LABEL[kind]} · #${base.n}` : s.set ? 'New looks on the stage set' : BATCH_LABEL[kind]
     const started = Date.now()
     const batch = nextBatch(existing)
     d({ type: 'pending/set', song, pending: { label, count: drafts.length, batch } })
-    let thinking = batchThinking(s.brief, moment, light, s.set, kind, drafts.length, opts.notes)
+    let thinking = batchThinking(s.brief, moment, light, s.set, kind, drafts.length, opts.notes, opts.prompt)
     const msg = say('assistant', '', true)
     updateMessage(msg, { thinking })
     const made = materialize(drafts, { project: id, song, existing, author: opts.author })
@@ -523,7 +524,10 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       d({ type: 'moments/set', moments: [...moments, { number: (moments.at(-1)?.number ?? 0) + 1, title, intent }] })
     },
     removeMoment: (song) => d({ type: 'moments/remove', song }),
-    explore: (song, kind, baseId) => runBatch(song, kind, { baseId, author: 'you' }),
+    explore: (song, kind, baseId, prompt, echo = true) => {
+      if (prompt && echo) say('user', prompt)
+      return runBatch(song, kind, { baseId, prompt, author: 'you' })
+    },
     refine,
     addAnnotation,
     removeAnnotation,

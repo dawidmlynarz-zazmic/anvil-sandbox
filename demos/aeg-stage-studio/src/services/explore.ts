@@ -1,6 +1,6 @@
 import { stageArt } from '~/mocks/art'
 import { TIME_LABEL, VIEW_LABEL, type Generation, type GenSource, type ShowSet, type StageTweaks, type StageView, type StillSpec, type TimeOfDay } from '~/state/types'
-import { listing, take, tweaksFrom } from './changes'
+import { hybridFrom, listing, SHAPE_WORDS, take, tweaksFrom } from './changes'
 import { capitalise, conceptTitle, describeLook, describeTweaks, lowerFirst, SHAPES, SHAPE_SHORT } from './shapes'
 
 // Mocked exploration. A batch is a few images for one key moment, planned from what you ask for: new directions,
@@ -15,6 +15,8 @@ export interface Draft {
   title: string
   caption: string
   source: GenSource
+  /** The description the image was made from. */
+  prompt?: string
   parentId?: string
   reworked?: boolean
 }
@@ -30,6 +32,11 @@ export interface BatchContext {
   base?: Generation
   /** Words to apply to every image, e.g. the artist's comments. */
   notes?: string[]
+  /**
+   * Your description of the stage, for new directions. The preview reads the design it names (arch, monolith, ribbons,
+   * halo, or two combined) and any size, height, colour, haze or brightness words; the pilot model reads all of it.
+   */
+  prompt?: string
 }
 
 /** Keeps the set's structure (shape, size, height) and whatever look the tweaks give. */
@@ -59,8 +66,13 @@ export function planBatch(kind: BatchKind, ctx: BatchContext): { drafts: Draft[]
   const n = ctx.existing.length
   const base = ctx.base
   const { set } = ctx
-  const notes = ctx.notes?.join('. ') ?? ''
+  const prompt = ctx.prompt?.trim() ?? ''
+  const notes = [prompt, ...(ctx.notes ?? [])].filter(Boolean).join('. ')
   const withNotes = (t: StageTweaks) => (notes ? tweaksFrom(notes, t).tweaks : t)
+  const understood = prompt ? tweaksFrom(prompt).applied : []
+  /** What the agent says about a description it could only partly show. */
+  const unread = (shown: boolean) =>
+    prompt && !shown ? ` This preview shows a design’s shape, size, colour, haze and brightness, so it can’t show the rest of “${prompt}”; in the pilot, Nano Banana Pro works from your words directly.` : ''
   const fresh = (spec: Omit<StillSpec, 'seed' | 'crowd' | 'view' | 'timeOfDay'> & Partial<StillSpec>, i: number): StillSpec => ({
     crowd: 'full',
     view: 'front-of-house',
@@ -73,21 +85,44 @@ export function planBatch(kind: BatchKind, ctx: BatchContext): { drafts: Draft[]
     if (set) {
       const drafts = [0, 1, 2, 3].map((i): Draft => {
         const spec = onSet(fresh({ concept: set.concept, with: set.with }, i), set, withNotes(take(n + i).tweaks))
-        return { spec, title: set.title, caption: capitalise(describeLook(spec.tweaks) || 'original light'), source: 'directions' }
+        return { spec, title: set.title, caption: capitalise(describeLook(spec.tweaks) || 'original light'), source: prompt ? 'prompt' : 'directions', prompt: prompt || undefined }
       })
-      return { drafts, summary: `Four new looks on the stage set: ${quoted(drafts.map((d) => d.caption))}. The structure stays as locked.` }
+      return {
+        drafts,
+        summary: `Four new looks on the stage set${prompt ? ' from your description' : ''}: ${quoted(drafts.map((d) => d.caption))}. The structure stays as locked.${unread(understood.length > 0)}`,
+      }
     }
     const dismissed = [...new Set(ctx.existing.filter((g) => g.dismissed).map((g) => g.spec.concept))]
     const allowed = SHAPES.filter((s) => !dismissed.includes(s))
-    const pool = allowed.length ? allowed : SHAPES
+    // A description that names a design (or two, combined) gets four takes on it; otherwise the open directions.
+    const hybrid = prompt ? hybridFrom(prompt) : undefined
+    const named = prompt ? SHAPES.filter((s) => SHAPE_WORDS[s].test(prompt)) : []
+    const pool = hybrid ? [hybrid[0]] : named.length ? named : allowed.length ? allowed : SHAPES
     const first = n === 0
     const drafts = [0, 1, 2, 3].map((i): Draft => {
       const shape = pool[i % pool.length]!
-      // The first batch shows each direction as designed; later ones vary them, so nothing repeats.
-      const tweaks = withNotes(first && i < pool.length ? {} : take(n + i).tweaks)
-      return { spec: fresh({ concept: shape, tweaks }, i), title: conceptTitle(shape), caption: describeTweaks(tweaks) ? `${conceptTitle(shape)}, ${describeTweaks(tweaks)}` : conceptTitle(shape), source: 'directions' }
+      const second = hybrid?.[1]
+      // The first batch shows each direction as designed; later ones (and repeats) vary them, so nothing repeats.
+      // From a description, the variations skip the takes its words would cancel out (a warm note over a cool take).
+      const variation = prompt ? (i === 0 ? {} : take(n + [0, 1, 3, 5][i]!).tweaks) : first && i < pool.length ? {} : take(n + i).tweaks
+      const tweaks = withNotes(variation)
+      const title = conceptTitle(shape, second)
+      return { spec: fresh({ concept: shape, with: second, tweaks }, i), title, caption: describeTweaks(tweaks) ? `${title}, ${describeTweaks(tweaks)}` : title, source: prompt ? 'prompt' : 'directions', prompt: prompt || undefined }
     })
     const left = dismissed.length && allowed.length ? ` I left out the ${listing(dismissed.map((s) => SHAPE_SHORT[s]))} you set aside.` : ''
+    if (prompt) {
+      const designs = listing([...new Set(drafts.map((d) => lowerFirst(d.title)))])
+      // Nothing in the description that the preview can draw: say so, and offer open directions instead.
+      if (!hybrid && !named.length && !understood.length)
+        return {
+          drafts,
+          summary: `This preview can’t draw “${prompt}”, so here are four open directions instead: ${designs}. In the pilot, Nano Banana Pro works from your words directly.`,
+        }
+      return {
+        drafts,
+        summary: `Four images from your description: ${designs}${understood.length ? `, with ${listing(understood)}` : ''}.${unread(true)}`,
+      }
+    }
     return {
       drafts,
       summary: `${first ? 'Four directions' : 'Four new directions'}: ${listing([...new Set(drafts.map((d) => lowerFirst(d.title)))])}.${left}`,
@@ -157,6 +192,7 @@ export function materialize(drafts: Draft[], at: { project: string; song: number
       batch,
       parentId: d.parentId,
       source: d.source,
+      prompt: d.prompt,
       title: d.title,
       caption: d.caption,
       spec: d.spec,
@@ -174,6 +210,8 @@ export function batchLabel(first: Generation, parent: Generation | undefined, se
   switch (first.source) {
     case 'directions':
       return set && matchesSet(first.spec, set) ? 'New looks on the stage set' : 'New directions'
+    case 'prompt':
+      return `From your description: “${first.prompt ?? ''}”`
     case 'more':
       return `More like${of}`
     case 'angles':
