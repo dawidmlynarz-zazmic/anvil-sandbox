@@ -31,7 +31,7 @@ function ProvenanceDetails({ provenance }: { provenance: Provenance }) {
   )
 }
 
-/** Where an image or clip came from, one click away on every asset. */
+/** Where an image or clip came from, one click away on every image and clip. */
 export function ProvenanceButton({ name, provenance, size = 'xs' }: { name: string; provenance: Provenance; size?: 'xs' | 'sm' }) {
   return (
     <Popover>

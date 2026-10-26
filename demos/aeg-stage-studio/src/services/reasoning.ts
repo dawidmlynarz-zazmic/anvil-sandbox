@@ -25,7 +25,7 @@ export function batchThinking(brief: Brief, moment: SetlistMoment, light: TimeOf
   return {
     title: `Exploring song ${moment.number}`,
     reasoning: `Song ${moment.number} (${moment.title}) plays in ${TIME_LABEL[light].toLowerCase()} (${slotNote(brief).toLowerCase()}). You asked for ${prompt ? `“${prompt}”` : ASK[kind]}.`,
-    steps: [`Loaded ${venueOf(brief.venueId).name}`, ...(prompt ? ['Read your description'] : []), 'Checked the artist’s no-go list', ...notes.map((n) => `Read the artist’s comment: “${n}”`), `Drafted ${count} prompts`],
+    steps: [`Loaded ${venueOf(brief.venueId).name}`, ...(prompt ? ['Read your description'] : []), 'Checked the artist’s no-go list', ...notes.map((n) => `Read the note: “${n}”`), `Drafted ${count} prompts`],
     tools: [{ name: 'generate_stills', summary: `Nano Banana Pro · ${count} images`, input: draftPrompt(brief, moment, light, prompt), status: 'running' }],
   }
 }

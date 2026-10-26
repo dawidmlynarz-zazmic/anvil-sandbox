@@ -4,11 +4,8 @@ import type {
   BriefSection,
   ChatTurn,
   ClipSlot,
-  Asset,
   Generation,
-  Kit,
-  ProjectStatus,
-  ReviewComment,
+  Handoff,
   SetlistMoment,
   Version,
 } from './types'
@@ -24,7 +21,7 @@ export interface ProjectMeta {
   event: string
   createdAt: number
   updatedAt: number
-  /** When the brief was written; drives "days to approval". */
+  /** When the brief was written; drives "days to handoff". */
   briefDate: number
 }
 
@@ -45,7 +42,7 @@ export interface Pending {
 /** Everything about one project: its brief, its show and its conversation. */
 export interface ProjectState {
   meta: ProjectMeta
-  /** setup: the agent is interviewing you for the brief. loop: the show, review and handoff. */
+  /** setup: the agent is interviewing you for the brief. loop: the show and its handoff. */
   phase: 'setup' | 'loop'
   /** Which interview question the agent is on, during setup. */
   setupStep: number
@@ -63,23 +60,12 @@ export interface ProjectState {
   /** Batches being made, per moment. */
   pending: Record<number, Pending | undefined>
   clips: Record<string, ClipSlot>
-  /** Each moment's asset kit, built from its look. */
-  kits: Record<number, Kit>
-  /** Kits being built: song → assets still to come. */
-  kitPending: Record<number, number | undefined>
   /** The image open on a moment page, so the chat changes that one. */
   focus: { song: number; genId: string } | null
   messages: ChatTurn[]
-  status: ProjectStatus
-  review: ReviewComment[]
-  /** Moments the artist asked to change, until they get a new look. */
-  redo: number[]
   versions: Version[]
-  sentVersion: number | null
-  /** The artist's 1–5 rating at sign-off: “How close is this to your vision?” */
-  artistRating?: number | null
-  /** The handoff package has gone to the production team. */
-  exported?: boolean
+  /** The latest handoff for production, or null before the first one. */
+  handoff: Handoff | null
 }
 
 export type Action =
@@ -97,19 +83,11 @@ export type Action =
   | { type: 'look/set'; song: number; id: string }
   | { type: 'focus/set'; song: number; genId: string }
   | { type: 'clip/set'; key: string; slot: ClipSlot }
-  | { type: 'kit/start'; song: number; lookId: string; count: number }
-  | { type: 'kit/asset'; song: number; asset: Asset }
-  | { type: 'kit/done'; song: number }
   | { type: 'chat/add'; turn: ChatTurn }
   | { type: 'chat/update'; id: number; patch: Partial<ChatTurn> }
-  | { type: 'status/set'; status: ProjectStatus }
-  | { type: 'review/set'; comments: ReviewComment[] }
-  | { type: 'review/resolve'; id: string; resolved?: boolean }
-  | { type: 'review/add'; comment: ReviewComment }
-  | { type: 'redo/set'; songs: number[] }
-  | { type: 'rating/set'; rating: number | null }
+  | { type: 'handoff/set'; handoff: Handoff }
   | { type: 'export/done' }
-  | { type: 'version/add'; summary: string; author: string; sent?: boolean }
+  | { type: 'version/add'; summary: string; author: string }
 
 const SECTION_OF: Record<keyof Brief, BriefSection> = {
   venueId: 'venue',
@@ -139,21 +117,15 @@ export function newProject(id: string, opening: ChatTurn[], show?: { artist: str
     looks: {},
     pending: {},
     clips: {},
-    kits: {},
-    kitPending: {},
     focus: null,
     messages: opening,
-    status: 'draft',
-    review: [],
-    redo: [],
     versions: [],
-    sentVersion: null,
-    artistRating: null,
+    handoff: null,
   }
 }
 
 /** Actions that don't count as working on the project (for "updated 5 min ago"). */
-const QUIET = new Set<Action['type']>(['chat/update', 'focus/set', 'pending/set', 'kit/done'])
+const QUIET = new Set<Action['type']>(['chat/update', 'focus/set', 'pending/set'])
 
 export function projectReducer(state: ProjectState, action: Action): ProjectState {
   const next = step(state, action)
@@ -191,53 +163,24 @@ function step(state: ProjectState, action: Action): ProjectState {
     case 'pending/set':
       return { ...state, pending: { ...state.pending, [action.song]: action.pending } }
     case 'look/set':
-      return { ...state, looks: { ...state.looks, [action.song]: action.id }, redo: state.redo.filter((s) => s !== action.song) }
+      return { ...state, looks: { ...state.looks, [action.song]: action.id } }
     case 'focus/set':
       return { ...state, focus: { song: action.song, genId: action.genId } }
     case 'clip/set':
       return { ...state, clips: { ...state.clips, [action.key]: action.slot } }
-    case 'kit/start':
-      return {
-        ...state,
-        kits: { ...state.kits, [action.song]: { lookId: action.lookId, assets: [] } },
-        kitPending: { ...state.kitPending, [action.song]: action.count },
-      }
-    case 'kit/asset': {
-      const kit = state.kits[action.song]
-      if (!kit) return state
-      const left = state.kitPending[action.song]
-      return {
-        ...state,
-        kits: { ...state.kits, [action.song]: { ...kit, assets: [...kit.assets, action.asset] } },
-        kitPending: { ...state.kitPending, [action.song]: left ? left - 1 : undefined },
-      }
-    }
-    case 'kit/done':
-      return { ...state, kitPending: { ...state.kitPending, [action.song]: undefined } }
     case 'chat/add':
       return { ...state, messages: [...state.messages, action.turn] }
     case 'chat/update':
       return { ...state, messages: state.messages.map((m) => (m.id === action.id ? { ...m, ...action.patch } : m)) }
-    case 'status/set':
-      return { ...state, status: action.status }
-    case 'review/set':
-      return { ...state, review: action.comments }
-    case 'review/add':
-      return { ...state, review: [...state.review, action.comment] }
-    case 'review/resolve':
-      return { ...state, review: state.review.map((c) => (c.id === action.id ? { ...c, resolved: action.resolved ?? !c.resolved } : c)) }
-    case 'redo/set':
-      return { ...state, redo: action.songs }
-    case 'rating/set':
-      return { ...state, artistRating: action.rating }
+    case 'handoff/set':
+      return { ...state, handoff: action.handoff }
     case 'export/done':
-      return { ...state, exported: true }
+      return state.handoff ? { ...state, handoff: { ...state.handoff, exported: true } } : state
     case 'version/add': {
       const number = state.versions.length + 1
       return {
         ...state,
         versions: [...state.versions, { number, summary: action.summary, author: action.author, time: clock() }],
-        sentVersion: action.sent ? number : state.sentVersion,
       }
     }
   }
@@ -245,7 +188,7 @@ function step(state: ProjectState, action: Action): ProjectState {
 
 /**
  * Removes a key moment and renumbers the ones after it, so the show always reads 1, 2, 3… Everything keyed by a
- * moment's number (its images, look, kit, clips, comments) moves with it.
+ * moment's number (its images, look, clips) moves with it.
  */
 function removeMoment(state: ProjectState, song: number): ProjectState {
   const to = (n: number) => (n > song ? n - 1 : n)
@@ -257,8 +200,6 @@ function removeMoment(state: ProjectState, song: number): ProjectState {
     generations: state.generations.filter((g) => g.song !== song).map((g) => ({ ...g, song: to(g.song) })),
     looks: rekey(state.looks),
     pending: rekey(state.pending),
-    kits: rekey(state.kits),
-    kitPending: rekey(state.kitPending),
     clips: Object.fromEntries(
       Object.entries(state.clips).flatMap(([key, slot]) => {
         const [genId, n] = key.split('|')
@@ -266,8 +207,6 @@ function removeMoment(state: ProjectState, song: number): ProjectState {
       }),
     ),
     focus: state.focus && state.focus.song !== song ? { ...state.focus, song: to(state.focus.song) } : null,
-    review: state.review.filter((c) => c.song !== song).map((c) => ({ ...c, song: to(c.song) })),
-    redo: state.redo.filter((n) => n !== song).map(to),
   }
 }
 
@@ -281,7 +220,6 @@ export function settle(state: ProjectState): ProjectState {
   return {
     ...state,
     pending: {},
-    kitPending: {},
     clips,
     messages: state.messages.map((m) => (m.pending ? { ...m, pending: false, text: m.text || 'Interrupted by a reload.' } : m)),
   }
@@ -293,26 +231,37 @@ export const looksChosen = (p: Pick<ProjectState, 'moments' | 'looks'>) => p.mom
 /** A short label for where a project stands, for the project list. */
 export function projectStatusLabel(p: ProjectState): string {
   if (p.phase === 'setup') return 'Writing the brief'
-  if (p.status === 'approved') return 'Approved · ready to hand off'
-  if (p.status === 'feedback') return `Artist replied · ${p.review.filter((c) => !c.resolved).length} comments open`
-  if (p.status === 'awaiting-artist') return 'With the artist'
+  if (p.handoff) return `Handed off · v${p.handoff.version}`
   return `${looksChosen(p)} of ${p.moments.length} songs in motion`
 }
 
-/** The step a project should open on: where its work currently is. */
-export function currentStep(p: ProjectState): 'brief' | 'show' | 'review' | 'handoff' {
+/** The page a project should open on: where its work currently is. */
+export function currentStep(p: ProjectState): 'brief' | 'show' | 'handoff' {
   if (p.phase === 'setup') return 'brief'
-  if (p.status === 'approved') return 'handoff'
-  if (p.status === 'awaiting-artist' || p.status === 'feedback') return 'review'
+  if (p.handoff) return 'handoff'
   return 'show'
 }
 
-/** In progress, in review or approved: the badge next to a project's name. */
+/** In progress or handed off: the badge next to a project's name. */
 export const STATUS_BADGE = {
   progress: { tone: 'warning', text: 'In progress' },
-  review: { tone: 'agent', text: 'In review' },
-  approved: { tone: 'success', text: 'Approved' },
+  handedOff: { tone: 'success', text: 'Handed off' },
 } as const
 
-export const statusBadge = (status: ProjectStatus) =>
-  STATUS_BADGE[status === 'approved' ? 'approved' : status === 'awaiting-artist' || status === 'feedback' ? 'review' : 'progress']
+export const statusBadge = (p: Pick<ProjectState, 'handoff'>) => STATUS_BADGE[p.handoff ? 'handedOff' : 'progress']
+
+/** Every song has a look: the show can be handed off. */
+export const showComplete = (p: Pick<ProjectState, 'moments' | 'looks'>) => p.moments.length > 0 && looksChosen(p) === p.moments.length
+
+/** The show has changed since its last handoff: a song added, removed or renamed, a new look, or a new clip version. */
+export function handoffOutOfDate(p: Pick<ProjectState, 'handoff' | 'moments' | 'looks' | 'clips'>): boolean {
+  const h = p.handoff
+  if (!h) return false
+  if (h.songs.length !== p.moments.length) return true
+  return h.songs.some((s, i) => {
+    const m = p.moments[i]!
+    const slot = p.clips[clipKey(s.lookId, m.number)]
+    const clip = slot?.status === 'ready' ? slot.clip : undefined
+    return m.number !== s.moment.number || m.title !== s.moment.title || p.looks[m.number] !== s.lookId || clip?.version !== s.clip?.version || clip?.edits.length !== s.clip?.edits.length
+  })
+}

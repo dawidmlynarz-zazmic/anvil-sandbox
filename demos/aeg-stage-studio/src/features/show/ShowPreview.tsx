@@ -10,7 +10,7 @@ import { clipKey, useProject } from '~/state/ProjectContext'
 import { lookFor } from '~/state/show'
 import type { Generation, MotionClip, SetlistMoment } from '~/state/types'
 
-interface Scene {
+export interface Scene {
   moment: SetlistMoment
   look: Generation
   clip: MotionClip
@@ -37,20 +37,23 @@ function Player({ scene, index, count, onEnded }: { scene: Scene; index: number;
   )
 }
 
-/** Plays every moment's clip in setlist order, one after another: the show as the audience will see it, in brief. */
-export function ShowPreview() {
+/**
+ * Plays every moment's clip in setlist order, one after another: the show as the audience will see it, in brief.
+ * Pass `scenes` to play a fixed set (the handoff as it was generated) instead of the show as it is now.
+ */
+export function ShowPreview({ scenes: fixed }: { scenes?: Scene[] }) {
   const p = useProject()
   const [open, setOpen] = useState(false)
   const [at, setAt] = useState(0)
   // Bumped by “Play from the start”, so the first clip restarts even when it's already open.
   const [run, setRun] = useState(0)
-  const scenes: Scene[] = p.moments.flatMap((moment) => {
+  const scenes: Scene[] = fixed ?? p.moments.flatMap((moment) => {
     const look = lookFor(p, moment.number)
     const slot = look ? p.clips[clipKey(look.id, moment.number)] : undefined
     return look && slot?.status === 'ready' ? [{ moment, look, clip: slot.clip }] : []
   })
   const scene = scenes[at] ?? scenes[0]
-  const missing = p.moments.length - scenes.length
+  const missing = fixed ? 0 : p.moments.length - scenes.length
 
   return (
     <Dialog

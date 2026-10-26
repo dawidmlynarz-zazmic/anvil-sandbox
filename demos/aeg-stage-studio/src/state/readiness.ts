@@ -10,7 +10,7 @@ export interface ReadinessItem {
 }
 
 /**
- * What the brief needs before the show is built, as one list. The brief page, its cards, Generate show, the header steps and the
+ * What the brief needs before the show is built, as one list. The brief page, its cards, Generate show and the
  * agent all read it, so they never disagree.
  * - Required: stage, time slot and visual direction (every image and clip is built on them).
  * Key moments aren't here: they're the show itself, drafted when the show is built and shaped on the show board.

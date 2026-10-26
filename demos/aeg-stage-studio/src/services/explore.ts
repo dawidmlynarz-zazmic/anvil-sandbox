@@ -28,7 +28,7 @@ export interface BatchContext {
   existing: Generation[]
   /** The image the batch starts from (more, angles, light). */
   base?: Generation
-  /** Words to apply to every image, e.g. the artist's comments. */
+  /** Words to apply to every image, e.g. notes on the look. */
   notes?: string[]
   /**
    * Your description of the stage, for new directions. The preview reads the design it names (arch, monolith, ribbons,
@@ -115,7 +115,7 @@ export function planBatch(kind: BatchKind, ctx: BatchContext): { drafts: Draft[]
     })
     return {
       drafts,
-      summary: `Three more like ${code}: ${quoted(drafts.map((d) => d.caption))}.${notes ? ` Each takes on the artist’s note: “${ctx.notes!.map((n) => n.replace(/[.!]+$/, '')).join('”, “')}”.` : ''}`,
+      summary: `Three more like ${code}: ${quoted(drafts.map((d) => d.caption))}.${notes ? ` Each takes on the note: “${ctx.notes!.map((n) => n.replace(/[.!]+$/, '')).join('”, “')}”.` : ''}`,
     }
   }
 

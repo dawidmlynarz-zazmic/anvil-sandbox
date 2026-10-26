@@ -1,7 +1,7 @@
-import type { Asset, Generation } from '~/state/types'
+import type { Generation } from '~/state/types'
 
 // Where every image and clip came from: the model, what it was asked, what it was made from, who asked and when, and
-// what protects it. Shown on every explored image and every asset, so provenance is never a separate audit.
+// what protects it. Shown on every explored image and clip, so provenance is never a separate audit.
 
 export interface Provenance {
   model: string
@@ -28,11 +28,7 @@ export function ofGeneration(gen: Generation, chain: Generation[]): Provenance {
     model: 'Nano Banana Pro',
     prompt: gen.prompt ? `${gen.prompt}. Song ${gen.song}, lit for its slot, with the brief’s visual direction and references.` : `${gen.caption.startsWith(gen.title) ? gen.caption : `${gen.title}: ${gen.caption.toLowerCase()}`}. Song ${gen.song}, lit for its slot, from the brief’s visual direction and references.`,
     from: chain.length > 1 ? `${chain.map((g) => `#${g.n}`).join(' → ')}, via ${SOURCE[gen.source]}` : `The brief, via ${SOURCE[gen.source]}`,
-    by: gen.author === 'you' ? 'You' : 'Stage agent',
+    by: gen.author === 'you' ? 'You' : 'Gemini',
     at: gen.at ?? 'Earlier',
   }
-}
-
-export function ofAsset(asset: Asset, look: Generation): Provenance {
-  return { model: asset.model, prompt: asset.prompt, from: `The look, #${look.n}`, by: 'Stage agent, when you built the kit', at: asset.at }
 }

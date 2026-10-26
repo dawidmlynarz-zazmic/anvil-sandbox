@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { ButtonGroup } from '@anvil/components/ui/button-group'
@@ -14,12 +14,10 @@ import {
   ChevronRightIcon,
   Icon,
   LayersIcon,
-  PackageIcon,
   ShieldCheckIcon,
   SparklesIcon,
   SunMoonIcon,
 } from '@anvil/components/ui/icon'
-import { Tabs, TabsList, TabsTrigger } from '@anvil/components/ui/tabs'
 import { ConceptCard } from '~/components/local/ConceptCard/ConceptCard'
 import { ContactSheetGroup, ContactSheetTile } from '~/components/local/ContactSheet/ContactSheet'
 import { STEP_CONTENT } from '~/components/layout'
@@ -33,7 +31,7 @@ import { ofGeneration } from '~/services/provenance'
 import { useProject } from '~/state/ProjectContext'
 import { defaultFocus, genById, gensFor, lineage, lookFor, MOMENT_STATUS, momentStatus } from '~/state/show'
 import { TIME_LABEL, type Generation } from '~/state/types'
-import { AssetKit } from './AssetKit'
+import { reveal } from '~/lib/reveal'
 import { LookMotion } from './LookMotion'
 import { SongPrompt } from './SongPrompt'
 
@@ -44,7 +42,7 @@ function Tile({ gen, ...props }: { gen: Generation } & Omit<React.ComponentProps
 }
 
 /** The image open for work: what it is, its check, and what you can do to it. Reference (lineage, provenance) is in its menu. */
-function Focus({ gen, readOnly, action }: { gen: Generation; readOnly: boolean; action?: React.ReactNode }) {
+function Focus({ gen, action }: { gen: Generation; action?: React.ReactNode }) {
   const p = useProject()
   const src = useStillUrl(gen)
   const parent = genById(p, gen.parentId)
@@ -86,7 +84,6 @@ function Focus({ gen, readOnly, action }: { gen: Generation; readOnly: boolean; 
         regenerateLabel="Another take"
         onRegenerate={() => void p.anotherTake(gen.id)}
         onToggleDismissed={() => p.toggleDismissed(gen.id)}
-        readOnly={readOnly}
         primaryAction={action}
       />
       <ProvenanceDialog name={`#${gen.n}`} provenance={ofGeneration(gen, lineage(p, gen))} open={provenance} onOpenChange={setProvenance} />
@@ -98,10 +95,6 @@ export function MomentPage() {
   const { song: param } = useParams()
   const song = Number(param)
   const p = useProject()
-  // Explore (finding the look and putting it into motion) or its asset kit. In the URL, so a link can open either.
-  const [params, setParams] = useSearchParams()
-  const tab = params.get('tab') === 'assets' ? 'assets' : 'explore'
-  const setTab = (next: string) => setParams(next === 'assets' ? { tab: 'assets' } : {}, { replace: true })
 
   const moment = p.moments.find((m) => m.number === song)
   const all = gensFor(p, song)
@@ -122,10 +115,19 @@ export function MomentPage() {
   const look = lookFor(p, song)
   const pending = p.pending[song]
   const status = momentStatus(p, song)
-  const locked = p.status === 'approved'
-  const sent = p.status === 'awaiting-artist'
-  const busy = !!pending || locked
+  const busy = !!pending
   const open = (id: string) => setFocus(song, id)
+  // Generate motion: the clip starts rendering at the top of the page, so bring it into view once it's there.
+  const generateMotion = (id: string) => {
+    p.chooseLook(id)
+    let tries = 0
+    const find = () => {
+      const el = document.getElementById('look-motion')
+      if (el) reveal(el)
+      else if (++tries < 20) window.setTimeout(find, 50)
+    }
+    window.setTimeout(find, 0)
+  }
 
   // Batches, newest first, each with its images in order.
   const batches = [...new Set(all.map((g) => g.batch))].sort((a, b) => b - a).map((batch) => all.filter((g) => g.batch === batch))
@@ -184,116 +186,100 @@ export function MomentPage() {
           </div>
 
           {all.length === 0 && !pending ? (
-            <SongPrompt moment={moment} disabled={locked} />
+            <SongPrompt moment={moment} />
           ) : (
             <>
-              <Tabs value={tab} onValueChange={setTab}>
-                <TabsList variant="line" aria-label="Explore, or the asset kit">
-                  <TabsTrigger value="explore">
-                    <Icon icon={SparklesIcon} />
-                    Explore · {all.length}
-                  </TabsTrigger>
-                  <TabsTrigger value="assets">
-                    <Icon icon={PackageIcon} />
-                    Asset kit
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              {tab === 'assets' ? (
-                <AssetKit moment={moment} />
-              ) : (
-                <>
-                  {/* Motion first: once the open image is the look, its clip leads the page. */}
-                  {look && focus?.id === look.id && <LookMotion moment={moment} look={look} readOnly={locked} />}
-                  {focus && (
-                    <Focus
-                      gen={focus}
-                      readOnly={locked}
-                      action={
-                        choosable && !locked ? (
-                          <Button size="sm" disabled={sent || !!pending} onClick={() => p.chooseLook(focus.id)}>
-                            <Icon icon={ClapperboardIcon} />
-                            Generate motion
-                          </Button>
-                        ) : undefined
-                      }
-                    />
-                  )}
-
-                  <section aria-labelledby="explore-title" className="flex flex-col gap-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <h2 id="explore-title" className="type-text-base-semibold">
-                        {all.length} {all.length === 1 ? 'image' : 'images'}
-                      </h2>
-                      <div className="flex items-center gap-2">
-                        {/* One way to explore: new directions, or a menu of batches built from the open image. */}
-                        <ButtonGroup aria-label="Explore">
-                          <Button variant="outline" intent="neutral" size="sm" disabled={busy} onClick={() => void p.explore(song, 'directions')}>
-                            <Icon icon={SparklesIcon} />
-                            New directions
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" intent="neutral" size="icon-sm" disabled={busy || !focus} aria-label={`More ways to explore from #${focus?.n}`}>
-                                <Icon icon={ChevronDownIcon} />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onSelect={() => focus && void p.explore(song, 'more', focus.id)}>
-                                <Icon icon={LayersIcon} />
-                                More like #{focus?.n}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => focus && void p.explore(song, 'angles', focus.id)}>
-                                <Icon icon={CameraIcon} />
-                                Other angles of #{focus?.n}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => focus && void p.explore(song, 'light', focus.id)}>
-                                <Icon icon={SunMoonIcon} />
-                                Other light for #{focus?.n}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </ButtonGroup>
-                      </div>
-                    </div>
-
-                    <p className="sr-only" aria-live="polite">
-                      {pending ? `${pending.label}: ${pending.count} ${pending.count === 1 ? 'image' : 'images'} to go` : `${all.length} images explored`}
-                    </p>
-                    <div className="flex flex-col gap-5" aria-busy={!!pending}>
-                      {newBatch && (
-                        <ContactSheetGroup title={pending.label} meta="Rendering…" pending={pending.count}>
-                          {null}
-                        </ContactSheetGroup>
-                      )}
-                      {batches.map((gens) => {
-                        const first = gens[0]!
-                        const parent = genById(p, first.parentId)
-                        return (
-                          <ContactSheetGroup
-                            key={first.batch}
-                            title={batchLabel(first, parent)}
-                            meta={`${gens.length} ${gens.length === 1 ? 'image' : 'images'} · ${first.author === 'you' ? 'you asked' : 'by the agent'}`}
-                            pending={pending?.batch === first.batch ? pending.count : 0}
-                          >
-                            {gens.map((g) => (
-                              <Tile
-                                key={g.id}
-                                gen={g}
-                                focused={focus?.id === g.id}
-                                chosen={look?.id === g.id ? 'Look' : undefined}
-                                dismissed={g.dismissed}
-                                onOpen={() => open(g.id)}
-                              />
-                            ))}
-                          </ContactSheetGroup>
-                        )
-                      })}
-                    </div>
-                  </section>
-                </>
+              {/* Motion first: once the open image is the look, its clip leads the page. */}
+              {look && focus?.id === look.id && (
+                <div id="look-motion" className="scroll-mt-4">
+                  <LookMotion moment={moment} look={look} />
+                </div>
               )}
+              {focus && (
+                <Focus
+                  gen={focus}
+                  action={
+                    choosable ? (
+                      <Button size="sm" disabled={!!pending} onClick={() => generateMotion(focus.id)}>
+                        <Icon icon={ClapperboardIcon} />
+                        Generate motion
+                      </Button>
+                    ) : undefined
+                  }
+                />
+              )}
+
+              <section aria-labelledby="explore-title" className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 id="explore-title" className="type-text-base-semibold">
+                    {all.length} {all.length === 1 ? 'image' : 'images'}
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    {/* One way to explore: new directions, or a menu of batches built from the open image. */}
+                    <ButtonGroup aria-label="Explore">
+                      <Button variant="outline" intent="neutral" size="sm" disabled={busy} onClick={() => void p.explore(song, 'directions')}>
+                        <Icon icon={SparklesIcon} />
+                        New directions
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" intent="neutral" size="icon-sm" disabled={busy || !focus} aria-label={`More ways to explore from #${focus?.n}`}>
+                            <Icon icon={ChevronDownIcon} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => focus && void p.explore(song, 'more', focus.id)}>
+                            <Icon icon={LayersIcon} />
+                            More like #{focus?.n}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => focus && void p.explore(song, 'angles', focus.id)}>
+                            <Icon icon={CameraIcon} />
+                            Other angles of #{focus?.n}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => focus && void p.explore(song, 'light', focus.id)}>
+                            <Icon icon={SunMoonIcon} />
+                            Other light for #{focus?.n}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </ButtonGroup>
+                  </div>
+                </div>
+
+                <p className="sr-only" aria-live="polite">
+                  {pending ? `${pending.label}: ${pending.count} ${pending.count === 1 ? 'image' : 'images'} to go` : `${all.length} images explored`}
+                </p>
+                <div className="flex flex-col gap-5" aria-busy={!!pending}>
+                  {newBatch && (
+                    <ContactSheetGroup title={pending.label} meta="Rendering…" pending={pending.count}>
+                      {null}
+                    </ContactSheetGroup>
+                  )}
+                  {batches.map((gens) => {
+                    const first = gens[0]!
+                    const parent = genById(p, first.parentId)
+                    return (
+                      <ContactSheetGroup
+                        key={first.batch}
+                        title={batchLabel(first, parent)}
+                        meta={`${gens.length} ${gens.length === 1 ? 'image' : 'images'} · ${first.author === 'you' ? 'you asked' : 'by the agent'}`}
+                        pending={pending?.batch === first.batch ? pending.count : 0}
+                      >
+                        {gens.map((g) => (
+                          <Tile
+                            key={g.id}
+                            gen={g}
+                            focused={focus?.id === g.id}
+                            chosen={look?.id === g.id ? 'Look' : undefined}
+                            dismissed={g.dismissed}
+                            onOpen={() => open(g.id)}
+                          />
+                        ))}
+                      </ContactSheetGroup>
+                    )
+                  })}
+                </div>
+              </section>
             </>
           )}
         </div>

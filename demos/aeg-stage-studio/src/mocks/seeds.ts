@@ -1,9 +1,7 @@
-import { artistFeedback } from '~/mocks/review'
 import { initialBrief, openingMessages } from '~/mocks/project'
 import { isCovered } from '~/mocks/venues'
 import { materialize, planBatch, type BatchKind } from '~/services/explore'
 import { clipFor } from '~/services/generation'
-import { planKit } from '~/services/kit'
 import { draftMoments } from '~/services/interview'
 import { momentLight } from '~/services/light'
 import { clipKey, type ProjectState } from '~/state/project'
@@ -32,16 +30,10 @@ const base = (id: string, artist: string, event: string, brief: Brief, moments: 
   looks: {},
   pending: {},
   clips: {},
-  kits: {},
-  kitPending: {},
   focus: null,
   messages: [],
-  status: 'draft',
-  review: [],
-  redo: [],
   versions: [],
-  sentVersion: null,
-  artistRating: null,
+  handoff: null,
 })
 
 /** Explores one batch for a moment, the same way the agent does live (synchronously, for seeding). */
@@ -66,13 +58,6 @@ function choose(p: ProjectState, song: number, n: number) {
   p.clips[clipKey(look.id, song)] = { status: 'ready', clip: clipFor(look, song) } as ClipSlot
 }
 
-/** A moment's asset kit, built from its look. */
-function kit(p: ProjectState, song: number) {
-  const look = p.generations.find((g) => g.id === p.looks[song])!
-  const assets = planKit(look, song, p.moments.length, p.brief, isCovered(p.brief.venueId), song % 3).map((a, i) => ({ ...a, id: `${look.id}.kit.${i + 1}`, at: '11:20' }))
-  p.kits[song] = { lookId: look.id, assets }
-}
-
 /** Exploring the first moment: two batches in, nothing chosen yet. The live demo starts here. */
 function coachella(): ProjectState {
   const p = base('coachella', 'Marisol Vey', 'Coachella 2027', initialBrief, draftMoments(initialBrief), 9)
@@ -92,13 +77,13 @@ function coachella(): ProjectState {
       ),
     ],
     versions: versions([
-      ['Song 1 · New directions (4 images)', 'Stage agent'],
+      ['Song 1 · New directions (4 images)', 'Gemini'],
       ['Song 1 · More like #2 (3 images)', 'You'],
     ]),
   }
 }
 
-/** The artist has replied: comments on two moments are waiting in Review. */
+/** Every song in motion: ready to generate the handoff. */
 function o2(): ProjectState {
   const brief: Brief = {
     ...initialBrief,
@@ -114,32 +99,24 @@ function o2(): ProjectState {
     explore(p, song, 'directions')
     choose(p, song, song === 3 ? 3 : 2)
   }
-  for (const m of p.moments) kit(p, m.number)
-  const looks = p.moments.map((moment) => ({ moment, look: p.generations.find((g) => g.id === p.looks[moment.number])! }))
-  const review = artistFeedback(looks).map((c, i) => ({ ...c, number: i + 1, time: '10:40' }))
   return {
     ...p,
-    status: 'feedback',
-    review,
-    sentVersion: 3,
     versions: versions([
-      ['Song 1 · New directions, then more like #3', 'Stage agent'],
+      ['Song 1 · New directions, then more like #3', 'Gemini'],
       ['All 4 songs put into motion', 'You'],
-      ['Sent to the artist · 4 songs, 4 clips', 'You'],
     ]),
     messages: turns(
       [
         ['user', 'Cold, industrial residency look for The O2. Chrome and neon, nothing warm until the ballad.'],
         ['assistant', 'Loaded The O2. It’s under a roof, so every song is lit as night. I drafted four key moments from the setlist.'],
-        ['assistant', 'Sent the show to the artist: 4 songs, each with its look and clip.'],
-        ['assistant', `The artist replied with ${review.length} comments. Open Review to go through them, then approve the show or request changes.`],
+        ['assistant', 'Every song is in motion. Generate the handoff on the show board when you’re ready.'],
       ],
       200,
     ),
   }
 }
 
-/** Approved: the handoff package is ready. */
+/** Handed off: the package is ready to export. */
 function arena(): ProjectState {
   const brief: Brief = {
     ...initialBrief,
@@ -161,28 +138,23 @@ function arena(): ProjectState {
     explore(p, song, 'directions')
     choose(p, song, song === 3 ? 1 : 4)
   }
-  for (const m of moments) kit(p, m.number)
-  const looks = moments.map((moment) => ({ moment, look: p.generations.find((g) => g.id === p.looks[moment.number])! }))
-  const review = artistFeedback(looks).map((c, i) => ({ ...c, number: i + 1, time: '16:20', resolved: i !== 1 }))
+  const songs = moments.map((moment) => {
+    const lookId = p.looks[moment.number]!
+    const slot = p.clips[clipKey(lookId, moment.number)]
+    return { moment, lookId, clip: slot?.status === 'ready' ? slot.clip : undefined }
+  })
   return {
     ...p,
-    status: 'approved',
-    review,
-    artistRating: 4,
-    sentVersion: 5,
+    handoff: { version: 1, at: '16:20', songs, exported: false },
     versions: versions([
-      ['Song 1 · New directions, then more like #4', 'Stage agent'],
+      ['Song 1 · New directions, then more like #4', 'Gemini'],
       ['All 4 songs put into motion', 'You'],
-      ['Sent to the artist · 4 songs, 4 clips', 'You'],
-      ['Changes requested · 1 song', 'You'],
-      ['Sent to the artist · 4 songs, 4 clips', 'You'],
-      ['Show approved by the artist · rated 4/5', 'Artist'],
+      ['Handoff v1 generated · 4 songs, 4 clips', 'You'],
     ]),
     messages: turns(
       [
         ['user', 'Minimal, monochrome arena show built around a single halo.'],
-        ['assistant', 'Song 4 has a new look that takes on the artist’s comment: brighter, in haze.'],
-        ['assistant', 'The artist approved the show and rated it 4/5. The handoff package is ready: 4 songs, each with its look and clip. 1 comment was left open and is in the decision log.'],
+        ['assistant', 'The handoff is ready. 4 songs, each with its look, and 4 clips, organised for each team: staging and rigging, lighting, video and LED, camera, and rights. Export the package when you’re ready.'],
       ],
       300,
     ),

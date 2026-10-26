@@ -29,7 +29,7 @@ function ProjectCard({ p }: { p: ProjectState }) {
   const first = p.moments[0]
   const shown = genById(p, first ? p.looks[first.number] : undefined) || p.generations.at(-1)
   const thumb = useMomentThumb(shown, p.brief, shown?.song ?? 0, p.moments.length)
-  const badge = statusBadge(p.status)
+  const badge = statusBadge(p)
   const venue = venueOf(p.brief.venueId)
   const setup = p.phase === 'setup'
   return (

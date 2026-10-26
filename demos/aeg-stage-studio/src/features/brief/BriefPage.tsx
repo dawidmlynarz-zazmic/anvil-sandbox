@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@anvil/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anvil/components/ui/card'
-import { Icon, PencilIcon, SparklesIcon } from '@anvil/components/ui/icon'
+import { Icon, PencilIcon, SaveIcon, SparklesIcon } from '@anvil/components/ui/icon'
 import { CheckRow } from '@anvil/components/anvil/check-row'
 import { STEP_CONTENT } from '~/components/layout'
 import { useProject } from '~/state/ProjectContext'
@@ -29,7 +29,7 @@ export function BriefPage() {
   const setup = phase === 'setup'
   const visible = SECTIONS.filter((s) => provenance[s.key] !== 'pending')
   const formOpen = SECTIONS.every((s) => provenance[s.key] !== 'pending')
-  // One readiness rule for the checklist, Generate show, the header steps and the agent.
+  // One readiness rule for the checklist, Generate show and the agent.
   const readiness = briefReadiness(p)
 
   // When the agent fills in one more section, bring it into view, so what it talks about is on screen.
@@ -59,8 +59,8 @@ export function BriefPage() {
                   navigate(path('show'))
                 }}
               >
-                <Icon icon={SparklesIcon} />
-                Generate show
+                <Icon icon={setup ? SparklesIcon : SaveIcon} />
+                {setup ? 'Generate show' : 'Save'}
               </Button>
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
