@@ -27,7 +27,7 @@ import { genById, gensFor, lookFor, MOMENT_STATUS, momentStatus } from '~/state/
 const PLACEHOLDER: Record<string, string> = {
   setup: 'Answer the question, or use a suggestion',
   brief: 'Describe the show, or ask me to change the brief…',
-  show: 'Ask about the show, e.g. “will the stage set hold in the wind?”',
+  show: 'Ask about the show, e.g. “will it hold in the wind?”',
   m: 'Change the open image, e.g. “narrower, warmer”',
   review: 'Ask about the review, e.g. “what’s comment 2?”',
   handoff: 'Ask about the package or the decision log',
@@ -168,20 +168,25 @@ export function ChatPanel() {
 
     if (step === 'show' && /\b(wind|gusts?|rig|rigging|weight|heavy|fit|fits|trim|height|venue|checks?|sightlines?|build)\b/i.test(value)) {
       say('user', value)
-      const source = project.set ? genById(project, project.set.fromId) : undefined
-      if (!source) {
-        void reply('Checking the stage set', 'The stage set isn’t locked, so there’s no structure to check yet.', ['Looked for the stage set'], 'The stage set isn’t locked yet. Each image shows its own checks on its badge. Lock the stage set from a look and I’ll check it against the venue.')
+      const looks = project.moments.flatMap((m) => {
+        const look = lookFor(project, m.number)
+        return look ? [{ m, look, checks: venueChecks(look.spec, project.brief, look.reworked) }] : []
+      })
+      if (!looks.length) {
+        void reply('Checking the venue', 'No song is in motion yet, so there’s no look to check.', ['Looked for looks in motion'], 'No song is in motion yet. Each image shows its own venue checks on its badge; put one into motion and ask me again.')
         return
       }
-      const checks = venueChecks(source.spec, project.brief, source.reworked)
-      const fp = footprint(source.spec)
-      const flagged = issues(checks)
-      const wind = checks.find((c) => c.label === 'Wind')
+      const lines = looks.map(({ m, look, checks }) => {
+        const flagged = issues(checks)
+        const fp = footprint(look.spec)
+        return `Song ${m.number} (#${look.n}, ${fp.width} m wide, ${fp.height} m tall): ${flagged.length ? flagged.map((c) => `${c.label.toLowerCase()}, ${lowerFirst(c.detail.replace(/\.$/, ''))}`).join('; ') : 'passes every check'}.`
+      })
+      const windless = isCovered(project.brief.venueId) && /wind|gust/i.test(value) ? ' It’s under a roof, so wind doesn’t apply.' : ''
       void reply(
-        'Checking the stage set against the venue',
-        'You asked how the stage set fits the venue, so I’ll check its footprint against the venue’s limits. The limits are sample specs.',
-        ['Estimated the footprint', ...checks.map((c) => `${c.label}: ${c.status === 'pass' ? 'passes' : c.status === 'warn' ? 'needs a plan' : 'fails'}`)],
-        `The stage set is ${fp.width} m wide, ${fp.height} m tall and ${fp.weight} t (${fp.flown} t hung from the ${isCovered(project.brief.venueId) ? 'grid' : 'roof'}). ${flagged.length ? `${checks.length - flagged.length} of ${checks.length} checks pass. ${flagged.map((c) => `${c.label}: ${c.detail}`).join(' ')}` : `Every check passes.${wind ? ` Wind: ${lowerFirst(wind.detail)}` : ''}`}${!wind && /wind|gust/i.test(value) ? ' It’s under a roof, so wind doesn’t apply.' : ''} These are estimates from sample specs; production confirms them with the venue.`,
+        'Checking the looks against the venue',
+        'You asked how the show fits the venue, so I’ll check each song’s look against the venue’s limits. The limits are sample specs.',
+        looks.map(({ m, checks }) => `Song ${m.number}: ${issues(checks).length ? `${issues(checks).length} ${issues(checks).length === 1 ? 'issue' : 'issues'}` : 'passes'}`),
+        `${lines.join(' ')}${windless} These are estimates from sample specs; production confirms them with the venue.`,
       )
       return
     }
@@ -192,8 +197,8 @@ export function ChatPanel() {
       void reply(
         'Checking the show',
         isQuestion(value) ? 'You asked about the show, so here is where it stands.' : 'Changes happen one song at a time, so I’ll point you to the right one.',
-        ['Read every song’s status', 'Checked the stage set'],
-        `${looksChosen(project)} of ${project.moments.length} songs are in motion${project.set ? `, and the stage set is locked (${lowerFirst(project.set.title)})` : '; the stage set isn’t locked yet'}.${open.length ? ` Still open: ${open.map((m) => `song ${m.number} (${MOMENT_STATUS[momentStatus(project, m.number)].text.toLowerCase()})`).join(', ')}.` : ' Every song is ready to send.'} To change a song’s look, open the song and tell me there.`,
+        ['Read every song’s status'],
+        `${looksChosen(project)} of ${project.moments.length} songs are in motion.${open.length ? ` Still open: ${open.map((m) => `song ${m.number} (${MOMENT_STATUS[momentStatus(project, m.number)].text.toLowerCase()})`).join(', ')}.` : ' Every song is ready to send.'} To change a song’s look, open the song and tell me there.`,
       )
       return
     }

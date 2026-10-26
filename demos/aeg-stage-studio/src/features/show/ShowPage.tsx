@@ -4,21 +4,17 @@ import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card, CardContent } from '@anvil/components/ui/card'
 import { Dialog, DialogBody, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@anvil/components/ui/dialog'
-import { ArrowRightIcon, CircleAlertIcon, CircleCheckIcon, Icon, ImageIcon, LockIcon, LockOpenIcon, PlusIcon, XIcon } from '@anvil/components/ui/icon'
+import { ArrowRightIcon, Icon, ImageIcon, PlusIcon, XIcon } from '@anvil/components/ui/icon'
 import { Input } from '@anvil/components/ui/input'
-import { Popover, PopoverContent, PopoverTrigger } from '@anvil/components/ui/popover'
 import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
-import { useStillUrl } from '~/components/StillImage'
 import { useMomentThumb } from '~/components/clipFrame'
 import { momentLight } from '~/services/light'
-import { issues, venueChecks } from '~/services/venueCheck'
 import { looksChosen } from '~/state/project'
 import { clipKey, useProject } from '~/state/ProjectContext'
-import { genById, gensFor, kitStatus, lookFor, MOMENT_STATUS, momentStatus } from '~/state/show'
+import { gensFor, kitStatus, lookFor, MOMENT_STATUS, momentStatus } from '~/state/show'
 import { TIME_LABEL, type SetlistMoment } from '~/state/types'
 import { SendDialog } from './SendDialog'
-import { SetChecks } from './SetChecks'
 import { ShowPreview } from './ShowPreview'
 
 /** One key moment on the board: its look (or latest image), one status, and one line of detail. The card opens it. */
@@ -135,12 +131,10 @@ function AddMomentDialog() {
   )
 }
 
-/** The show at a glance: the set, every key moment in setlist order, and one line on how far it has come. */
+/** The show at a glance: every key moment in setlist order, and one line on how far it has come. */
 export function ShowPage() {
   const p = useProject()
   const navigate = useNavigate()
-  const setSource = p.set ? genById(p, p.set.fromId) : undefined
-  const setSrc = useStillUrl(setSource)
   if (p.phase === 'setup') return <Navigate to={p.path('brief')} replace />
 
   const chosen = looksChosen(p)
@@ -154,8 +148,6 @@ export function ShowPage() {
   })
   const waiting = p.status === 'awaiting-artist'
   const sent = p.sentVersion !== null
-  const offSet = p.moments.filter((m) => momentStatus(p, m.number) === 'off-set').length
-  const flagged = setSource ? issues(venueChecks(setSource.spec, p.brief, setSource.reworked)) : []
   const left = p.moments.length - chosen
 
   return (
@@ -175,46 +167,6 @@ export function ShowPage() {
               {p.artistRating ? ` · rated ${p.artistRating}/5` : ''} · day {p.daysSinceBrief} since the brief
             </p>
           </div>
-
-          <Card size="sm">
-            <CardContent className="flex flex-wrap items-center gap-4">
-              {p.set && (setSrc ? <img src={setSrc} alt={`Stage set: ${p.set.title}`} className="aspect-[21/9] w-44 shrink-0 rounded-md object-cover" /> : <div className="bg-muted aspect-[21/9] w-44 shrink-0 animate-pulse rounded-md" />)}
-              {/* At least 14rem for the text: on a narrow board it wraps below the image instead of squeezing. */}
-              <div className="flex min-w-56 flex-1 flex-col gap-1">
-                <span className="flex items-center gap-1.5 type-text-sm-semibold">
-                  <Icon icon={p.set ? LockIcon : LockOpenIcon} size="xs" />
-                  {p.set && setSource ? `Stage set: ${p.set.title}` : 'Stage set not locked yet'}
-                </span>
-                <span className="text-muted-foreground type-text-xs-normal">
-                  {p.set && setSource
-                    ? `From song ${setSource.song}, image #${setSource.n}. Every song uses this structure.`
-                    : 'To share one structure across every song, lock it from the ⋯ menu of an image in motion.'}
-                  {offSet > 0 ? ` ${offSet === 1 ? '1 look has' : `${offSet} looks have`} a different structure.` : ''}
-                </span>
-                {setSource && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button type="button" className="focus-visible:focus-ring self-start rounded-full outline-none" aria-label={`Venue checks: ${flagged.length ? `${flagged.length} ${flagged.length === 1 ? 'issue' : 'issues'}` : 'passes every check'}`}>
-                        <Badge tone={flagged.length ? 'warning' : 'success'} variant="subtle" size="sm">
-                          <Icon icon={flagged.length ? CircleAlertIcon : CircleCheckIcon} />
-                          {flagged.length ? `${flagged.length} ${flagged.length === 1 ? 'issue' : 'issues'}` : 'Passes every venue check'}
-                        </Badge>
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent align="start" className="w-96">
-                      <SetChecks spec={setSource.spec} brief={p.brief} reworked={setSource.reworked} locked />
-                    </PopoverContent>
-                  </Popover>
-                )}
-              </div>
-              {p.set && editable && (
-                <Button variant="ghost" intent="neutral" size="sm" onClick={p.unlockSet}>
-                  <Icon icon={LockOpenIcon} />
-                  Unlock
-                </Button>
-              )}
-            </CardContent>
-          </Card>
 
           <section aria-labelledby="moments-title" className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
@@ -253,9 +205,8 @@ export function ShowPage() {
           </Button>
         ) : (
           <SendDialog
-            artist={p.meta.artist}
             items={sendItems}
-            label={sent ? 'Send the new version' : 'Send for review'}
+            label="Send for review"
             disabled={waiting || chosen < p.moments.length || p.moments.length === 0}
             onSend={(note) => {
               p.sendToArtist(note || undefined)

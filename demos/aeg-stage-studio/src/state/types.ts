@@ -18,7 +18,7 @@ export interface Venue {
   about?: string
   /** Where the facts come from. */
   source: string
-  /** Technical limits the set is checked against. Samples, labelled as such, until AEG supplies the real ones. */
+  /** Technical limits every design is checked against. Samples, labelled as such, until AEG supplies the real ones. */
   limits: VenueLimits
   /** Whether the venue's 3D model is loaded (one venue is modelled for the pilot). */
   modelled: boolean
@@ -155,18 +155,6 @@ export interface Asset {
 export interface Kit {
   lookId: string
   assets: Asset[]
-}
-
-/** The show's physical set: the structure every moment shares once it's locked. */
-export interface ShowSet {
-  /** The generation the set was taken from. */
-  fromId: string
-  concept: ConceptShape
-  with?: ConceptShape
-  /** Structure only: size and height. Palette, haze and brightness stay free per moment. */
-  width: number
-  lift: number
-  title: string
 }
 
 /** draft → awaiting-artist (sent, no reply yet) → feedback (the artist commented) → approved. Request changes goes back to draft. */

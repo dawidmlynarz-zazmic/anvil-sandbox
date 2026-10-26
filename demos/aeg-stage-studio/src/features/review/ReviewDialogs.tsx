@@ -14,7 +14,6 @@ import { Button } from '@anvil/components/ui/button'
 import { Checkbox } from '@anvil/components/ui/checkbox'
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@anvil/components/ui/dialog'
 import { CheckIcon, Icon, RotateCcwIcon } from '@anvil/components/ui/icon'
-import { Rating } from '@anvil/components/agent/rating'
 import type { ReviewComment } from '~/state/types'
 
 /** Pick which open comments to take on, then go back to the show to rework those moments. */
@@ -107,42 +106,5 @@ export function ApproveButton({ name, openCount, disabled, onApprove }: { name: 
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
-}
-
-/** Artist preview: approving the show asks how close it is to their vision (the “artist feedback” measure). */
-export function ArtistApproveDialog({ name, disabled, onApprove }: { name: string; disabled?: boolean; onApprove: (rating: number) => void }) {
-  const [rating, setRating] = useState<number | undefined>()
-  return (
-    <Dialog onOpenChange={(o) => o && setRating(undefined)}>
-      <DialogTrigger asChild>
-        <Button disabled={disabled}>
-          <Icon icon={CheckIcon} />
-          Approve {name}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Approve {name}</DialogTitle>
-          <DialogDescription>Every song, with its look and clip, goes to the production team. One question first.</DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          <Rating
-            kind="stars"
-            question="How close is this to your vision?"
-            value={rating}
-            onValueChange={setRating}
-            lowLabel="Not close"
-            highLabel="Exactly it"
-            thanks="Thanks, this goes into the project’s results."
-          />
-        </DialogBody>
-        <DialogFooter>
-          <Button disabled={!rating} onClick={() => rating && onApprove(rating)}>
-            Approve for production
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   )
 }

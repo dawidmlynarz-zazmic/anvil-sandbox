@@ -5,18 +5,18 @@ import { issues, venueChecks } from '~/services/venueCheck'
 import { applyAnswer, DONE_TEXT, draftMoments, profileQuestions, QUESTIONS, SLOT_TIMES } from '~/services/interview'
 import { generation } from '~/services/generation'
 import { listing, take, tweaksFrom } from '~/services/changes'
-import { BATCH_LABEL, matchesSet, materialize, onSet, planBatch, setFrom, stamp, type BatchKind, type Draft } from '~/services/explore'
+import { BATCH_LABEL, materialize, planBatch, stamp, type BatchKind, type Draft } from '~/services/explore'
 import { KIT_LABEL, planKit } from '~/services/kit'
 import { moveOf } from '~/services/generation'
 import { momentLight } from '~/services/light'
-import { capitalise, describeLook, describeTweaks, lowerFirst } from '~/services/shapes'
+import { capitalise, describeTweaks } from '~/services/shapes'
 import { batchThinking, motionThinking } from '~/services/reasoning'
 import { TIME_LABEL } from './types'
 import { ALL_SECTIONS, clipKey, looksChosen, type Action, type ProjectState } from './project'
 import { briefReadiness } from './readiness'
 import { genById, gensFor, lookFor, momentStatus, nextOpenMoment } from './show'
 import { useStore } from './store'
-import type { Brief, ChatTurn, Generation, MotionClip, ReviewComment, Thinking } from './types'
+import type { Brief, ChatTurn, Generation, MotionClip, Thinking } from './types'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export { clipKey }
@@ -59,9 +59,6 @@ interface ProjectApi extends ProjectState {
   toggleDismissed: (genId: string) => void
   /** Makes an image its moment's look, and renders the moment's clip from it. */
   chooseLook: (genId: string) => void
-  /** Locks the set from an image's structure: every moment then shares it. */
-  lockSet: (genId: string) => void
-  unlockSet: () => void
   /** The image open on a moment page, so the chat changes that one. */
   setFocus: (song: number, genId: string) => void
   generateClip: (song: number) => Promise<void>
@@ -78,12 +75,6 @@ interface ProjectApi extends ProjectState {
   requestChanges: (commentIds: string[]) => void
   /** Signs off the whole show, with the artist's rating when they gave one. */
   approve: (rating?: number) => void
-  /** Artist preview: the presenter plays the artist, so the simulated reply is cancelled. */
-  takeOverReview: () => void
-  /** Artist preview: a comment pinned on a moment's look, or on its clip. */
-  addArtistComment: (song: number, target: ReviewComment['target'], text: string) => void
-  /** Artist preview: hands the artist's comments back to the team. */
-  sendArtistFeedback: () => void
   say: (role: ChatTurn['role'], text: string, pending?: boolean) => number
   updateMessage: (id: number, patch: Partial<ChatTurn>) => void
   /** Re-arms the simulated artist reply after a reload. */
@@ -102,8 +93,6 @@ const nextBatch = (gens: Generation[]) => Math.max(0, ...gens.map((g) => g.batch
 
 /** Projects waiting on a (simulated) artist reply, so a reply is scheduled only once. */
 const pendingReplies = new Set<string>()
-/** Projects where the presenter is playing the artist: no simulated reply. */
-const manualReview = new Set<string>()
 
 type Store = ReturnType<typeof useStore>
 
@@ -134,13 +123,13 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const existing = gensFor(s, song)
     const base = genById(s, opts.baseId)
     const light = momentLight(s.brief, song, s.moments.length)
-    const { drafts, summary } = planBatch(kind, { light, covered: isCovered(s.brief.venueId), set: s.set, existing, base, notes: opts.notes, prompt: opts.prompt })
+    const { drafts, summary } = planBatch(kind, { light, covered: isCovered(s.brief.venueId), existing, base, notes: opts.notes, prompt: opts.prompt })
     if (!drafts.length) return
-    const label = base && kind !== 'directions' ? `${BATCH_LABEL[kind]} · #${base.n}` : s.set ? 'New looks on the stage set' : BATCH_LABEL[kind]
+    const label = base && kind !== 'directions' ? `${BATCH_LABEL[kind]} · #${base.n}` : BATCH_LABEL[kind]
     const started = Date.now()
     const batch = nextBatch(existing)
     d({ type: 'pending/set', song, pending: { label, count: drafts.length, batch } })
-    let thinking = batchThinking(s.brief, moment, light, s.set, kind, drafts.length, opts.notes, opts.prompt)
+    let thinking = batchThinking(s.brief, moment, light, kind, drafts.length, opts.notes, opts.prompt)
     const msg = say('assistant', '', true)
     updateMessage(msg, { thinking })
     const made = materialize(drafts, { project: id, song, existing, author: opts.author })
@@ -166,7 +155,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const thinking: Thinking = {
       title,
       reasoning,
-      steps: [`Read #${parent.n} · ${parent.title}`, get().set ? 'Kept the locked set’s structure' : 'Kept the venue limits and no-gos'],
+      steps: [`Read #${parent.n} · ${parent.title}`, 'Kept the venue limits and no-gos'],
       tools: [{ name: 'edit_still', summary: 'Nano Banana Pro · 1 image', input, status: 'running' }],
     }
     const msg = say('assistant', '', true)
@@ -180,7 +169,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
   }
 
   const changeDraft = (parent: Generation, tweaks: Generation['spec']['tweaks'], caption: string, source: Draft['source']): Draft => {
-    const spec = onSet({ ...parent.spec, seed: parent.spec.seed }, get().set, tweaks)
+    const spec = { ...parent.spec, tweaks }
     return { spec, title: parent.title, caption, source, parentId: parent.id, reworked: true }
   }
 
@@ -192,12 +181,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       say('assistant', cantShow(change, `#${parent.n}`))
       return
     }
-    const set = get().set
-    const shown = set ? applied.filter((a) => !/centrepiece/.test(a)) : applied
-    if (!shown.length) {
-      say('assistant', `The stage set is locked, so #${parent.n} keeps its size and height. To change the structure, unlock the stage set on the show board. Or ask me to change the light, colour or haze.`)
-      return
-    }
+    const shown = applied
     const { child, msg, thinking } = await makeChild(
       parent,
       changeDraft(parent, tweaks, capitalise(listing(shown)), 'edit'),
@@ -264,9 +248,8 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const parent = find(genId)
     if (!parent || get().pending[parent.song]) return
     const next = take(parent.n + gensFor(get(), parent.song).length, parent.spec.tweaks)
-    const set = get().set
     const draft = changeDraft(parent, next.tweaks, '', 'take')
-    draft.caption = capitalise((set ? describeLook(draft.spec.tweaks) : describeTweaks(draft.spec.tweaks)) || 'A new take')
+    draft.caption = capitalise(describeTweaks(draft.spec.tweaks) || 'A new take')
     draft.spec = { ...draft.spec, seed: (parent.spec.seed * 31 + 97) % 997 }
     const { child, msg, thinking } = await makeChild(
       parent,
@@ -296,10 +279,6 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     const s = get()
     const g = find(genId)
     if (!g) return
-    if (!matchesSet(g.spec, s.set)) {
-      say('assistant', `#${g.n} was made before the stage set was locked, so its structure is different. Ask for more like it to redo it on the locked set, then put one of those into motion.`)
-      return
-    }
     const redo = s.redo.includes(g.song)
     d({ type: 'look/set', song: g.song, id: genId })
     d({ type: 'version/add', summary: `Song ${g.song} · #${g.n} put into motion (${g.caption.toLowerCase()})`, author: 'You' })
@@ -315,32 +294,6 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       ]
         .filter(Boolean)
         .join(' '),
-    )
-  }
-
-  const lockSet: ProjectApi['lockSet'] = (genId) => {
-    const s = get()
-    const g = find(genId)
-    if (!g) return
-    const set = setFrom(g)
-    d({ type: 'set/lock', set })
-    // Locking from an image also makes it its moment's look, if the moment has none yet.
-    const alsoLook = !s.looks[g.song]
-    if (alsoLook) {
-      d({ type: 'look/set', song: g.song, id: genId })
-      if (!s.clips[clipKey(genId, g.song)]) void renderClip(g.song, g)
-    }
-    const off = s.moments.filter((m) => m.number !== g.song && lookFor(s, m.number) && !matchesSet(lookFor(s, m.number)!.spec, set)).map((m) => m.number)
-    const checks = venueChecks(g.spec, s.brief, g.reworked)
-    const flagged = issues(checks)
-    const venue = venueOf(s.brief.venueId).name
-    const checked = flagged.length
-      ? ` Against ${venue} (sample specs), ${checks.length - flagged.length} of ${checks.length} checks pass; ${listing(flagged.map((c) => `${c.label.toLowerCase()}: ${lowerFirst(c.detail.replace(/\.$/, ''))}`))}. Production will need a plan for ${flagged.length === 1 ? 'it' : 'them'}.`
-      : ` It passes every check against ${venue} (sample specs).`
-    d({ type: 'version/add', summary: `Stage set locked from song ${g.song}, #${g.n} · ${g.title}${flagged.length ? ` (${plural(flagged.length, 'issue')})` : ''}`, author: 'You' })
-    say(
-      'assistant',
-      `${alsoLook ? `#${g.n} is now the look for ${momentName(g.song)}, and its clip is rendering. ` : ''}You locked the stage set from #${g.n}: ${lowerFirst(g.title)}${describeTweaks({ width: set.width, lift: set.lift }) ? `, ${describeTweaks({ width: set.width, lift: set.lift })}` : ''}. From now on, new images for every song keep this structure and change only light, colour and haze.${checked}${off.length ? ` ${capitalise(songs(off))} ${off.length === 1 ? 'has a look' : 'have looks'} with another structure; ask for more like ${off.length === 1 ? 'it' : 'them'} to restage on the set.` : ''}`,
     )
   }
 
@@ -389,7 +342,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     window.setTimeout(() => {
       pendingReplies.delete(id)
       const now = get()
-      if (now.status !== 'awaiting-artist' || manualReview.has(id)) return
+      if (now.status !== 'awaiting-artist') return
       const looks = now.moments.flatMap((moment) => {
         const look = lookFor(now, moment.number)
         return look ? [{ moment, look }] : []
@@ -418,18 +371,15 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     patchBrief: (patch, source = 'you') => {
       const s = get()
       d({ type: 'brief/patch', patch, source })
-      // A new venue under a locked set: say straight away how the set sits there.
-      const from = s.set ? genById(s, s.set.fromId) : undefined
-      if (!patch.venueId || patch.venueId === s.brief.venueId || !from) return
+      // A new venue: check the looks in motion against it straight away.
+      if (!patch.venueId || patch.venueId === s.brief.venueId) return
       const brief = { ...s.brief, ...patch }
-      const flagged = issues(venueChecks(from.spec, brief, from.reworked))
-      const venue = venueOf(patch.venueId).name
-      say(
-        'assistant',
-        flagged.length
-          ? `The venue is now ${venue}. The locked stage set doesn’t fit there as it is (sample specs): ${listing(flagged.map((c) => `${c.label.toLowerCase()}, ${lowerFirst(c.detail.replace(/\.$/, ''))}`))}. Unlock the stage set on the show board and change its look${flagged[0]!.fix ? ` (try “${flagged[0]!.fix}”)` : ''}, then lock it again.`
-          : `The venue is now ${venue}. The locked set still passes every check there (sample specs).`,
-      )
+      const failing = s.moments.flatMap((m) => {
+        const look = lookFor(s, m.number)
+        return look && issues(venueChecks(look.spec, brief, look.reworked)).length ? [m.number] : []
+      })
+      if (!failing.length) return
+      say('assistant', `The venue is now ${venueOf(patch.venueId).name}. The looks for ${songs(failing)} have issues there (sample specs); open ${failing.length === 1 ? 'it' : 'them'} to see what to change.`)
     },
     answerSetup: async (text) => {
       const s = get()
@@ -539,12 +489,6 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       d({ type: 'gen/patch', id: genId, patch: { dismissed: !g.dismissed } })
     },
     chooseLook,
-    lockSet,
-    unlockSet: () => {
-      d({ type: 'set/lock', set: null })
-      d({ type: 'version/add', summary: 'Set unlocked', author: 'You' })
-      say('assistant', 'You unlocked the stage set. New images can change the structure again. Lock it from a look when you’re ready.')
-    },
     setFocus: (song, genId) => {
       const f = get().focus
       if (f?.song !== song || f.genId !== genId) d({ type: 'focus/set', song, genId })
@@ -585,7 +529,7 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
       d({ type: 'version/add', summary: 'Package sent to production', author: 'You' })
       say(
         'assistant',
-        `The package is with the production team: the stage set, ${plural(s.moments.length, 'song')} with their looks and clips, the cue sheet and the decision log. Three things are still with legal before anything is built: C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the samples.`,
+        `The package is with the production team: ${plural(s.moments.length, 'song')} with their looks and clips, the cue sheet and the decision log. Three things are still with legal before anything is built: C2PA credentials per model, the indemnity scope for GA Gemini and Veo models, and cover for the preview clip edits. Real venue specs replace the samples.`,
       )
     },
     attachReferences: () => {
@@ -621,7 +565,6 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
     },
     approve: (rating) => {
       const s = get()
-      manualReview.delete(id)
       d({ type: 'status/set', status: 'approved' })
       if (rating) d({ type: 'rating/set', rating })
       d({ type: 'version/add', summary: rating ? `Show approved by the artist · rated ${rating}/5` : 'Show approved for production', author: rating ? 'Artist' : 'You' })
@@ -630,21 +573,6 @@ function buildApi(id: string, store: Store): Omit<ProjectApi, keyof ProjectState
         'assistant',
         `${rating ? `The artist approved the show and rated it ${rating}/5.` : 'You approved the show for production.'} The handoff package is ready: ${plural(s.moments.length, 'song')}, each with its look, and ${plural(s.moments.filter((m) => { const l = lookFor(s, m.number); return l && s.clips[clipKey(l.id, m.number)]?.status === 'ready' }).length, 'clip')}.${open ? ` ${open === 1 ? '1 comment was' : `${open} comments were`} left open and ${open === 1 ? 'is' : 'are'} in the decision log.` : ''}`,
       )
-    },
-    takeOverReview: () => {
-      manualReview.add(id)
-    },
-    addArtistComment: (song, target, text) => {
-      const s = get()
-      const look = s.looks[song]
-      if (!look) return
-      d({ type: 'review/add', comment: { id: `a${store.nextId()}`, number: s.review.length + 1, song, genId: look, target, author: 'Artist', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), text, resolved: false } })
-    },
-    sendArtistFeedback: () => {
-      const s = get()
-      manualReview.delete(id)
-      d({ type: 'status/set', status: 'feedback' })
-      say('assistant', `The artist sent ${plural(s.review.filter((c) => !c.resolved).length, 'comment')}. Go through them in Review, then request changes or approve the show.`)
     },
     resumeReply: scheduleReply,
   }

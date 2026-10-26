@@ -1,16 +1,14 @@
 import { venueOf } from '~/mocks/venues'
 import { slotNote } from './light'
-import { TIME_LABEL, type Brief, type SetlistMoment, type ShowSet, type Thinking, type TimeOfDay } from '~/state/types'
+import { TIME_LABEL, type Brief, type SetlistMoment, type Thinking, type TimeOfDay } from '~/state/types'
 import type { BatchKind } from './explore'
-import { lowerFirst } from './shapes'
 
 /** The prompt Gemini would draft from the brief and the moment. Shown so the user can see what the image model was asked. */
-export function draftPrompt(brief: Brief, moment: SetlistMoment, light: TimeOfDay, set: ShowSet | null, prompt?: string) {
+export function draftPrompt(brief: Brief, moment: SetlistMoment, light: TimeOfDay, prompt?: string) {
   return [
     ...(prompt ? [`As described: ${prompt}.`] : []),
     `Concept still of the ${venueOf(brief.venueId).name} stage, song ${moment.number} (“${moment.title}”): ${moment.intent.toLowerCase()}.`,
     `Style: ${brief.keywords.join(', ').toLowerCase()}.`,
-    set ? `Keep the stage set: ${lowerFirst(set.title)}, same structure and size. Vary only the light, LED content and haze.` : 'Explore the stage structure freely.',
     `Lighting: ${TIME_LABEL[light].toLowerCase()}.`,
     `Avoid: ${brief.constraints.noGo.toLowerCase() || 'nothing listed'}.`,
   ].join('\n')
@@ -23,12 +21,12 @@ const ASK: Record<BatchKind, string> = {
   light: 'the same design in other light',
 }
 
-export function batchThinking(brief: Brief, moment: SetlistMoment, light: TimeOfDay, set: ShowSet | null, kind: BatchKind, count: number, notes: string[] = [], prompt?: string): Thinking {
+export function batchThinking(brief: Brief, moment: SetlistMoment, light: TimeOfDay, kind: BatchKind, count: number, notes: string[] = [], prompt?: string): Thinking {
   return {
     title: `Exploring song ${moment.number}`,
-    reasoning: `Song ${moment.number} (${moment.title}) plays in ${TIME_LABEL[light].toLowerCase()} (${slotNote(brief).toLowerCase()}). You asked for ${prompt ? `“${prompt}”` : ASK[kind]}. ${set ? 'The stage set is locked, so I’ll keep its structure and vary the look.' : 'The stage set isn’t locked yet, so the structure can still change.'}`,
+    reasoning: `Song ${moment.number} (${moment.title}) plays in ${TIME_LABEL[light].toLowerCase()} (${slotNote(brief).toLowerCase()}). You asked for ${prompt ? `“${prompt}”` : ASK[kind]}.`,
     steps: [`Loaded ${venueOf(brief.venueId).name}`, ...(prompt ? ['Read your description'] : []), 'Checked the artist’s no-go list', ...notes.map((n) => `Read the artist’s comment: “${n}”`), `Drafted ${count} prompts`],
-    tools: [{ name: 'generate_stills', summary: `Nano Banana Pro · ${count} images`, input: draftPrompt(brief, moment, light, set, prompt), status: 'running' }],
+    tools: [{ name: 'generate_stills', summary: `Nano Banana Pro · ${count} images`, input: draftPrompt(brief, moment, light, prompt), status: 'running' }],
   }
 }
 

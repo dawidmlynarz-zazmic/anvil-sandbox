@@ -1,11 +1,10 @@
 import { stageArt } from '~/mocks/art'
-import { TIME_LABEL, VIEW_LABEL, type Generation, type GenSource, type ShowSet, type StageTweaks, type StageView, type StillSpec, type TimeOfDay } from '~/state/types'
+import { TIME_LABEL, VIEW_LABEL, type Generation, type GenSource, type StageTweaks, type StageView, type StillSpec, type TimeOfDay } from '~/state/types'
 import { hybridFrom, listing, SHAPE_WORDS, take, tweaksFrom } from './changes'
-import { capitalise, conceptTitle, describeLook, describeTweaks, lowerFirst, SHAPES, SHAPE_SHORT } from './shapes'
+import { capitalise, conceptTitle, describeTweaks, lowerFirst, SHAPES, SHAPE_SHORT } from './shapes'
 
 // Mocked exploration. A batch is a few images for one key moment, planned from what you ask for: new directions,
-// more like the open image, other camera angles, or other light. Before the set is locked, a batch may try any
-// structure; after, every image keeps the set's structure and varies only the look (palette, haze, brightness).
+// more like the open image, other camera angles, or other light.
 
 export type BatchKind = 'directions' | 'more' | 'angles' | 'light'
 
@@ -25,7 +24,6 @@ export interface BatchContext {
   /** The light this moment plays in (from the brief's time slot). */
   light: TimeOfDay
   covered: boolean
-  set: ShowSet | null
   /** This moment's generations so far. */
   existing: Generation[]
   /** The image the batch starts from (more, angles, light). */
@@ -38,16 +36,6 @@ export interface BatchContext {
    */
   prompt?: string
 }
-
-/** Keeps the set's structure (shape, size, height) and whatever look the tweaks give. */
-export function onSet(spec: StillSpec, set: ShowSet | null, tweaks: StageTweaks = spec.tweaks ?? {}): StillSpec {
-  if (!set) return { ...spec, tweaks }
-  return { ...spec, concept: set.concept, with: set.with, tweaks: { ...tweaks, width: set.width, lift: set.lift } }
-}
-
-/** Whether an image shows the locked set's structure. */
-export const matchesSet = (spec: StillSpec, set: ShowSet | null) =>
-  !set || (spec.concept === set.concept && spec.with === set.with && (spec.tweaks?.width ?? 1) === set.width && (spec.tweaks?.lift ?? 0) === set.lift)
 
 const seedOf = (n: number, song: number) => (n * 37 + song * 101) % 997
 
@@ -65,14 +53,10 @@ export const BATCH_LABEL: Record<BatchKind, string> = {
 export function planBatch(kind: BatchKind, ctx: BatchContext): { drafts: Draft[]; summary: string } {
   const n = ctx.existing.length
   const base = ctx.base
-  const { set } = ctx
   const prompt = ctx.prompt?.trim() ?? ''
   const notes = [prompt, ...(ctx.notes ?? [])].filter(Boolean).join('. ')
   const withNotes = (t: StageTweaks) => (notes ? tweaksFrom(notes, t).tweaks : t)
   const understood = prompt ? tweaksFrom(prompt).applied : []
-  /** What the agent says about a description it could only partly show. */
-  const unread = (shown: boolean) =>
-    prompt && !shown ? ` This preview shows a design’s shape, size, colour, haze and brightness, so it can’t show the rest of “${prompt}”; in the pilot, Nano Banana Pro works from your words directly.` : ''
   const fresh = (spec: Omit<StillSpec, 'seed' | 'crowd' | 'view' | 'timeOfDay'> & Partial<StillSpec>, i: number): StillSpec => ({
     crowd: 'full',
     view: 'front-of-house',
@@ -82,16 +66,6 @@ export function planBatch(kind: BatchKind, ctx: BatchContext): { drafts: Draft[]
   })
 
   if (kind === 'directions') {
-    if (set) {
-      const drafts = [0, 1, 2, 3].map((i): Draft => {
-        const spec = onSet(fresh({ concept: set.concept, with: set.with }, i), set, withNotes(take(n + i).tweaks))
-        return { spec, title: set.title, caption: capitalise(describeLook(spec.tweaks) || 'original light'), source: prompt ? 'prompt' : 'directions', prompt: prompt || undefined }
-      })
-      return {
-        drafts,
-        summary: `Four new looks on the stage set${prompt ? ' from your description' : ''}: ${quoted(drafts.map((d) => d.caption))}. The structure stays as locked.${unread(understood.length > 0)}`,
-      }
-    }
     const dismissed = [...new Set(ctx.existing.filter((g) => g.dismissed).map((g) => g.spec.concept))]
     const allowed = SHAPES.filter((s) => !dismissed.includes(s))
     // A description that names a design (or two, combined) gets four takes on it; otherwise the open directions.
@@ -120,7 +94,7 @@ export function planBatch(kind: BatchKind, ctx: BatchContext): { drafts: Draft[]
         }
       return {
         drafts,
-        summary: `Four images from your description: ${designs}${understood.length ? `, with ${listing(understood)}` : ''}.${unread(true)}`,
+        summary: `Four images from your description: ${designs}${understood.length ? `, with ${listing(understood)}` : ''}.`,
       }
     }
     return {
@@ -135,13 +109,13 @@ export function planBatch(kind: BatchKind, ctx: BatchContext): { drafts: Draft[]
   if (kind === 'more') {
     const drafts = [0, 1, 2].map((i): Draft => {
       const tweaks = withNotes(take(n + i, base.spec.tweaks).tweaks)
-      const spec = onSet({ ...base.spec, timeOfDay: ctx.light, seed: seedOf(n + i, 2) }, set, tweaks)
-      const caption = capitalise((set ? describeLook(spec.tweaks) : describeTweaks(spec.tweaks)) || 'a new take')
-      return { spec, title: set ? set.title : conceptTitle(spec.concept, spec.with), caption, source: 'more', parentId: base.id, reworked: base.reworked || !!notes }
+      const spec = { ...base.spec, timeOfDay: ctx.light, seed: seedOf(n + i, 2), tweaks }
+      const caption = capitalise(describeTweaks(spec.tweaks) || 'a new take')
+      return { spec, title: conceptTitle(spec.concept, spec.with), caption, source: 'more', parentId: base.id, reworked: base.reworked || !!notes }
     })
     return {
       drafts,
-      summary: `Three more like ${code}: ${quoted(drafts.map((d) => d.caption))}.${set ? ' Each keeps the stage set’s structure.' : ''}${notes ? ` Each takes on the artist’s note: “${ctx.notes!.map((n) => n.replace(/[.!]+$/, '')).join('”, “')}”.` : ''}`,
+      summary: `Three more like ${code}: ${quoted(drafts.map((d) => d.caption))}.${notes ? ` Each takes on the artist’s note: “${ctx.notes!.map((n) => n.replace(/[.!]+$/, '')).join('”, “')}”.` : ''}`,
     }
   }
 
@@ -205,11 +179,11 @@ export function materialize(drafts: Draft[], at: { project: string; song: number
 }
 
 /** How a batch is labelled on the contact sheet, from its first image. */
-export function batchLabel(first: Generation, parent: Generation | undefined, set: ShowSet | null): string {
+export function batchLabel(first: Generation, parent: Generation | undefined): string {
   const of = parent ? ` #${parent.n}` : ''
   switch (first.source) {
     case 'directions':
-      return set && matchesSet(first.spec, set) ? 'New looks on the stage set' : 'New directions'
+      return 'New directions'
     case 'prompt':
       return `From your description: “${first.prompt ?? ''}”`
     case 'more':
@@ -224,13 +198,3 @@ export function batchLabel(first: Generation, parent: Generation | undefined, se
       return `Another take on${of}`
   }
 }
-
-/** The set taken from an image: its structure, named after it. */
-export const setFrom = (gen: Generation): ShowSet => ({
-  fromId: gen.id,
-  concept: gen.spec.concept,
-  with: gen.spec.with,
-  width: gen.spec.tweaks?.width ?? 1,
-  lift: gen.spec.tweaks?.lift ?? 0,
-  title: gen.title,
-})

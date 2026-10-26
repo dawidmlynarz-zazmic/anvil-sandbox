@@ -19,7 +19,8 @@ export function SongPrompt({ moment, disabled }: { moment: SetlistMoment; disabl
   const keywords = p.brief.keywords.slice(0, 3).join(', ').toLowerCase()
   const suggestions = [
     moment.intent && moment.intent !== 'No direction yet' ? moment.intent : '',
-    ...(p.set ? ['Warmer, more haze', 'Cool light, brighter'] : ['A floating halo in warm haze', 'An arch around a monolith, gold light']),
+    'A floating halo in warm haze',
+    'An arch around a monolith, gold light',
     keywords,
   ].filter(Boolean)
   const generate = (text: string) => {
@@ -36,15 +37,14 @@ export function SongPrompt({ moment, disabled }: { moment: SetlistMoment; disabl
           What should “{moment.title}” look like?
         </h2>
         <p className="text-muted-foreground type-text-sm-normal">
-          Describe the stage in your own words. The agent makes four images from it, lit for {light}
-          {p.set ? ', on the locked stage set' : ''}.
+          Describe the stage in your own words. The agent makes four images from it, lit for {light}.
         </p>
       </div>
       <PromptInput
         value={value}
         onValueChange={setValue}
         onSubmit={generate}
-        placeholder={p.set ? 'e.g. Warmer, with heavy haze and a brighter wall' : 'e.g. A monolith rising out of warm haze, gold light'}
+        placeholder="e.g. A monolith rising out of warm haze, gold light"
         status={disabled ? 'streaming' : 'idle'}
       />
       <div className="flex flex-col gap-2">
@@ -59,7 +59,7 @@ export function SongPrompt({ moment, disabled }: { moment: SetlistMoment; disabl
       </div>
       <Button variant="ghost" intent="neutral" size="sm" className="-ms-2 self-start" disabled={disabled} onClick={() => void p.explore(song, 'directions')}>
         <Icon icon={SparklesIcon} />
-        {p.set ? 'Just explore four looks' : 'Just explore four directions'}
+        Just explore four directions
       </Button>
     </section>
   )

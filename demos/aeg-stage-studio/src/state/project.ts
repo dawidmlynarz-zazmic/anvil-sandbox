@@ -10,7 +10,6 @@ import type {
   ProjectStatus,
   ReviewComment,
   SetlistMoment,
-  ShowSet,
   Version,
 } from './types'
 
@@ -61,8 +60,6 @@ export interface ProjectState {
   generations: Generation[]
   /** Each moment's chosen look: song → generation id. */
   looks: Record<number, string>
-  /** The structure every moment shares, once locked. */
-  set: ShowSet | null
   /** Batches being made, per moment. */
   pending: Record<number, Pending | undefined>
   clips: Record<string, ClipSlot>
@@ -98,7 +95,6 @@ export type Action =
   | { type: 'gen/patch'; id: string; patch: Partial<Generation> }
   | { type: 'pending/set'; song: number; pending: Pending | undefined }
   | { type: 'look/set'; song: number; id: string }
-  | { type: 'set/lock'; set: ShowSet | null }
   | { type: 'focus/set'; song: number; genId: string }
   | { type: 'clip/set'; key: string; slot: ClipSlot }
   | { type: 'kit/start'; song: number; lookId: string; count: number }
@@ -141,7 +137,6 @@ export function newProject(id: string, opening: ChatTurn[], show?: { artist: str
     moments: [],
     generations: [],
     looks: {},
-    set: null,
     pending: {},
     clips: {},
     kits: {},
@@ -197,8 +192,6 @@ function step(state: ProjectState, action: Action): ProjectState {
       return { ...state, pending: { ...state.pending, [action.song]: action.pending } }
     case 'look/set':
       return { ...state, looks: { ...state.looks, [action.song]: action.id }, redo: state.redo.filter((s) => s !== action.song) }
-    case 'set/lock':
-      return { ...state, set: action.set }
     case 'focus/set':
       return { ...state, focus: { song: action.song, genId: action.genId } }
     case 'clip/set':

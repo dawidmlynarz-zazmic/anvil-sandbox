@@ -16,7 +16,7 @@ import { STEP_CONTENT } from '~/components/layout'
 import { StepFooter } from '~/components/StepFooter'
 import { StillImage } from '~/components/StillImage'
 import { MODEL } from '~/components/ModelBadge'
-import { SetChecks } from '~/features/show/SetChecks'
+import { VenueChecks } from './VenueChecks'
 import { revealTop } from '~/lib/reveal'
 import { venueOf } from '~/mocks/venues'
 import { MOVE_TITLE, moveOf } from '~/services/generation'
@@ -24,7 +24,7 @@ import { PILOT_ONLY } from '~/services/kit'
 import { momentLight } from '~/services/light'
 import { limitRows } from '~/services/venueCheck'
 import { clipKey, useProject } from '~/state/ProjectContext'
-import { genById, kitStatus, lookFor } from '~/state/show'
+import { kitStatus, lookFor } from '~/state/show'
 import { TIME_LABEL, type Asset, type Generation, type Kit, type MotionClip, type SetlistMoment } from '~/state/types'
 
 /** Who builds from the package. Each trade gets its own view: only what it needs, per key moment. */
@@ -81,12 +81,11 @@ function MomentRow({ row, children }: { row: Row; children: React.ReactNode }) {
 export function HandoffPage() {
   const navigate = useNavigate()
   const p = useProject()
-  const { moments, clips, status, review, versions, sentVersion, daysSinceBrief, artistRating, exported, exportPackage, path, generations, set, meta } = p
+  const { moments, clips, status, review, versions, sentVersion, daysSinceBrief, artistRating, exported, exportPackage, path, generations, meta } = p
   const [creating, setCreating] = useState(false)
   const [params, setParams] = useSearchParams()
   const trade: Trade = TRADES.some((t) => t.id === params.get('trade')) ? (params.get('trade') as Trade) : 'overview'
   const approved = status === 'approved'
-  const setSource = set ? genById(p, set.fromId) : undefined
   const venue = venueOf(p.brief.venueId)
   const open = review.filter((c) => !c.resolved)
   const sends = versions.filter((v) => v.summary.startsWith('Sent to the artist')).length
@@ -156,7 +155,7 @@ export function HandoffPage() {
               <Icon icon={CheckIcon} />
               <AlertTitle>Sent to the production team</AlertTitle>
               <AlertDescription>
-                Each team has its part: the stage set and its checks, every song’s look, clip and asset kit, the cue sheet and the decision log. Legal still
+                Each team has its part: every song’s look, clip, asset kit and venue checks, the cue sheet and the decision log. Legal still
                 confirms the pending items. This is a demo, so nothing left the app.
               </AlertDescription>
             </Alert>
@@ -193,11 +192,10 @@ export function HandoffPage() {
                 <CardHeader>
                   <CardTitle>The show</CardTitle>
                   <CardDescription>
-                    {set && setSource ? `Stage set: ${set.title}, from song ${setSource.song}, image #${setSource.n}. Every song has its own look on it.` : 'Every song with its look.'}
+                    Every song with its look.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
-                  {setSource && <StillImage still={setSource} alt={`Stage set: ${set?.title}`} model={MODEL.still} className="aspect-[21/9] w-full rounded-lg object-cover" />}
                   <ul className="grid grid-cols-2 gap-4">
                     {rows.map(({ moment, look, clip, kit }) => (
                       <li key={moment.number} className="flex flex-col gap-1">
@@ -220,10 +218,10 @@ export function HandoffPage() {
                   <CardDescription>What the export contains.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
-                  <CheckRow>The stage set and {rows.length} looks, hi-res</CheckRow>
+                  <CheckRow>{rows.length} looks, hi-res</CheckRow>
                   <CheckRow>Motion previews ({rows.filter((r) => r.clip).length} clips)</CheckRow>
                   <CheckRow status={withKits === rows.length ? 'included' : 'pending'}>
-                    Asset kits ({kitAssets} assets across {withKits} of {rows.length} moments)
+                    Asset kits ({kitAssets} assets across {withKits} of {rows.length} songs)
                   </CheckRow>
                   <CheckRow>Cue sheets for lighting, video and camera</CheckRow>
                   <CheckRow>Provenance for every image and clip, and the decision log</CheckRow>
@@ -238,17 +236,16 @@ export function HandoffPage() {
             <Card>
               <CardHeader>
                 <CardTitle>For the production manager and stage builder</CardTitle>
-                <CardDescription>The stage set, its footprint and how it fits {venue.name}. Every song uses this structure.</CardDescription>
+                <CardDescription>Each song’s look: its footprint and how it fits {venue.name}.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-5">
-                {setSource ? (
-                  <>
-                    <StillImage still={setSource} alt={`Stage set: ${set?.title}`} model={MODEL.still} className="aspect-[21/9] w-full rounded-lg object-cover" />
-                    <SetChecks spec={setSource.spec} brief={p.brief} reworked={setSource.reworked} locked />
-                  </>
-                ) : (
-                  <p className="text-muted-foreground type-text-sm-normal">The stage set wasn’t locked, so each song’s look has its own structure. Check each one before building.</p>
-                )}
+                <ul className="flex flex-col gap-4">
+                  {rows.map((row) => (
+                    <MomentRow key={row.moment.number} row={row}>
+                      <VenueChecks spec={row.look.spec} brief={p.brief} reworked={row.look.reworked} />
+                    </MomentRow>
+                  ))}
+                </ul>
                 <section aria-label="Venue limits" className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
                     <span className="type-text-sm-semibold">{venue.name} limits</span>
@@ -355,7 +352,7 @@ export function HandoffPage() {
                   <CardContent>
                     <KeyValueList>
                       <KeyValueRow label="Creative direction">
-                        AEG Presents creative team: chose {rows.length} looks, {set ? 'locked the stage set, ' : ''}
+                        AEG Presents creative team: chose {rows.length} looks, 
                         {yours ? `asked for ${yours} of the ${generations.length} images, ` : ''}sent {sends} {sends === 1 ? 'review' : 'reviews'} to the artist
                       </KeyValueRow>
                       <KeyValueRow label="Artist">

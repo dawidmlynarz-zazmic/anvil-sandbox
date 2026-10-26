@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Outlet, useLocation, useSearchParams } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Icon, MoonIcon, SunIcon } from '@anvil/components/ui/icon'
@@ -35,9 +35,6 @@ const readChatWidth = () => {
 export function AppShell() {
   const { meta, status } = useProject()
   const { pathname } = useLocation()
-  // Previewing as the artist: show only what the artist would see (no agent, no steps, no internal status).
-  const [params] = useSearchParams()
-  const asArtist = pathname.endsWith('/review') && params.get('as') === 'artist'
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
   // The agent is always open: it's how you work with the project.
   const first = useRef(true)
@@ -85,13 +82,11 @@ export function AppShell() {
           <span className="ms-1 min-w-0 truncate type-text-sm-semibold">
             {meta.artist} · {meta.event}
           </span>
-          {!asArtist && (
-            <Badge tone={badge.tone} variant="subtle" shape="pill" indicator className="hidden shrink-0 xl:inline-flex">
-              {badge.text}
-            </Badge>
-          )}
+          <Badge tone={badge.tone} variant="subtle" shape="pill" indicator className="hidden shrink-0 xl:inline-flex">
+            {badge.text}
+          </Badge>
           {/* Keeps its own width; the project name truncates first. */}
-          <div className="flex flex-1 justify-center">{!asArtist && <StepNav />}</div>
+          <div className="flex flex-1 justify-center"><StepNav /></div>
           <AboutDemo />
           <InviteDialog />
           <Button
@@ -107,21 +102,17 @@ export function AppShell() {
         <div className="flex min-h-0 flex-1">
           {/* Drag the line between the agent and the work to give either more room; the width is remembered. */}
           <ResizablePanelGroup orientation="horizontal" className="min-w-0 flex-1" onLayoutChanged={saveChatWidth}>
-            {!asArtist && (
-              <>
-                <ResizablePanel
-                  id="chat"
-                  defaultSize={chatWidth}
-                  minSize={CHAT_WIDTH.min}
-                  maxSize={CHAT_WIDTH.max}
-                  groupResizeBehavior="preserve-pixel-size"
-                  onResize={(size) => (chatPixels.current = size.inPixels)}
-                >
-                  <ChatPanel />
-                </ResizablePanel>
-                <ResizableHandle withHandle aria-label="Resize the agent panel" />
-              </>
-            )}
+            <ResizablePanel
+              id="chat"
+              defaultSize={chatWidth}
+              minSize={CHAT_WIDTH.min}
+              maxSize={CHAT_WIDTH.max}
+              groupResizeBehavior="preserve-pixel-size"
+              onResize={(size) => (chatPixels.current = size.inPixels)}
+            >
+              <ChatPanel />
+            </ResizablePanel>
+            <ResizableHandle withHandle aria-label="Resize the agent panel" />
             <ResizablePanel id="work" minSize={360}>
               <main className="relative h-full min-w-0 overflow-hidden">
                 <Outlet />
