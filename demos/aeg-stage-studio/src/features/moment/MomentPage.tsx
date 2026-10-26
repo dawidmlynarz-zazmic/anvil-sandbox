@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Alert, AlertDescription, AlertTitle } from '@anvil/components/ui/alert'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { ButtonGroup } from '@anvil/components/ui/button-group'
@@ -58,6 +57,9 @@ function Focus({ gen, readOnly }: { gen: Generation; readOnly: boolean }) {
   const look = lookFor(p, gen.song)
   const pending = p.pending[gen.song]
   const [provenance, setProvenance] = useState(false)
+  const [locking, setLocking] = useState(false)
+  // Locking the stage set is offered from the look's menu, until a stage set is locked.
+  const canLock = !readOnly && !p.set && look?.id === gen.id
   return (
     <>
       <ConceptCard
@@ -78,7 +80,10 @@ function Focus({ gen, readOnly }: { gen: Generation; readOnly: boolean }) {
         mediaBadge={<ModelBadge model={MODEL.still} />}
         previous={parent ? { version: parent.n, src: parentSrc } : undefined}
         compareInMenu
-        menuItems={[{ label: 'Provenance', icon: ShieldCheckIcon, onSelect: () => setProvenance(true) }]}
+        menuItems={[
+          ...(canLock ? [{ label: `Lock the stage set from #${gen.n}`, icon: LockIcon, onSelect: () => setLocking(true) }] : []),
+          { label: 'Provenance', icon: ShieldCheckIcon, onSelect: () => setProvenance(true) },
+        ]}
         checks={briefCheck(gen, p.brief)}
         dismissed={gen.dismissed}
         busy={pending?.of === gen.id ? `${pending.label}…` : undefined}
@@ -96,6 +101,7 @@ function Focus({ gen, readOnly }: { gen: Generation; readOnly: boolean }) {
           <p className="text-muted-foreground type-text-xs-normal">Made before the stage set was locked, so its structure is different. Use “More like #{gen.n}” to redo it on the locked set.</p>
         )}
       </ConceptCard>
+      {canLock && <LockSetDialog gen={gen} open={locking} onOpenChange={setLocking} />}
       <ProvenanceDialog name={`#${gen.n}`} provenance={ofGeneration(gen, lineage(p, gen))} open={provenance} onOpenChange={setProvenance} />
     </>
   )
@@ -217,14 +223,6 @@ export function MomentPage() {
                   {/* Motion first: once the open image is the look, its clip leads the page. */}
                   {look && focus?.id === look.id && <LookMotion moment={moment} look={look} readOnly={locked} />}
                   {focus && <Focus gen={focus} readOnly={locked} />}
-
-                  {!p.set && focus && look?.id === focus.id && !locked && (
-                    <Alert tone="agent" role="status" action={<LockSetDialog gen={focus} />}>
-                      <Icon icon={LockIcon} />
-                      <AlertTitle>Use this structure for the whole show?</AlertTitle>
-                      <AlertDescription>Lock the stage set from #{focus.n}. Every song then uses this structure, and only the light, colour and haze change.</AlertDescription>
-                    </Alert>
-                  )}
 
                   <section aria-labelledby="explore-title" className="flex flex-col gap-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">

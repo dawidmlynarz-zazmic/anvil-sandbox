@@ -1,5 +1,5 @@
 import { Button } from '@anvil/components/ui/button'
-import { Dialog, DialogBody, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@anvil/components/ui/dialog'
+import { Dialog, DialogBody, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@anvil/components/ui/dialog'
 import { Icon, LockIcon } from '@anvil/components/ui/icon'
 import { lowerFirst } from '~/services/shapes'
 import { issues, venueChecks } from '~/services/venueCheck'
@@ -11,18 +11,12 @@ import { SetChecks } from '../show/SetChecks'
  * Locking the set is the one deliberate convergence, so it's checked first: the design's footprint against the venue,
  * with every check and what would clear it. Lock anyway, or go back and change the design.
  */
-export function LockSetDialog({ gen }: { gen: Generation }) {
+export function LockSetDialog({ gen, open: shown, onOpenChange }: { gen: Generation; /** Opened from a menu item: no trigger button. */ open: boolean; onOpenChange: (open: boolean) => void }) {
   const p = useProject()
   const open = issues(venueChecks(gen.spec, p.brief, gen.reworked))
   const fails = open.filter((c) => c.status === 'fail').length
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button size="xs" variant="outline" intent="neutral">
-          <Icon icon={LockIcon} />
-          Lock the stage set from #{gen.n}
-        </Button>
-      </DialogTrigger>
+    <Dialog open={shown} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
           <DialogTitle>Lock the stage set from #{gen.n}?</DialogTitle>

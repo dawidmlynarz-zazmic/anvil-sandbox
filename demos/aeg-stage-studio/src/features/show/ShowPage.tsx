@@ -188,7 +188,7 @@ export function ShowPage() {
                 <span className="text-muted-foreground type-text-xs-normal">
                   {p.set && setSource
                     ? `From song ${setSource.song}, image #${setSource.n}. Every song uses this structure.`
-                    : 'Put an image into motion, then lock its structure so every song uses it.'}
+                    : 'To share one structure across every song, lock it from the ⋯ menu of an image in motion.'}
                   {offSet > 0 ? ` ${offSet === 1 ? '1 look has' : `${offSet} looks have`} a different structure.` : ''}
                 </span>
                 {setSource && (
