@@ -97,6 +97,7 @@ Stills and Motion screens below are replaced by the Show board and the Moment pa
 | Set checks (footprint and venue checks) | `anvil/key-value-row` + `anvil/check-row` (included · pending · excluded) + `ui/badge` | | No |
 | Motion | `ui/card` + local `ClipPlayer` + `anvil/key-value-row` + `ui/input` | | Yes (ClipPlayer) |
 | Previous / next moment | `ui/button` `size="icon-sm"` | | No |
+| Describe the stage (empty song) | `agent/prompt-input` + `agent/quick-reply` suggestions that fill it | | No |
 | Explore / Asset kit | `ui/tabs` `variant="line"` | in the URL (`?tab=assets`) | No |
 | The look in motion, first on the page | `ui/card` + local `ClipPlayer` + `anvil/key-value-row` + `ui/input` | | Yes (ClipPlayer) |
 | Asset kit (stills, motion variants, pilot-only items) | `ui/card`, local `ClipPlayer` + `ClipTile`, `anvil/check-row` | | Yes (ClipPlayer, ClipTile) |

@@ -255,7 +255,7 @@ export function ShowPage() {
           <SendDialog
             artist={p.meta.artist}
             items={sendItems}
-            label={sent ? 'Send the new version' : 'Send the show to the artist'}
+            label={sent ? 'Send the new version' : 'Send for review'}
             disabled={waiting || chosen < p.moments.length || p.moments.length === 0}
             onSend={(note) => {
               p.sendToArtist(note || undefined)

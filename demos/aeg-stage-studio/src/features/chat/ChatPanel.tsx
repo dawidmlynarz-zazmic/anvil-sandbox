@@ -107,6 +107,9 @@ export function ChatPanel() {
   const live = useRef(latest)
   live.current = latest
   const { pathname } = useLocation()
+  // On a song with no images yet, what you type describes the stage.
+  const openSong = /\/m\/(\d+)/.exec(pathname)?.[1]
+  const emptySong = openSong !== undefined && gensFor(latest, Number(openSong)).length === 0
 
   /** A short agent reply with its reasoning shown, for answers that don't call a model. */
   const reply = async (title: string, reasoning: string, steps: string[], text: string) => {
@@ -157,7 +160,8 @@ export function ChatPanel() {
         // Anything else changes the open image, as a new image (#13 from #12).
         void project.refine(focus.id, value.replace(/^\s*#\d+\s*[:,-]?\s*/, '') || value)
       } else {
-        void reply('Reading your request', 'Nothing is open on this song yet.', ['Checked the song'], 'There are no images here yet. Explore four designs first, then tell me what to change.')
+        // No images yet: what you type describes the stage, and the agent makes four images from it.
+        void project.explore(song, 'directions', undefined, value, false)
       }
       return
     }
@@ -360,7 +364,7 @@ export function ChatPanel() {
         <ChatShellComposer disclaimer="Powered by Gemini. The agent can make mistakes.">
           <PromptInput
             aria-label="Message the stage agent"
-            placeholder={latest.phase === 'setup' ? PLACEHOLDER.setup : (PLACEHOLDER[stepOf(pathname)] ?? PLACEHOLDER.brief)}
+            placeholder={latest.phase === 'setup' ? PLACEHOLDER.setup : emptySong ? 'Describe the stage for this song, e.g. “a halo in warm haze”' : (PLACEHOLDER[stepOf(pathname)] ?? PLACEHOLDER.brief)}
             onSubmit={(text) => void send(text)}
             onAttach={() => live.current.attachReferences()}
           />

@@ -94,7 +94,7 @@ export interface StillSpec {
 }
 
 /** What made a generation: a batch the agent explored, or one change to one image. */
-export type GenSource = 'directions' | 'more' | 'angles' | 'light' | 'edit' | 'take'
+export type GenSource = 'directions' | 'prompt' | 'more' | 'angles' | 'light' | 'edit' | 'take'
 
 /**
  * One image explored for a key moment. Generations are never replaced: a change makes a child (`parentId`), so the
@@ -110,6 +110,8 @@ export interface Generation {
   batch: number
   parentId?: string
   source: GenSource
+  /** Your description, for images made from one. */
+  prompt?: string
   /** “Open-air arch”, or “Open-air arch with monolith”. */
   title: string
   /** What's different about it, in a few words: “Wider and raised”, “Back of field”. */

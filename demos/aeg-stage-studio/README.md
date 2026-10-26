@@ -28,9 +28,11 @@ The show is designed one key moment (a song) at a time, on one shared set. See `
   real AEG venues and festival stages, with the facts aegworldwide.com publishes; technical specs are labelled samples.
   **Generate show** drafts the key moments from the setlist and starts exploring the first.
 - **Show board** (`/show`): one line of running numbers, the set (its venue checks behind a badge), every key moment
-  in setlist order (its look, one status and one line of detail), and **Send the show to the artist** once every
+  in setlist order (its look, one status and one line of detail), and **Send for review** once every
   moment has a look.
-- **Moment page** (`/m/:song`), two tabs. **Explore**: new directions, or more like / other angles / other light of the
+- **Moment page** (`/m/:song`). A song with no images opens on a prompt: describe the stage (or start from a
+  suggestion) and the agent makes four images from it; naming a design or a colour, size, haze or brightness steers
+  them, and the agent says what the preview couldn't show. Then two tabs. **Explore**: new directions, or more like / other angles / other light of the
   open image from one menu; change an image in words or with pinned notes (each change is a new image; its lineage,
   provenance and compare-with-parent are in the card's menu); **Put #n into motion** makes it the moment's look and its
   clip then leads the page (cues, plain-word edits); lock the set from it. **Asset kit**: angles, light states and
