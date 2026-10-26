@@ -51,7 +51,7 @@ function ProjectCard({ p }: { p: ProjectState }) {
             {setup && p.provenance.venue === 'pending' ? 'Venue not set yet' : `${venue.name}, ${venue.city}`}
           </span>
           <span className="text-muted-foreground type-text-xs-normal">
-            {setup ? 'Setting up the brief' : `${looksChosen(p)} of ${p.moments.length} looks chosen`} · {updated(p.meta.updatedAt)}
+            {setup ? 'Writing the brief' : `${looksChosen(p)} of ${p.moments.length} songs in motion`} · {updated(p.meta.updatedAt)}
           </span>
         </span>
       </Link>
@@ -80,7 +80,7 @@ export function HomePage() {
               <h1 tabIndex={-1} className="type-heading-2xl outline-none">
                 All projects
               </h1>
-              <p className="text-muted-foreground type-text-sm-normal">Every show you’re designing, most recent first. Open one to pick up where it is.</p>
+              <p className="text-muted-foreground type-text-sm-normal">Your shows, most recent first. Open one to pick up where you left off.</p>
             </div>
             <ul className="grid grid-cols-1 gap-4 @xl:grid-cols-2 @4xl:grid-cols-3">
               <li>
@@ -90,7 +90,7 @@ export function HomePage() {
                       <Icon icon={PlusIcon} />
                     </span>
                     <span className="type-text-base-semibold">New project</span>
-                    <span className="text-muted-foreground type-text-sm-normal">Name the artist and event; the agent sets up the brief with you.</span>
+                    <span className="text-muted-foreground type-text-sm-normal">Add the artist and event, and the agent helps you write the brief.</span>
                   </button>
                 </Card>
               </li>

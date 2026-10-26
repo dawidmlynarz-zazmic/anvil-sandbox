@@ -26,7 +26,7 @@ The show is designed one key moment (a song) at a time, on one shared set. See `
   project; **Reset the demo** at its bottom restores the seeded start.
 - **Brief**: the agent asks three questions in one card (stage, roughly when, the look), then any no-gos. Venues are
   real AEG venues and festival stages, with the facts aegworldwide.com publishes; technical specs are labelled samples.
-  **Build the show** drafts the key moments from the setlist and starts exploring the first.
+  **Generate show** drafts the key moments from the setlist and starts exploring the first.
 - **Show board** (`/show`): one line of running numbers, the set (its venue checks behind a badge), every key moment
   in setlist order (its look, one status and one line of detail), and **Send the show to the artist** once every
   moment has a look.

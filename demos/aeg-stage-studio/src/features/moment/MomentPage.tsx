@@ -94,7 +94,7 @@ function Focus({ gen, readOnly }: { gen: Generation; readOnly: boolean }) {
         readOnly={readOnly}
       >
         {!matchesSet(gen.spec, p.set) && (
-          <p className="text-muted-foreground type-text-xs-normal">Made before the set was locked: its structure differs from the set. Explore more like it to restage it on the set.</p>
+          <p className="text-muted-foreground type-text-xs-normal">Made before the stage set was locked, so its structure is different. Use “More like #{gen.n}” to redo it on the locked set.</p>
         )}
       </ConceptCard>
       <ProvenanceDialog name={`#${gen.n}`} provenance={ofGeneration(gen, lineage(p, gen))} open={provenance} onOpenChange={setProvenance} />
@@ -158,7 +158,7 @@ export function MomentPage() {
                 </Link>
               </Button>
               <div className="flex items-center gap-1">
-                <Button asChild={!!prev} variant="ghost" intent="neutral" size="icon-sm" disabled={!prev} aria-label={prev ? `Previous moment: song ${prev.number}` : 'No previous moment'}>
+                <Button asChild={!!prev} variant="ghost" intent="neutral" size="icon-sm" disabled={!prev} aria-label={prev ? `Previous: song ${prev.number}` : 'No previous song'}>
                   {prev ? (
                     <Link to={p.momentPath(prev.number)}>
                       <Icon icon={ChevronLeftIcon} />
@@ -170,7 +170,7 @@ export function MomentPage() {
                 <span className="text-muted-foreground type-text-xs-normal">
                   {index + 1} of {p.moments.length}
                 </span>
-                <Button asChild={!!next} variant="ghost" intent="neutral" size="icon-sm" disabled={!next} aria-label={next ? `Next moment: song ${next.number}` : 'No next moment'}>
+                <Button asChild={!!next} variant="ghost" intent="neutral" size="icon-sm" disabled={!next} aria-label={next ? `Next: song ${next.number}` : 'No next song'}>
                   {next ? (
                     <Link to={p.momentPath(next.number)}>
                       <Icon icon={ChevronRightIcon} />
@@ -190,7 +190,7 @@ export function MomentPage() {
               </Badge>
             </div>
             <p className="text-muted-foreground type-text-sm-normal">
-              {moment.intent} · {TIME_LABEL[momentLight(p.brief, song, p.moments.length)].toLowerCase()} · {p.set ? `set locked: ${lowerFirst(p.set.title)}` : 'set not locked yet'}
+              {moment.intent} · {TIME_LABEL[momentLight(p.brief, song, p.moments.length)].toLowerCase()} · {p.set ? `stage set locked: ${lowerFirst(p.set.title)}` : 'stage set not locked yet'}
             </p>
           </div>
 
@@ -200,9 +200,9 @@ export function MomentPage() {
                 <Icon icon={ImageIcon} />
               </EmptyStateMedia>
               <EmptyStateHeader>
-                <EmptyStateTitle>Nothing explored for this moment yet</EmptyStateTitle>
+                <EmptyStateTitle>No images for this song yet</EmptyStateTitle>
                 <EmptyStateDescription>
-                  {p.set ? 'Start with four looks on the locked set, lit for this song.' : 'Start with four directions for the stage, lit for this song.'}
+                  {p.set ? 'Start with four looks on the locked stage set, lit for this song.' : 'Start with four stage designs, lit for this song.'}
                 </EmptyStateDescription>
               </EmptyStateHeader>
               <Button variant="outline" intent="neutral" disabled={locked} onClick={() => void p.explore(song, 'directions')}>
@@ -236,8 +236,8 @@ export function MomentPage() {
                   {!p.set && focus && look?.id === focus.id && !locked && (
                     <Alert tone="agent" role="status" action={<LockSetDialog gen={focus} />}>
                       <Icon icon={LockIcon} />
-                      <AlertTitle>Happy with this structure?</AlertTitle>
-                      <AlertDescription>Lock the set from #{focus.n}: every moment then shares it, and only the look changes.</AlertDescription>
+                      <AlertTitle>Use this structure for the whole show?</AlertTitle>
+                      <AlertDescription>Lock the stage set from #{focus.n}. Every song then uses this structure, and only the light, colour and haze change.</AlertDescription>
                     </Alert>
                   )}
 
@@ -294,7 +294,7 @@ export function MomentPage() {
                           <ContactSheetGroup
                             key={first.batch}
                             title={batchLabel(first, parent, p.set)}
-                            meta={`${gens.length} ${gens.length === 1 ? 'image' : 'images'} · ${first.author === 'you' ? 'you asked' : 'the agent explored'}`}
+                            meta={`${gens.length} ${gens.length === 1 ? 'image' : 'images'} · ${first.author === 'you' ? 'you asked' : 'by the agent'}`}
                             pending={pending?.batch === first.batch ? pending.count : 0}
                           >
                             {gens.map((g) => (
@@ -319,8 +319,8 @@ export function MomentPage() {
         </div>
       </div>
       <StepFooter
-        note={look ? `Look: #${look.n} · ${look.caption}` : 'No look chosen yet'}
-        status={sent ? 'With the artist: choosing a new look waits until they reply' : undefined}
+        note={look ? `In motion: #${look.n} · ${look.caption}` : 'Nothing in motion yet'}
+        status={sent ? 'With the artist. You can put a new image into motion after they reply.' : undefined}
       >
         {tab === 'assets' && look && (kit === 'none' || kit === 'stale') ? (
           <Button disabled={locked} onClick={() => void p.buildKit(song)}>

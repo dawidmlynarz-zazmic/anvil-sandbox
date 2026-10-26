@@ -79,7 +79,7 @@ export const QUESTIONS: { section: BriefSection; ask: string; suggestions: strin
 ]
 
 export const DONE_TEXT =
-  'The brief is ready. Check it in the middle, change anything you like, then build the show. I’ll draft the key moments from the setlist and start exploring the first one.'
+  'The brief is ready. Check it in the middle and change anything you like, then generate the show. I’ll draft the key moments from the setlist and start on the first one.'
 
 const DAYS = /(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -115,7 +115,7 @@ export function applyAnswer(
       const note = slotNote({ ...brief, slot })
       return {
         patch: { slot: { ...slot, note } },
-        summary: `Slot: ${date ? formatShowDate(date) : day}, ${slot.time}, ${slot.length}. ${note}, so I’ll light every moment for that. Change the date or time in the brief if it’s not right.`,
+        summary: `Slot: ${date ? formatShowDate(date) : day}, ${slot.time}, ${slot.length}. ${note}, so I’ll light every song for that. Change the date or time in the brief if it’s not right.`,
       }
     }
     case 'visual': {

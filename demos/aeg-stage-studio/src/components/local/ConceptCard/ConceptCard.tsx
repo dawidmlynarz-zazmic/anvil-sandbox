@@ -198,22 +198,22 @@ export function ConceptCard({
           <CardAction>
             <Popover>
               <PopoverTrigger asChild>
-                <button type="button" className="focus-visible:focus-ring rounded-full outline-none" aria-label={`Brief check: ${issues.length ? `${issues.length} to look at` : 'fits the brief'}`}>
+                <button type="button" className="focus-visible:focus-ring rounded-full outline-none" aria-label={`Checks: ${issues.length ? `${issues.length} ${issues.length === 1 ? 'issue' : 'issues'}` : 'passes every check'}`}>
                   <Badge tone={issues.length ? 'warning' : 'success'} variant="subtle" size="sm">
                     <Icon icon={issues.length ? CircleAlertIcon : CircleCheckIcon} />
-                    {issues.length ? `${issues.length} to look at` : 'Fits brief'}
+                    {issues.length ? `${issues.length} ${issues.length === 1 ? 'issue' : 'issues'}` : 'Passes checks'}
                   </Badge>
                 </button>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-80">
                 <PopoverHeader>
-                  <PopoverTitle>Brief and venue check</PopoverTitle>
-                  <PopoverDescription>The agent checks every image against the venue’s limits (sample specs), the no-go list and the budget.</PopoverDescription>
+                  <PopoverTitle>Venue and brief checks</PopoverTitle>
+                  <PopoverDescription>Checked against the venue’s limits (sample specs), the artist’s no-gos and the budget.</PopoverDescription>
                 </PopoverHeader>
                 <ul className="flex flex-col gap-2">
                   {checks.map((c) => (
                     <li key={c.label} className="flex flex-col gap-0.5">
-                      <CheckRow status={c.ok ? 'included' : 'pending'} statusLabel={c.ok ? 'Passes' : 'Needs a look'}>
+                      <CheckRow status={c.ok ? 'included' : 'pending'} statusLabel={c.ok ? 'Passes' : 'Issue'}>
                         <span className="type-text-xs-semibold">{c.label}</span>
                       </CheckRow>
                       <span className="text-muted-foreground ps-5 type-text-xs-normal">{c.detail}</span>
@@ -320,7 +320,7 @@ export function ConceptCard({
               <span className="type-text-xs-semibold">Changes to make</span>
               {annotating && (
                 <span className="text-muted-foreground type-text-xs-normal">
-                  Click the image to pin a change to a spot, or describe one for the whole concept.
+                  Click the image to mark a spot, or describe a change for the whole image.
                 </span>
               )}
             </div>
@@ -349,7 +349,7 @@ export function ConceptCard({
                   addNote()
                 }}
               >
-                <Label htmlFor={`${title}-change`}>{pin ? `What should change at ${nextNumber}?` : 'Change for the whole concept'}</Label>
+                <Label htmlFor={`${title}-change`}>{pin ? `What should change at ${nextNumber}?` : 'Change for the whole image'}</Label>
                 <InputGroup className="bg-background">
                   <InputGroupInput
                     ref={inputRef}
@@ -537,7 +537,7 @@ function CompareVersions({
                 ))}
               </ol>
             ) : (
-              <p className="text-muted-foreground type-text-sm-normal">{change ?? 'A new take on the same concept.'}</p>
+              <p className="text-muted-foreground type-text-sm-normal">{change ?? 'A new take on the same image.'}</p>
             )}
           </section>
         </DialogBody>

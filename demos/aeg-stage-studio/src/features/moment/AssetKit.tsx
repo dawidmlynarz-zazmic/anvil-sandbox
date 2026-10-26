@@ -66,8 +66,8 @@ export function AssetKit({ moment }: { moment: SetlistMoment }) {
           <Icon icon={PackageIcon} />
         </EmptyStateMedia>
         <EmptyStateHeader>
-          <EmptyStateTitle>Put a still into motion first</EmptyStateTitle>
-          <EmptyStateDescription>The kit is made from the moment’s look: angles, light states and motion variants.</EmptyStateDescription>
+          <EmptyStateTitle>Put an image into motion first</EmptyStateTitle>
+          <EmptyStateDescription>The kit is made from the song’s look: other camera angles, light states and camera moves.</EmptyStateDescription>
         </EmptyStateHeader>
       </EmptyState>
     )
@@ -92,7 +92,7 @@ export function AssetKit({ moment }: { moment: SetlistMoment }) {
 
         {status === 'none' && (
           <p className="text-muted-foreground type-text-sm-normal">
-            Angles, light states and motion variants of #{look.n}, for production and content teams. Build it when the look is settled.
+            Other camera angles, light states and camera moves of #{look.n}, for production and content teams. Build it once you’re happy with the look.
           </p>
         )}
 

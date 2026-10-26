@@ -35,7 +35,7 @@ export function LookMotion({ moment, look, readOnly }: { moment: SetlistMoment; 
     <Card>
       <CardHeader>
         <CardTitle>#{look.n} in motion</CardTitle>
-        <CardDescription>The look for this moment, as an eight-second clip with the song’s cues.</CardDescription>
+        <CardDescription>An eight-second clip of this song’s look, with its lighting, LED and camera cues.</CardDescription>
         {clip && frame?.other && (
           <CardAction className="flex items-center gap-2">
             <Switch id={`compare-${song}`} checked={compare} onCheckedChange={setCompare} />

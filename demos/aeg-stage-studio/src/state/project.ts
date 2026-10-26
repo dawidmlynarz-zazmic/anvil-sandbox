@@ -299,11 +299,11 @@ export const looksChosen = (p: Pick<ProjectState, 'moments' | 'looks'>) => p.mom
 
 /** A short label for where a project stands, for the project list. */
 export function projectStatusLabel(p: ProjectState): string {
-  if (p.phase === 'setup') return 'Setting up the brief'
-  if (p.status === 'approved') return 'Approved · handoff ready'
-  if (p.status === 'feedback') return `Artist replied · ${p.review.filter((c) => !c.resolved).length} open`
+  if (p.phase === 'setup') return 'Writing the brief'
+  if (p.status === 'approved') return 'Approved · ready to hand off'
+  if (p.status === 'feedback') return `Artist replied · ${p.review.filter((c) => !c.resolved).length} comments open`
   if (p.status === 'awaiting-artist') return 'With the artist'
-  return `${looksChosen(p)} of ${p.moments.length} looks chosen`
+  return `${looksChosen(p)} of ${p.moments.length} songs in motion`
 }
 
 /** The step a project should open on: where its work currently is. */

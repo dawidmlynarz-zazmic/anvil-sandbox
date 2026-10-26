@@ -20,14 +20,14 @@ export function LockSetDialog({ gen }: { gen: Generation }) {
       <DialogTrigger asChild>
         <Button size="xs" variant="outline" intent="neutral">
           <Icon icon={LockIcon} />
-          Lock the set from #{gen.n}
+          Lock the stage set from #{gen.n}
         </Button>
       </DialogTrigger>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Lock the set from #{gen.n}?</DialogTitle>
+          <DialogTitle>Lock the stage set from #{gen.n}?</DialogTitle>
           <DialogDescription>
-            Every moment then keeps this structure ({lowerFirst(gen.title)}); only the look changes from song to song. Here’s how it sits in the venue.
+            Every song then uses this structure ({lowerFirst(gen.title)}), and only the light, colour and haze change. Here’s how it fits the venue.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
@@ -37,7 +37,7 @@ export function LockSetDialog({ gen }: { gen: Generation }) {
               {fails
                 ? `${fails === 1 ? 'One check fails' : `${fails} checks fail`}: production couldn’t build it as it is.`
                 : 'Nothing fails, but production will need a plan for what’s flagged.'}{' '}
-              To change it first, close this and describe the change on #{gen.n} (for example “{open.find((c) => c.fix)?.fix ?? 'narrower'}”); the new image keeps its own check.
+              To fix it first, close this and describe a change to #{gen.n}, for example “{open.find((c) => c.fix)?.fix ?? 'narrower'}”. The new image is checked again.
             </p>
           )}
         </DialogBody>
@@ -50,7 +50,7 @@ export function LockSetDialog({ gen }: { gen: Generation }) {
           <DialogClose asChild>
             <Button onClick={() => p.lockSet(gen.id)}>
               <Icon icon={LockIcon} />
-              {open.length ? `Lock with ${open.length} to resolve` : 'Lock the set'}
+              {open.length ? `Lock with ${open.length} ${open.length === 1 ? 'issue' : 'issues'}` : 'Lock the stage set'}
             </Button>
           </DialogClose>
         </DialogFooter>

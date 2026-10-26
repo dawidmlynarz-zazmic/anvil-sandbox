@@ -70,8 +70,8 @@ export function ShowPreview() {
         <DialogHeader>
           <DialogTitle>{scene ? `Song ${scene.moment.number} · ${scene.moment.title}` : 'The show'}</DialogTitle>
           <DialogDescription>
-            Every key moment’s clip in setlist order, {scenes.length * 8} seconds in all.
-            {missing ? ` ${missing === 1 ? '1 moment has' : `${missing} moments have`} no clip yet and ${missing === 1 ? 'is' : 'are'} left out.` : ''}
+            Every song’s clip in setlist order, {scenes.length * 8} seconds in all.
+            {missing ? ` ${missing === 1 ? '1 song has' : `${missing} songs have`} no clip yet and ${missing === 1 ? 'is' : 'are'} left out.` : ''}
           </DialogDescription>
         </DialogHeader>
         <DialogBody>

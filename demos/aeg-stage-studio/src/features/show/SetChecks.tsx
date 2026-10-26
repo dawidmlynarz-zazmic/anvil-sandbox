@@ -33,9 +33,9 @@ export function SetChecks({ spec, brief, reworked, compact, locked }: SetChecksP
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="type-text-sm-semibold">Against {venue.name}</span>
+        <span className="type-text-sm-semibold">At {venue.name}</span>
         <Badge tone={open.some((c) => c.status === 'fail') ? 'destructive' : open.length ? 'warning' : 'success'} variant="subtle" size="sm">
-          {open.length ? `${open.length} to resolve` : 'Every check passes'}
+          {open.length ? `${open.length} ${open.length === 1 ? 'issue' : 'issues'}` : 'Passes every check'}
         </Badge>
         <Badge tone="warning" variant="outline" size="xs">
           Sample estimates
@@ -47,7 +47,7 @@ export function SetChecks({ spec, brief, reworked, compact, locked }: SetChecksP
             {fp.width} m wide, {fp.height} m tall
           </KeyValueRow>
           <KeyValueRow label="Weight">
-            {fp.weight} t, {fp.flown} t of it flown
+            {fp.weight} t, {fp.flown} t of it hung from the {venue.covered ? 'grid' : 'roof'}
           </KeyValueRow>
           {!isCovered(venue.id) && venue.limits.gusts && <KeyValueRow label="Wind">Holds to {holdsTo(fp)} m/s</KeyValueRow>}
         </KeyValueList>
@@ -60,7 +60,7 @@ export function SetChecks({ spec, brief, reworked, compact, locked }: SetChecksP
             </CheckRow>
             <span className="text-muted-foreground ps-5 type-text-xs-normal">
               {c.detail}
-              {c.fix && c.status !== 'pass' ? (locked ? ` To fix it, unlock the set and try “${c.fix}” on its look.` : ` Try “${c.fix}”.`) : ''}
+              {c.fix && c.status !== 'pass' ? (locked ? ` To fix it, unlock the stage set and try “${c.fix}” on its look.` : ` Try “${c.fix}”.`) : ''}
             </span>
           </li>
         ))}

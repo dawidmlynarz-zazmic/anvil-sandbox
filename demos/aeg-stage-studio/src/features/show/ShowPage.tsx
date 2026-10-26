@@ -35,8 +35,8 @@ function MomentCard({ moment, canRemove }: { moment: SetlistMoment; canRemove: b
   const meta = [
     TIME_LABEL[momentLight(p.brief, moment.number, p.moments.length)],
     gens.length ? `${gens.length} ${gens.length === 1 ? 'image' : 'images'}` : '',
-    clip ? (clip.status === 'ready' ? 'clip' : 'clip rendering') : '',
-    kit === 'ready' ? 'kit' : kit === 'stale' ? 'kit out of date' : kit === 'building' ? 'kit building' : '',
+    clip ? (clip.status === 'ready' ? 'clip ready' : 'clip rendering') : '',
+    kit === 'ready' ? 'asset kit' : kit === 'stale' ? 'asset kit out of date' : kit === 'building' ? 'asset kit building' : '',
   ].filter(Boolean)
   return (
     <Card size="sm" className="h-full min-w-0">
@@ -98,7 +98,7 @@ function AddMomentDialog() {
       <DialogTrigger asChild>
         <Button variant="ghost" intent="neutral" size="sm">
           <Icon icon={PlusIcon} />
-          Add a moment
+          Add a key moment
         </Button>
       </DialogTrigger>
       <DialogContent aria-describedby={undefined}>
@@ -116,7 +116,7 @@ function AddMomentDialog() {
               setOpen(false)
             }}
           >
-            <Input label="Moment" placeholder="e.g. Sunset drop" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
+            <Input label="Name" placeholder="e.g. Sunset drop" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
             <Input label="What should happen" placeholder="e.g. The LED wall peaks with the sun" value={intent} onChange={(e) => setIntent(e.target.value)} />
           </form>
         </DialogBody>
@@ -171,33 +171,33 @@ export function ShowPage() {
             </div>
             {/* The running numbers, in one line. The full measures are in Handoff. */}
             <p className="text-muted-foreground type-text-sm-normal tabular-nums">
-              {chosen} of {p.moments.length} looks · {p.generations.length} images · {sends} {sends === 1 ? 'review' : 'reviews'}
-              {p.artistRating ? ` · rated ${p.artistRating}/5` : ''} · day {p.daysSinceBrief}
+              {chosen} of {p.moments.length} songs in motion · {p.generations.length} images · {sends ? `${sends} ${sends === 1 ? 'review' : 'reviews'} with the artist` : 'not sent yet'}
+              {p.artistRating ? ` · rated ${p.artistRating}/5` : ''} · day {p.daysSinceBrief} since the brief
             </p>
           </div>
 
           <Card size="sm">
             <CardContent className="flex flex-wrap items-center gap-4">
-              {p.set && (setSrc ? <img src={setSrc} alt={`The set: ${p.set.title}`} className="aspect-[21/9] w-44 shrink-0 rounded-md object-cover" /> : <div className="bg-muted aspect-[21/9] w-44 shrink-0 animate-pulse rounded-md" />)}
+              {p.set && (setSrc ? <img src={setSrc} alt={`Stage set: ${p.set.title}`} className="aspect-[21/9] w-44 shrink-0 rounded-md object-cover" /> : <div className="bg-muted aspect-[21/9] w-44 shrink-0 animate-pulse rounded-md" />)}
               {/* At least 14rem for the text: on a narrow board it wraps below the image instead of squeezing. */}
               <div className="flex min-w-56 flex-1 flex-col gap-1">
                 <span className="flex items-center gap-1.5 type-text-sm-semibold">
                   <Icon icon={p.set ? LockIcon : LockOpenIcon} size="xs" />
-                  {p.set && setSource ? `The set: ${p.set.title}` : 'The set isn’t locked yet'}
+                  {p.set && setSource ? `Stage set: ${p.set.title}` : 'Stage set not locked yet'}
                 </span>
                 <span className="text-muted-foreground type-text-xs-normal">
                   {p.set && setSource
-                    ? `Locked from song ${setSource.song} #${setSource.n}. Every moment keeps this structure.`
-                    : 'Choose a look for any moment, then lock its structure as the set.'}
-                  {offSet > 0 ? ` ${offSet === 1 ? '1 look has' : `${offSet} looks have`} another structure.` : ''}
+                    ? `From song ${setSource.song}, image #${setSource.n}. Every song uses this structure.`
+                    : 'Put an image into motion, then lock its structure so every song uses it.'}
+                  {offSet > 0 ? ` ${offSet === 1 ? '1 look has' : `${offSet} looks have`} a different structure.` : ''}
                 </span>
                 {setSource && (
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button type="button" className="focus-visible:focus-ring self-start rounded-full outline-none" aria-label={`Venue checks: ${flagged.length ? `${flagged.length} to resolve` : 'every check passes'}`}>
+                      <button type="button" className="focus-visible:focus-ring self-start rounded-full outline-none" aria-label={`Venue checks: ${flagged.length ? `${flagged.length} ${flagged.length === 1 ? 'issue' : 'issues'}` : 'passes every check'}`}>
                         <Badge tone={flagged.length ? 'warning' : 'success'} variant="subtle" size="sm">
                           <Icon icon={flagged.length ? CircleAlertIcon : CircleCheckIcon} />
-                          {flagged.length ? `${flagged.length} to resolve` : 'Every venue check passes'}
+                          {flagged.length ? `${flagged.length} ${flagged.length === 1 ? 'issue' : 'issues'}` : 'Passes every venue check'}
                         </Badge>
                       </button>
                     </PopoverTrigger>
@@ -238,12 +238,12 @@ export function ShowPage() {
           waiting
             ? 'With the artist'
             : left > 0
-              ? `${left} ${left === 1 ? 'moment needs' : 'moments need'} a look before sending`
+              ? `Put ${left} more ${left === 1 ? 'song' : 'songs'} into motion to send`
               : p.redo.length
-                ? `${p.redo.length} ${p.redo.length === 1 ? 'moment' : 'moments'} still to rework`
+                ? `${p.redo.length} ${p.redo.length === 1 ? 'song still needs' : 'songs still need'} the artist’s changes`
                 : sent
                   ? 'Sending again shares the latest looks and clips'
-                  : 'Every moment has a look'
+                  : 'Every song is in motion'
         }
       >
         {p.status === 'approved' ? (
