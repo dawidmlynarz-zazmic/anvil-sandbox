@@ -1,0 +1,22 @@
+@import '@anvil/styles/globals.css';
+/* Tailwind v4 only scans this project by default: also generate the classes Anvil's components use. */
+@source '../../../../../anvil-ui/src';
+
+/* Hero backdrop: a slow drift that stops for visitors who prefer less motion (and when paused). */
+@keyframes tp-drift {
+  from { transform: scale(1.04) translate3d(-1.5%, 0, 0); }
+  to { transform: scale(1.12) translate3d(1.5%, -1%, 0); }
+}
+.tp-drift { animation: tp-drift 28s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) {
+  .tp-drift { animation: none; }
+}
+.tp-paused .tp-drift { animation-play-state: paused; }
+
+/* The booking dialog leaves the chat column usable (see BookingDialog): the dimmed layer covers the page only. */
+@media (min-width: 48rem) {
+  body:has([data-booking]) [data-slot='dialog-overlay'] {
+    pointer-events: none;
+    left: 380px;
+  }
+}

@@ -5,6 +5,7 @@
   "engines": { "node": ">=22.12.0" },
   "scripts": {
     "stage-studio": "pnpm --filter aeg-stage-studio dev",
-    "ask-axs": "pnpm --filter axs-ticketing-agent dev"
+    "ask-axs": "pnpm --filter axs-ticketing-agent dev",
+    "travelpass-ai": "pnpm --filter travelpass-ai dev"
   }
 }
