@@ -2,6 +2,7 @@
 #   https://<owner>.github.io/anvil-sandbox/            a list of demos
 #   https://<owner>.github.io/anvil-sandbox/aeg-stage-studio/
 #   https://<owner>.github.io/anvil-sandbox/axs-ticketing-agent/
+#   https://<owner>.github.io/anvil-sandbox/travelpass-ai/
 #
 # Optional password screen: add a repository secret DEMO_PASSWORD and re-run this workflow. Only its SHA-256 goes into
 # the build. It keeps casual visitors out; it is not access control (the site and the source are public).
@@ -81,12 +82,23 @@ jobs:
           fi
           pnpm --filter axs-ticketing-agent build
 
+      - name: Build TravelPass AI
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/travelpass-ai/
+          DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
+        run: |
+          if [ -n "$DEMO_PASSWORD" ]; then
+            export VITE_DEMO_GATE="$(printf '%s' "$DEMO_PASSWORD" | sha256sum | cut -d' ' -f1)"
+          fi
+          pnpm --filter travelpass-ai build
+
       - name: Assemble the site
         run: |
           mkdir -p _site
           cp site/index.html _site/
           cp -r demos/aeg-stage-studio/dist _site/aeg-stage-studio
           cp -r demos/axs-ticketing-agent/dist _site/axs-ticketing-agent
+          cp -r demos/travelpass-ai/dist _site/travelpass-ai
           # Pages serves 404.html for any unknown path. With more than one single-page app, it sends deep links
           # (…/aeg-stage-studio/p/<id>/stills) to that demo's index.html, which restores the path (spa-github-pages).
           cp site/404.html _site/404.html
