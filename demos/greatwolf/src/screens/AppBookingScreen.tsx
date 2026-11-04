@@ -101,7 +101,7 @@ export function AppBookingScreen() {
       subtitle={kidkamp.note}
       meta={`Sleeps ${kidkamp.sleeps} · ${stay.spring.short}`}
       price={<span className="flex items-baseline gap-1"><Price current={money(kidkamp.nightly)} size="sm" /><span className="type-text-xs-normal text-muted-foreground">per night</span></span>}
-      ctaLabel="Book this suite"
+      ctaLabel="Switch"
       onCta={openCheckout}
     />
   )

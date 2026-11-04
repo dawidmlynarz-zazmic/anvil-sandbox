@@ -155,7 +155,7 @@ export function ConciergeScreen() {
                 { label: 'Guest', value: `${family.guest} ${family.name}, Suite ${family.suite}` },
                 { label: 'Stay', value: 'Fri, Mar 12 to Sun, Mar 14' },
                 { label: 'Plan', value: s.sensory ? 'Sensory-friendly Saturday' : 'Standard Saturday' },
-                { label: 'Last question', value: 'Towels, and changing the plan' },
+                { label: 'Request', value: 'Asked to speak with a person' },
               ]}
             />
           ),

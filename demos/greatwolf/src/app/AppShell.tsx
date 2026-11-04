@@ -39,7 +39,7 @@ function Shell() {
           </span>
         </div>
 
-        <nav aria-label="Guest journey" className="order-last flex w-full min-w-0 justify-center overflow-x-auto lg:order-none lg:w-auto lg:flex-1">
+        <nav aria-label="Guest journey" className="order-last flex w-full min-w-0 justify-center overflow-x-auto xl:order-none xl:w-auto xl:flex-1">
           <ol className="flex items-center gap-1">
             {STAGES.map((s, i) => {
               const active = moment.stage === s.id
@@ -60,7 +60,7 @@ function Shell() {
           </ol>
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 lg:ml-0">
+        <div className="ml-auto flex items-center gap-2 xl:ml-0">
           <ToggleGroup
             type="single"
             variant="outline"
