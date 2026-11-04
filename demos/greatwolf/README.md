@@ -39,7 +39,7 @@ Feedback insights in 5; accepting the return offer in 7 changes the homepage in 
 - **Not built:** screens 8 (AI-platform booking) and 9 (phone booking), the plan's stretch items.
 - **Folder:** `demos/greatwolf` (the plan said `great-wolf-lodge/`; the repo keeps demos under `demos/`).
 - **Fixtures** are TypeScript modules in `src/data/` (the plan said JSON), conversation scripts live in each screen.
-- **Brand:** neutral Anvil with a forest-green accent (`src/styles/app.css`); a text wordmark, no logo assets.
+- **Brand:** Anvil with Great Wolf Lodge's colors and shadows from the GWL Denkit Figma file (`src/styles/gwl-theme.css`, with each mapping noted). Typography, spacing and radius stay Anvil's. Denkit has no dark mode and no purple, so the dark palette and the assistant's teal accent are derived from its blues and teal. A text wordmark, no logo assets.
 - **Next moment** is a secondary-weight header button; the one primary action on a screen is the product's own
   (for example **Book for $1,122**).
 

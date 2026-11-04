@@ -95,7 +95,7 @@ export function AppBookingScreen() {
     <OfferCard
       layout="horizontal"
       className="w-full"
-      media={<div aria-hidden className="h-full w-full bg-gradient-to-br from-[#244a63] to-[#1d6b52]" />}
+      media={<div aria-hidden className="h-full w-full bg-gradient-to-br from-[#20486c] to-[#3a85bd]" />}
       badge="Water park passes included"
       title={kidkamp.name}
       subtitle={kidkamp.note}

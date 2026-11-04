@@ -14,12 +14,12 @@ interface Props {
 // DEMO-ONLY: a phone lock screen with one push notification, to show how the concierge reaches the guest first.
 export function LockScreen({ title, body, actions, date = 'Friday, March 12', time = '3:05' }: Props) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center bg-gradient-to-b from-[#16324a] via-[#244a63] to-[#35604f] px-4 pt-14 text-[#ffffff]" data-slot="lock-screen">
+    <div className="flex min-h-0 flex-1 flex-col items-center bg-gradient-to-b from-[#072745] via-[#123d65] to-[#005c3c] px-4 pt-14 text-[#ffffff]" data-slot="lock-screen">
       <p className="type-text-sm-medium opacity-80">{date}</p>
       <p className="mb-8 text-[64px] leading-none font-light tracking-tight">{time}</p>
       <div className="w-full rounded-2xl bg-[#ffffffd9] p-3 text-[#1c1c1e] shadow-lg backdrop-blur" role="group" aria-label="Notification">
         <div className="type-text-xs-medium mb-1 flex items-center gap-2 text-[#3c3c43]">
-          <span className="grid size-5 place-items-center rounded-md bg-[#1d6b52] text-[#ffffff]"><Icon icon={SparklesIcon} size="xs" /></span>
+          <span className="grid size-5 place-items-center rounded-md bg-[#123d65] text-[#ffffff]"><Icon icon={SparklesIcon} size="xs" /></span>
           <span>GREAT WOLF LODGE</span>
           <span className="ml-auto">now</span>
         </div>

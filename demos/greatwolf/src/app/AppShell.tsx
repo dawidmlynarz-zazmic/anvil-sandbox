@@ -29,7 +29,7 @@ function Shell() {
   const stageHome = (stage: StageId) => (MOMENTS.find((m) => m.stage === stage && m.side === moment.side) ?? MOMENTS.find((m) => m.stage === stage)!).id
 
   return (
-    <div className="flex h-svh min-h-0 flex-col bg-muted/40 text-foreground">
+    <div className="flex h-svh min-h-0 flex-col bg-[var(--gwl-canvas)] text-foreground">
       <header className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b bg-background px-4 py-2.5 sm:px-6">
         <div className="flex items-center gap-2.5">
           <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Icon icon={PawPrintIcon} /></span>

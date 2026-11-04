@@ -48,17 +48,17 @@ export function AfterScreen() {
   const scale = { widget: <RatingScale scale="faces" aria-label="Rate your stay" onValueChange={rate} />, widgetKey: 'scale' }
 
   const hold = () => {
-    patch({ offerAccepted: true, trip: { season: 'summer', suite: 'wolf-den', nights: 2, dining: false, booked: false } })
+    patch({ offerAccepted: true, trip: { season: 'summer', suite: sessionRef.current.trip.suite, nights: 2, dining: false, booked: false } })
     chatRef.current?.agentSay({ text: 'Held for you. Your homepage now shows the summer weekend.', chips: [{ label: 'See my updated homepage', onPick: () => navigate('/discover') }] })
   }
   const offer = (
     <OfferCard
       layout="horizontal"
       className="w-full"
-      media={<div aria-hidden className="h-full w-full bg-gradient-to-br from-[#b8873a] to-[#1d6b52]" />}
+      media={<div aria-hidden className="h-full w-full bg-gradient-to-br from-[#f2d997] to-[#088f96]" />}
       badge="Picked for your family"
       title="Summer weekend, same suite"
-      subtitle={`${inventory.suites['wolf-den'].name}, ${stay.summer.label}`}
+      subtitle={`${inventory.suites[session.trip.suite].name}, ${stay.summer.label}`}
       meta="2 nights, with a Saturday cabana"
       price={<span className="flex items-baseline gap-1"><Price current={money(inventory.suites['wolf-den'].nightly * 2)} size="sm" /><span className="type-text-xs-normal text-muted-foreground">suite, 2 nights</span></span>}
       ctaLabel="Hold this weekend"

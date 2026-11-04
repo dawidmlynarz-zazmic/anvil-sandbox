@@ -33,11 +33,11 @@ function Hero() {
   const summer = trip.season === 'summer'
   return (
     <section className="relative isolate overflow-hidden rounded-xl text-[#ffffff]" aria-label="Welcome">
-      <div aria-hidden className="gwl-drift absolute inset-0 -z-10 bg-gradient-to-br from-[#0f2f2a] via-[#1d6b52] to-[#2f8f9d]">
+      <div aria-hidden className="gwl-drift absolute inset-0 -z-10 bg-gradient-to-br from-[#072745] via-[#123d65] to-[#3a85bd]">
         <svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" className="absolute inset-x-0 bottom-0 h-3/4 w-full opacity-30">
-          <path d="M0 160V120l20-30 20 30 20-50 25 50 22-36 22 36 18-60 26 60 24-40 24 40 20-48 22 48 24-32 24 32 18-44 22 44 20-30 20 30v40z" fill="#06201a" />
+          <path d="M0 160V120l20-30 20 30 20-50 25 50 22-36 22 36 18-60 26 60 24-40 24 40 20-48 22 48 24-32 24 32 18-44 22 44 20-30 20 30v40z" fill="#071828" />
         </svg>
-        <span className="absolute top-6 right-10 size-12 rounded-full bg-[#fdecc8cc] blur-[1px]" />
+        <span className="absolute top-6 right-10 size-12 rounded-full bg-[#f2d997] blur-[1px]" />
       </div>
       <div className="flex min-h-48 flex-col justify-end gap-2 p-6 sm:min-h-56">
         <Badge variant="default" tone="neutral" size="sm" className="w-fit bg-[#ffffff33] text-[#ffffff] backdrop-blur">
@@ -62,7 +62,7 @@ function Milestone() {
         <CardTitle className="flex items-center gap-2"><Icon icon={CakeIcon} tone="agent" />{summer ? 'Your summer weekend is held' : 'Mia turns 7 on March 13'}</CardTitle>
         <CardDescription>
           {summer
-            ? 'Same Wolf Den Suite, Friday to Sunday. We kept Saturday afternoon for a cabana.'
+            ? `Same ${inventory.suites[session.trip.suite].name}, Friday to Sunday. We kept Saturday afternoon for a cabana.`
             : `Your favorite suite is open that weekend. The ${family.favoriteSuite} sleeps the whole family, and the party room has a slot on Saturday.`}
         </CardDescription>
       </CardHeader>
@@ -74,7 +74,7 @@ function TripPreview() {
   const [playing, setPlaying] = useState(false)
   return (
     <Card size="sm" className="max-w-xl overflow-hidden pt-0">
-      <div className="relative grid aspect-video place-items-center bg-gradient-to-br from-[#244a63] to-[#1d6b52]">
+      <div className="relative grid aspect-video place-items-center bg-gradient-to-br from-[#123d65] to-[#005c3c]">
         <Button variant="default" intent="inverse" size="icon-lg" shape="circle" aria-label={playing ? 'Pause the trip preview' : 'Play the trip preview'} onClick={() => setPlaying((p) => !p)}>
           <Icon icon={playing ? PauseIcon : PlayIcon} />
         </Button>
@@ -192,7 +192,7 @@ export function HomeScreen() {
   const summer = trip.season === 'summer'
   const opening: Reply = summer
     ? {
-        text: `Welcome back, ${family.guest}. I held the summer weekend you accepted: ${inventory.suites['wolf-den'].name}, ${datesOf(trip).short}, with a Saturday cabana. Want a dining plan too?`,
+        text: `Welcome back, ${family.guest}. I held the summer weekend you accepted: ${inventory.suites[trip.suite].name}, ${datesOf(trip).short}, with a Saturday cabana. Want a dining plan too?`,
         ...quote(),
         chips: [{ label: 'Add dining' }, { label: 'Book this trip', say: 'Book it' }],
       }
