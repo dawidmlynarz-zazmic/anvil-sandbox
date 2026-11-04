@@ -92,6 +92,16 @@ jobs:
           fi
           pnpm --filter travelpass-ai build
 
+      - name: Build Great Wolf Lodge
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/greatwolf/
+          DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
+        run: |
+          if [ -n "$DEMO_PASSWORD" ]; then
+            export VITE_DEMO_GATE="$(printf '%s' "$DEMO_PASSWORD" | sha256sum | cut -d' ' -f1)"
+          fi
+          pnpm --filter greatwolf build
+
       - name: Assemble the site
         run: |
           mkdir -p _site
@@ -99,6 +109,7 @@ jobs:
           cp -r demos/aeg-stage-studio/dist _site/aeg-stage-studio
           cp -r demos/axs-ticketing-agent/dist _site/axs-ticketing-agent
           cp -r demos/travelpass-ai/dist _site/travelpass-ai
+          cp -r demos/greatwolf/dist _site/greatwolf
           # Pages serves 404.html for any unknown path. With more than one single-page app, it sends deep links
           # (…/aeg-stage-studio/p/<id>/stills) to that demo's index.html, which restores the path (spa-github-pages).
           cp site/404.html _site/404.html

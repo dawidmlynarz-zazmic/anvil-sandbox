@@ -1,0 +1,31 @@
+@import '@anvil/styles/globals.css';
+/* Tailwind v4 only scans this project by default: also generate the classes Anvil's components use. */
+@source '../../../../../anvil-ui/src';
+
+/* A Great Wolf Lodge flavored accent: a forest green over Anvil's blue. White text on it passes AA in both modes. */
+:root,
+.dark {
+  --primary: #1d6b52;
+  --primary-foreground: #ffffff;
+  --ring: #1d6b52;
+  --button-primary-hover: #165842;
+}
+.dark {
+  --primary: #2a8a69;
+  --button-primary-hover: #34a37d;
+}
+
+/* The hero's backdrop drifts slowly; it stops for visitors who prefer less motion. */
+@keyframes gwl-drift {
+  from { transform: scale(1.04) translate3d(-1.5%, 0, 0); }
+  to { transform: scale(1.12) translate3d(1.5%, -1%, 0); }
+}
+.gwl-drift { animation: gwl-drift 26s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) {
+  .gwl-drift { animation: none; }
+}
+
+@keyframes gwl-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
