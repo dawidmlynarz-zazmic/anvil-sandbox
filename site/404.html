@@ -9,7 +9,7 @@
       // the demo's index.html as /<repo>/<demo>/?/some/route; the demo's own index.html restores the real path
       // (spa-github-pages). Anything else goes to the site's list of demos.
       (function (l) {
-        var demos = ['aeg-stage-studio', 'axs-ticketing-agent']
+        var demos = ['aeg-stage-studio', 'axs-ticketing-agent', 'travelpass-ai']
         var seg = l.pathname.split('/')
         var root = '/' + seg[1] + '/'
         if (demos.indexOf(seg[2]) === -1) return l.replace(root)

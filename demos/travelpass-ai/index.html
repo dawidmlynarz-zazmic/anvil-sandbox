@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- A client preview, not a public site: keep it out of search results. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <script>
+      // Restores a deep link that site/404.html redirected to /?/some/route (GitHub Pages single-page-app fallback).
+      ;(function (l) {
+        if (l.search[1] === '/') {
+          var d = l.search.slice(1).split('&').map(function (s) { return s.replace(/~and~/g, '&') }).join('?')
+          window.history.replaceState(null, null, l.pathname.slice(0, -1) + d + l.hash)
+        }
+      })(window.location)
+    </script>
+    <title>TravelPass AI (demo)</title>
+  </head>
+  <body>
+    <script>
+      // Light by default; a dark choice is kept across reloads (set before paint, so there's no flash).
+      try {
+        if (localStorage.getItem('travelpass-ai:theme') === 'dark') document.documentElement.classList.add('dark')
+      } catch {
+        // Without storage: light.
+      }
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
