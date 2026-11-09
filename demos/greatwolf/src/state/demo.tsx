@@ -21,6 +21,8 @@ interface Demo {
   composer: 'idle' | 'live'
   desktop: boolean
   framed: boolean
+  /** The window has room for the full desktop nav. */
+  roomyNav: boolean
   deviceMode: DeviceMode
   setDeviceMode: (m: DeviceMode) => void
   barHidden: boolean
@@ -37,6 +39,7 @@ interface Demo {
   submitCard: (msgId: number, payload: unknown) => void
   setSnap: (snap: Snap) => void
   toggleWiley: () => void
+  clearChat: () => void
   closeWiley: () => void
   openWiley: (snap?: Snap) => void
   next: () => void
@@ -322,6 +325,14 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
   const setSnap = useCallback((snap: Snap) => setS((x) => ({ ...x, snap })), [])
   const openWiley = useCallback((snap: Snap = 'half') => setS((x) => ({ ...x, open: true, snap })), [])
   const closeWiley = useCallback(() => setS((x) => ({ ...x, open: false })), [])
+  const clearChat = useCallback(() => {
+    token.current++
+    setMsgs([])
+    setTyping(false)
+    setPlaying(false)
+    playingRef.current = false
+    setComposer('idle')
+  }, [])
   const toggleWiley = useCallback(() => setS((x) => ({ ...x, open: !x.open, snap: x.open ? x.snap : 'half' })), [])
 
   const goStep = useCallback((n: number) => go(`j${journey}/${Math.min(STEPS, Math.max(1, n))}`), [go, journey])
@@ -449,6 +460,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       composer,
       desktop: framed ? false : desktop,
       framed,
+      roomyNav: w >= 1180,
       deviceMode,
       setDeviceMode,
       barHidden,
@@ -465,6 +477,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       submitCard,
       setSnap,
       toggleWiley,
+      clearChat,
       closeWiley,
       openWiley,
       next,
@@ -474,7 +487,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       reset,
       go,
     }),
-    [s, step, journey, msgs, typing, playing, composer, desktop, framed, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, payApple, listen, pick, submitCard, setSnap, toggleWiley, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
+    [s, step, journey, msgs, typing, playing, composer, desktop, framed, w, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, payApple, listen, pick, submitCard, setSnap, toggleWiley, clearChat, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
@@ -487,7 +500,7 @@ export function quoteOf(s: DemoState, nights = 2) {
   const rate = rateOf(s.selected.suite, s.selected.rate)
   const base = rate.price * nights
   const lines = [
-    { id: 'suite', label: `${suite.name}, ${nights} nights`, detail: rate.plan, amount: base },
+    { id: 'suite', label: `${suite.name.replace(/ Suite$/, '')}, ${nights} nights`, detail: rate.plan, amount: base },
     { id: 'passes', label: 'Water park passes', detail: '', amount: 0 },
     ...s.cart.map((c) => ({ id: c.id, label: c.label, detail: c.fresh ? 'Just added' : '', amount: c.amount })),
   ]

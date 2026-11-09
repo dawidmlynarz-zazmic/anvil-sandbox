@@ -9,15 +9,14 @@ import { money } from '~/data/fixtures'
 import { quoteOf, useDemo } from '~/state/demo'
 import type { Option } from '~/wiley/types'
 
-// ANVIL-CANDIDATE (AiChip): a suggested next prompt that reads as "ask the AI this", dashed with a sparkle, distinct
-// from an answer chip. Anvil's Quick Reply is one style for both.
-export function AiChip({ children, onClick }: { children: string; onClick: () => void }) {
+// ANVIL-CANDIDATE (AiChip): a suggested next prompt. Styled as greatwolf.com's AI Planner options (an outlined box
+// with bold navy text), plus a sparkle so it reads as "ask the AI this". Anvil's Quick Reply is one style for all.
+const CHIP =
+  'gwl-in inline-flex min-h-11 items-center gap-2 rounded-xl border-[1.5px] px-4 py-2.5 text-left type-text-sm-semibold font-bold transition-colors outline-none focus-visible:focus-ring'
+
+export function AiChip({ children, onClick, block }: { children: string; onClick: () => void; block?: boolean }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="gwl-in inline-flex min-h-9 items-center gap-1.5 rounded-full border border-dashed border-foreground/70 bg-background px-3 py-1.5 text-left type-text-sm-medium text-foreground transition-colors outline-none hover:border-solid hover:bg-accent focus-visible:focus-ring"
-    >
+    <button type="button" onClick={onClick} className={cn(CHIP, 'border-[var(--border-action)] bg-background text-foreground hover:bg-accent', block && 'w-full')}>
       <Icon icon={SparklesIcon} size="xs" className="shrink-0" />
       {children}
     </button>
@@ -30,10 +29,7 @@ export function AnswerChip({ children, onClick, pressed }: { children: string; o
       type="button"
       onClick={onClick}
       aria-pressed={pressed}
-      className={cn(
-        'gwl-in inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 py-1.5 type-text-sm-medium transition-colors outline-none focus-visible:focus-ring',
-        pressed ? 'border-primary bg-primary text-primary-foreground' : 'border-foreground/40 bg-background text-foreground hover:bg-accent',
-      )}
+      className={cn(CHIP, pressed ? 'border-[var(--gwl-navy)] bg-[var(--gwl-navy)] text-[var(--gwl-navy-foreground)]' : 'border-[var(--border-action)] bg-background text-foreground hover:bg-accent')}
     >
       {pressed && <Icon icon={CheckIcon} size="xs" />}
       {children}
@@ -101,11 +97,8 @@ export function TripQuote({ title = 'Your trip · sample prices', className, che
           <li key={l.id} className="flex items-baseline justify-between gap-3 type-text-sm-normal">
             <span>
               {l.label}
-              {l.detail && (
-                <span className={cn('ms-2 type-text-xs-medium', l.detail === 'Just added' ? 'rounded-sm bg-success-soft px-1.5 py-0.5 text-success-strong' : 'text-muted-foreground')}>
-                  {l.detail}
-                </span>
-              )}
+              {l.detail && l.detail !== 'Just added' && ` · ${l.detail}`}
+              {l.detail === 'Just added' && <span className="ms-2 rounded-sm bg-success-soft px-1.5 py-0.5 type-text-xs-medium whitespace-nowrap text-success-strong">Just added</span>}
             </span>
             <span className="type-text-sm-semibold whitespace-nowrap">{l.id === 'passes' ? 'Included' : l.id === 'magiquest' ? 'from $—' : money(l.amount)}</span>
           </li>

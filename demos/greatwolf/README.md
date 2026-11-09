@@ -25,6 +25,9 @@ desktop`). Scripted and mocked: no model, booking, payment or account behind it.
 
 ## How it is built
 
+- **It should read as greatwolf.com:** Montserrat throughout the site and Wiley (the site's typeface), the site's suite
+  photography, cards and Plan Your Stay form, and Wiley styled as the site's existing AI Planner (pale-blue panel, navy
+  user bubbles, outlined agent bubbles, outlined suggestions, Clear chat, the "Howls!" welcome, the AI Mode notice).
 - **The host page is GWL's** (header, lodge bar, Book Now, the live suite card with gallery, Starting Rate and View /
   Hide Rates, rate cards with "Join for Free"), styled with the Denkit colors in `src/styles/gwl-theme.css`, Montserrat
   for page headings and pill buttons, as on the live site. **Wiley is Anvil:** Chat Shell, Message Row, Prompt Input
@@ -45,7 +48,7 @@ desktop`). Scripted and mocked: no model, booking, payment or account behind it.
   place names.
 - **Sample (labeled "sample" in the UI or the quote):** Junior Wolf Pup Den's March rates other than $119 ($125 / $123 /
   $128), KidCabin's rate, the birthday party package ($249), MagiQuest ("from $—"). Sample rates print `[date]` for
-  cancellation deadlines. No real photography: labeled placeholders.
+  cancellation deadlines. Suite photos, floor plans, the logo and the Voyagers Club logo come from greatwolf.com (supplied); the water park, attractions and nearby places still use labeled placeholders.
 - **Fictional people:** the Martinez family. Confirmation GWL-48213 is invented.
 
 ## Decisions

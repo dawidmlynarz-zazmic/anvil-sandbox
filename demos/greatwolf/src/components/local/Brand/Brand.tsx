@@ -26,8 +26,16 @@ const TONES = {
   den: 'from-[#efe0c8] to-[#b98d5c] dark:from-[#3f2c18] dark:to-[#26190d]',
 }
 
-/** A labeled image placeholder. The label says what the photo would show. */
-export function Photo({ label, tone = 'lake', className, children }: { label: string; tone?: keyof typeof TONES; className?: string; children?: ReactNode }) {
+/** A real photo when there is one (`src`), otherwise a labeled placeholder saying what the photo would show. */
+export function Photo({ label, tone = 'lake', className, children, src }: { label: string; tone?: keyof typeof TONES; className?: string; children?: ReactNode; src?: string }) {
+  if (src) {
+    return (
+      <div className={cn('relative overflow-hidden', className)}>
+        <img src={src} alt={label} className="absolute inset-0 h-full w-full object-cover" />
+        {children}
+      </div>
+    )
+  }
   return (
     <div role="img" aria-label={`${label} (placeholder)`} className={cn('relative grid place-items-center overflow-hidden bg-gradient-to-br', TONES[tone], className)}>
       <span className="type-text-xs-medium rounded-full bg-[#ffffffcc] px-2.5 py-1 text-[#123d65] dark:bg-[#071828cc] dark:text-[#cae6ff]">{label}</span>

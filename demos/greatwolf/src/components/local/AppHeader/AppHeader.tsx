@@ -48,7 +48,7 @@ function Utility() {
 }
 
 export function AppHeader() {
-  const { desktop } = useDemo()
+  const { desktop, roomyNav } = useDemo()
   if (desktop) {
     return (
       <header className="shrink-0 border-b bg-background">
@@ -60,7 +60,8 @@ export function AppHeader() {
         </div>
         <div className="flex h-16 items-center gap-6 px-6">
           <Logo className="h-[26px]" />
-          <nav aria-label="Main" className="flex flex-1 items-center justify-end gap-6 type-text-sm-semibold">
+          {!roomyNav && <span className="flex-1" />}
+          <nav aria-label="Main" className={cn('flex flex-1 items-center justify-end gap-6 type-text-sm-semibold', !roomyNav && 'hidden')}>
             {['Explore', 'Stay', 'Day Visits', 'Deals', 'Celebrate'].map((n) => (
               <span key={n} className="inline-flex cursor-default items-center gap-0.5">
                 {n}
@@ -72,6 +73,11 @@ export function AppHeader() {
           <Button shape="pill" size="lg">
             Book Now
           </Button>
+          {!roomyNav && (
+            <Button variant="ghost" intent="neutral" size="icon" aria-label="Menu">
+              <Icon icon={MenuIcon} />
+            </Button>
+          )}
         </div>
       </header>
     )

@@ -7,9 +7,11 @@ import { Progress } from '@anvil/components/ui/progress'
 import { ToggleGroup, ToggleGroupItem } from '@anvil/components/ui/toggle-group'
 import { cn } from '@anvil/lib/utils'
 import { dates, families, money, nearby } from '~/data/fixtures'
+import { photos } from '~/data/photos'
 import { Photo, WileyAvatar, WileyTag } from '~/components/local/Brand/Brand'
 import { TripQuote } from '~/components/local/WileyCards/WileyCards'
 import { quoteOf, useDemo } from '~/state/demo'
+import { usePageWide } from '~/state/layout'
 import type { PlanItem } from '~/wiley/types'
 import { Page, PlanRow, Popular, Title } from './shared'
 
@@ -30,7 +32,8 @@ function Label({ children }: { children: string }) {
 
 /** J1·1: the lodge home, personalized for a signed-in family. Wiley waits in the launcher. */
 export function J1Home() {
-  const { desktop, go } = useDemo()
+  const { go } = useDemo()
+  const desktop = usePageWide()
   const toPlan = () => go('j1/2')
   const tag = (
     <Badge variant="subtle" size="sm" className="w-fit">
@@ -81,7 +84,7 @@ export function J1Home() {
       <Page>
         <Card className="grid grid-cols-[1.1fr_1fr] items-center gap-8 rounded-3xl p-8">
           {intro}
-          <Photo label="Generated hero · Martinez family" tone="dusk" className="h-64 rounded-2xl" />
+          <Photo src={photos.den} label="Junior Wolf Pup Den Suite, the family’s favorite" className="h-72 rounded-2xl" />
         </Card>
         <div className="grid grid-cols-2 gap-4">
           {weekend}
@@ -97,7 +100,7 @@ export function J1Home() {
   ]
   return (
     <Page className="pb-24">
-      <Photo label="Generated hero · Martinez family" tone="dusk" className="h-44 rounded-3xl" />
+      <Photo src={photos.den} label="Junior Wolf Pup Den Suite, the family’s favorite" className="h-48 rounded-3xl" />
       {tag}
       {intro}
       {weekend}
@@ -143,7 +146,7 @@ const MORE = [
 
 /** J1·4: the weekend in and around the lodge, built with Wiley. Day tabs on mobile, three columns on desktop. */
 export function J1Plan() {
-  const { desktop } = useDemo()
+  const desktop = usePageWide()
   const plan = usePlan()
   const [day, setDay] = useState<'fri' | 'sat' | 'sun'>('sun')
   return (
@@ -170,7 +173,7 @@ export function J1Plan() {
             <div className="grid grid-cols-3 gap-4">
               {MORE.filter((m) => !plan.some((p) => p.id === m.id)).map((m) => (
                 <Card key={m.id} className="gap-2 rounded-2xl p-3">
-                  <Photo label={m.name} tone={m.tone} className="h-24 rounded-xl" />
+                  <Photo label={m.name} tone={m.tone} className="h-24 rounded-xl [&>span]:hidden" />
                   <span className="type-text-sm-semibold">{m.name}</span>
                   <span className="-mt-1.5 type-text-xs-normal text-muted-foreground">{m.sub}</span>
                 </Card>
@@ -200,7 +203,8 @@ export function J1Plan() {
 
 /** J1·5: checkout, prefilled from the account. Payment is native; Wiley stays out of it. */
 export function J1Checkout() {
-  const { s, desktop, run, go } = useDemo()
+  const { s, run, go } = useDemo()
+  const desktop = usePageWide()
   const total = quoteOf(s)?.total ?? 0
   const applePay = (
     <Button shape="pill" size="lg" className="w-full bg-[#000000] text-[#ffffff] hover:bg-[#222222] dark:bg-[#ffffff] dark:text-[#000000]" onClick={() => run([{ do: 'sheet', which: 'apple' }])}>
@@ -275,7 +279,8 @@ export function J1Checkout() {
 
 /** J1·6: booked. The plan moves to the app. */
 export function J1Booked() {
-  const { s, desktop, run } = useDemo()
+  const { s, run } = useDemo()
+  const desktop = usePageWide()
   const plan = usePlan()
   const q = quoteOf(s)
   const sunday = plan.find((p) => p.day === 'sun' && (p.id === 'zoo' || p.id === 'garden'))

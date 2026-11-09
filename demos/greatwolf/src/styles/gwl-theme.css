@@ -100,9 +100,14 @@
   --gwl-yellow: #f2b51c;
   --gwl-yellow-foreground: #1d1a10;
   --gwl-sky: #e8f2fd;
-  --gwl-page: #f5f9fd;
+  --gwl-page: #ffffff;
   /* The logo's paw (from the supplied GWL logo). */
   --gwl-paw: #980000;
+  /* AI Planner and site surfaces (greatwolf.com screenshots): navy bubbles, pale agent bubbles, hairlines. */
+  --gwl-navy: #1c3750;
+  --gwl-navy-foreground: #ffffff;
+  --gwl-bubble: #f5f9fe;
+  --gwl-hairline: #dfe7ee;
 }
 
 .dark {
@@ -189,4 +194,8 @@
   --gwl-sky: #0c2540;
   --gwl-page: #061524;
   --gwl-paw: #e0525a;
+  --gwl-navy: #cae6ff;
+  --gwl-navy-foreground: #071828;
+  --gwl-bubble: #0c2540;
+  --gwl-hairline: #20486c;
 }

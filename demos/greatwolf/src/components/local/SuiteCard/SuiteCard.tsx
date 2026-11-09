@@ -5,17 +5,17 @@ import { Card } from '@anvil/components/ui/card'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon, CircleCheckIcon, Icon, InfoIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { money, ratesFor, type Rate, type RateKey, type Suite } from '~/data/fixtures'
-import { Photo, Sample } from '../Brand/Brand'
+import { suitePhotos } from '~/data/photos'
+import { Sample } from '../Brand/Brand'
 
 // ANVIL-CANDIDATE: the live greatwolf.com suite card (gallery with tier tag and counter, details, water park info box,
 // "Starting Rate" price block, View / Hide Rates) and its rate cards. Anvil's Offer Card holds one product and one CTA;
 // this needs an expanding set of rates with member pricing and a selected state.
 
-const TONE = { 'deluxe-queen': 'lake', 'pup-den-jr': 'den', kidcabin: 'forest' } as const
 
 export function Gallery({ suite, className }: { suite: Suite; className?: string }) {
   const [i, setI] = useState(0)
-  const tone = TONE[suite.id as keyof typeof TONE] ?? 'lake'
+  const shots = suitePhotos[suite.id] ?? []
   return (
     <div className={cn('relative overflow-hidden', className)}>
       <div
@@ -26,16 +26,23 @@ export function Gallery({ suite, className }: { suite: Suite; className?: string
         }}
         aria-label={`${suite.name} photos`}
       >
-        {Array.from({ length: suite.photos }, (_, n) => (
-          <Photo key={n} tone={tone} label={`${suite.name} · photo ${n + 1}`} className="h-full w-full shrink-0 snap-center" />
+        {shots.map((p, n) => (
+          <img
+            key={p.src}
+            src={p.src}
+            alt={`${suite.name}: ${p.alt} (${n + 1} of ${shots.length})`}
+            loading={n === 0 ? 'eager' : 'lazy'}
+            draggable={false}
+            className={cn('h-full w-full shrink-0 snap-center', p.plan ? 'bg-[#ffffff] object-contain p-2' : 'object-cover')}
+          />
         ))}
       </div>
       <span className="absolute top-3 left-3 rounded-sm border border-[#ffffff] bg-[#000000] px-2 py-0.5 type-text-xs-semibold text-[#ffffff]">{suite.tier}</span>
       <span className="absolute top-3 right-3 rounded-sm border border-[#ffffff] bg-[#000000] px-2 py-0.5 type-text-xs-semibold text-[#ffffff]" aria-live="polite">
-        {i + 1} / {suite.photos}
+        {i + 1} / {shots.length}
       </span>
       <span className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5" aria-hidden>
-        {Array.from({ length: suite.photos }, (_, n) => (
+        {shots.map((_, n) => (
           <span key={n} className={cn('size-2 rounded-full', n === i ? 'bg-[#ffffff]' : 'bg-[#ffffff80]')} />
         ))}
       </span>

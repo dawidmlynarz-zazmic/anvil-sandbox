@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Button } from '@anvil/components/ui/button'
 import { ChevronLeftIcon, ChevronRightIcon, Icon, MoonIcon, RotateCcwIcon, SunIcon } from '@anvil/components/ui/icon'
@@ -8,6 +8,7 @@ import { AppHeader } from '~/components/local/AppHeader/AppHeader'
 import { EndCard, Launcher, NativeSheets, Toast } from '~/components/local/Overlays/Overlays'
 import { WileyPanel } from '~/components/local/WileyPanel/WileyPanel'
 import { DemoProvider, useDemo } from '~/state/demo'
+import { PageWidthProvider } from '~/state/layout'
 import type { DeviceMode, Journey } from '~/wiley/types'
 import { useTheme } from './useTheme'
 
@@ -98,16 +99,19 @@ function PhoneFrame({ children }: { children: ReactNode }) {
 function Frame() {
   const { framed, barHidden, desktop, s, journey, step, go, openWiley, listen } = useDemo()
   const key = `${journey}.${step}`
+  const pageRef = useRef<HTMLElement | null>(null)
   const launcher = !s.open && (key === '1.1' ? (desktop ? 'pill' : 'bar') : ['1.5', '1.6', '2.1'].includes(key) ? 'pill' : null)
   const toStep2 = () => {
     go('j1/2')
   }
   const app = (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[var(--gwl-page)] text-foreground">
+    <div className="gwl-site relative flex h-full w-full flex-col overflow-hidden bg-[var(--gwl-page)] text-foreground">
       <AppHeader />
       <div className={cn('flex min-h-0 flex-1', !desktop && 'flex-col')}>
-        <main id="page-scroll" className="min-h-0 min-w-0 flex-1 overflow-y-auto">
-          <Outlet />
+        <main id="page-scroll" ref={pageRef} className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+          <PageWidthProvider target={pageRef}>
+            <Outlet />
+          </PageWidthProvider>
         </main>
         <WileyPanel />
       </div>

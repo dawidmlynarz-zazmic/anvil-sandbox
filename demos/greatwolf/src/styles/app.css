@@ -1,5 +1,5 @@
-/* The live greatwolf.com display face, for the host page's headings only. Wiley's chat keeps Anvil's type. */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap');
+/* greatwolf.com sets everything in Montserrat (500 / 700 / 900); the site and Wiley use it, the presenter bar does not. */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap');
 @import '@anvil/styles/globals.css';
 /* Tailwind v4 only scans this project by default: also generate the classes Anvil's components use. */
 @source '../../../../../anvil-ui/src';
@@ -64,3 +64,46 @@
 /* Hide the gallery scrollbar; it swipes. */
 .gwl-noscroll { scrollbar-width: none; }
 .gwl-noscroll::-webkit-scrollbar { display: none; }
+
+/* ---------------------------------------------------------------------------------------------------------------
+ * The site: greatwolf.com's type and surfaces over Anvil, inside the app frame only (`.gwl-site`).
+ * ------------------------------------------------------------------------------------------------------------- */
+.gwl-site {
+  --font-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
+}
+.gwl-site .gwl-display { font-weight: 900; letter-spacing: -0.015em; }
+/* Cards on greatwolf.com: white, a hairline and a soft navy shadow. In the components layer, so utilities such as
+   Wiley's highlight ring (also a box-shadow) still win. */
+@layer components {
+  .gwl-site main [data-slot='card'] {
+    border-color: var(--gwl-hairline);
+    box-shadow: 0 2px 18px rgb(28 55 80 / 0.1);
+  }
+}
+/* Buttons are bold and roomy, as on the site. */
+.gwl-site [data-slot='button'] { font-weight: 700; }
+
+/* ---------------------------------------------------------------------------------------------------------------
+ * Wiley, styled as greatwolf.com's AI Planner: a pale-blue wash, navy user bubbles, outlined agent bubbles,
+ * no author labels. Built on Anvil's Chat Shell, Message Row and Prompt Input underneath.
+ * ------------------------------------------------------------------------------------------------------------- */
+.gwl-chat {
+  background: linear-gradient(180deg, var(--gwl-sky) 0%, var(--background) 42%);
+}
+.gwl-chat [data-slot='message-header'] { display: none; }
+.gwl-chat [data-slot='message-row'][data-role='user'] [data-slot='message-bubble-content'] {
+  background: var(--gwl-navy);
+  color: var(--gwl-navy-foreground);
+  border-radius: 14px 14px 4px 14px;
+  padding: 12px 16px;
+}
+.gwl-chat [data-slot='message-row'][data-role='assistant'] [data-slot='message-bubble'] { max-width: 92%; }
+.gwl-chat [data-slot='message-row'][data-role='assistant'] [data-slot='message-bubble-content'] {
+  background: var(--gwl-bubble);
+  border: 1px solid var(--gwl-hairline);
+  border-radius: 14px 14px 14px 4px;
+  padding: 12px 16px;
+}
+.gwl-chat [data-slot='chat-shell-composer'] { background: transparent; }

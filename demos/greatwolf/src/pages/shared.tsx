@@ -4,19 +4,21 @@ import { Badge } from '@anvil/components/ui/badge'
 import { CalendarIcon, Icon, UsersIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { suiteById, suites } from '~/data/fixtures'
+import { photos } from '~/data/photos'
 import { CompactRates, SuiteCard } from '~/components/local/SuiteCard/SuiteCard'
 import { Photo, WileyTag } from '~/components/local/Brand/Brand'
 import { useDemo } from '~/state/demo'
+import { usePageWide } from '~/state/layout'
 import type { PlanItem } from '~/wiley/types'
 
 /** The page column: full width on mobile, a shared max width on desktop. */
 export function Page({ children, className, wide }: { children: ReactNode; className?: string; wide?: boolean }) {
-  const { desktop } = useDemo()
+  const desktop = usePageWide()
   return <div className={cn('mx-auto flex w-full flex-col gap-5', desktop ? cn('px-8 py-8', wide ? 'max-w-7xl' : 'max-w-6xl') : 'px-4 py-5', className)}>{children}</div>
 }
 
 export function Title({ children, tag, sub }: { children: ReactNode; tag?: ReactNode; sub?: ReactNode }) {
-  const { desktop } = useDemo()
+  const desktop = usePageWide()
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -53,7 +55,8 @@ export function PlanRow({ item }: { item: PlanItem }) {
 
 /** J1·2 and J2·2: the suites page. Wiley sets the filter chips, ranks and highlights; removing a chip shows all again. */
 export function SuitesPage() {
-  const { s, desktop, journey, patch, go } = useDemo()
+  const { s, journey, patch, go } = useDemo()
+  const desktop = usePageWide()
   const ranked = s.ranked.length > 0 && s.filters.length > 0
   const narrowed = ranked && !s.widened
   const order = ranked ? [...s.ranked, ...suites.map((x) => x.id).filter((id) => !s.ranked.includes(id))] : suites.map((x) => x.id)
@@ -117,7 +120,8 @@ export function SuitesPage() {
 
 /** J1·3 and J2·5: one suite with its rates open. Signed-in members see their two Voyagers rates only. */
 export function RatesPage() {
-  const { s, desktop, journey, patch, go } = useDemo()
+  const { s, journey, patch, go } = useDemo()
+  const desktop = usePageWide()
   const id = s.expanded ?? 'pup-den-jr'
   const suite = suiteById(id)
   const dates = journey === 1 ? 'Mar 12 – 14' : s.weekend
@@ -142,14 +146,14 @@ export function RatesPage() {
 
 const POPULAR = [
   { name: 'Indoor Water Park', tone: 'lake' },
-  { name: 'Themed Suites', tone: 'den' },
+  { name: 'Themed Suites', tone: 'den', src: photos.bunks },
   { name: 'MagiQuest', tone: 'dusk' },
   { name: 'Things to do nearby', tone: 'forest' },
-] as const
+] as { name: string; tone: 'lake' | 'den' | 'dusk' | 'forest'; src?: string }[]
 
 /** "Popular at this lodge": four tiles, a row on desktop and a swipeable strip on mobile. */
 export function Popular() {
-  const { desktop } = useDemo()
+  const desktop = usePageWide()
   return (
     <section aria-labelledby="popular" className="flex flex-col gap-3">
       <h2 id="popular" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
@@ -158,7 +162,7 @@ export function Popular() {
       <ul className={cn('gap-4', desktop ? 'grid grid-cols-4' : 'gwl-noscroll -mx-4 flex overflow-x-auto px-4')}>
         {POPULAR.map((p) => (
           <li key={p.name} className={cn('flex flex-col gap-2', !desktop && 'w-52 shrink-0')}>
-            <Photo label={p.name} tone={p.tone} className="h-28 rounded-2xl [&>span]:hidden" />
+            <Photo src={p.src} label={p.name} tone={p.tone} className="h-32 rounded-2xl [&>span]:hidden" />
             <span className="type-text-sm-semibold">{p.name}</span>
           </li>
         ))}

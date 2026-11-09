@@ -3,12 +3,14 @@ import { ElementSpotlight } from '@anvil/components/agent/element-spotlight'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
-import { ArrowLeftIcon, ArrowUpIcon, CalendarIcon, CheckIcon, ChevronRightIcon, Icon, MicIcon, SparklesIcon, UsersIcon } from '@anvil/components/ui/icon'
+import { ArrowLeftIcon, ArrowUpIcon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Icon, MicIcon, SparklesIcon, UsersIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { activityById, lodge, nearby, waterPark } from '~/data/fixtures'
+import { photos } from '~/data/photos'
 import { Photo, WileyAvatar, WileyTag } from '~/components/local/Brand/Brand'
 import { AiChip } from '~/components/local/WileyCards/WileyCards'
 import { useDemo } from '~/state/demo'
+import { usePageWide } from '~/state/layout'
 import type { Beat } from '~/wiley/types'
 import { Page, Popular, Title } from './shared'
 
@@ -25,7 +27,8 @@ const BEST_DEAL: Beat[] = [
 
 /** J2·1: the lodge landing page for a first-time visitor. "Describe your trip" sits beside the usual dates & guests. */
 export function J2Landing() {
-  const { desktop, go, openWiley, play } = useDemo()
+  const { go, openWiley, play } = useDemo()
+  const desktop = usePageWide()
   const [tab, setTab] = useState<'dates' | 'describe'>('describe')
   const [typed, setTyped] = useState('')
   useEffect(() => {
@@ -106,16 +109,28 @@ export function J2Landing() {
           </div>
         </>
       ) : (
-        <div className="flex flex-col gap-3">
-          <span className="flex h-12 items-center gap-2 rounded-lg border border-input px-3 type-text-md-normal">
-            <Icon icon={CalendarIcon} /> Select dates
-          </span>
-          <span className="flex h-12 items-center gap-2 rounded-lg border border-input px-3 type-text-md-normal">
-            <Icon icon={UsersIcon} /> 2 Guests
-          </span>
-          <Button shape="pill" size="lg" onClick={() => go('j2/2')}>
-            Search
-          </Button>
+        <div className="flex flex-col gap-4">
+          {[
+            { label: 'Check-In / Check-Out', icon: CalendarIcon, value: 'Select dates' },
+            { label: 'Guests', icon: UsersIcon, value: '2 Guests' },
+          ].map((f) => (
+            <div key={f.label} className="flex flex-col gap-1.5">
+              <span className="type-text-sm-medium">{f.label}</span>
+              <span className="flex h-12 items-center gap-3 rounded-md border-[1.5px] border-[var(--border-action)] bg-background px-4 type-text-md-medium">
+                <Icon icon={f.icon} />
+                <span className="flex-1">{f.value}</span>
+                <Icon icon={ChevronDownIcon} />
+              </span>
+            </div>
+          ))}
+          <div className="flex gap-3">
+            <Button shape="pill" size="lg" className="flex-1" onClick={() => go('j2/2')}>
+              Search
+            </Button>
+            <Button shape="pill" size="lg" variant="outline" intent="neutral" className="flex-1" onClick={() => setTab('describe')}>
+              <Icon icon={SparklesIcon} /> Plan With AI
+            </Button>
+          </div>
         </div>
       )}
     </div>
@@ -125,11 +140,11 @@ export function J2Landing() {
       {desktop ? (
         <Card className="grid grid-cols-[1.15fr_1fr] items-center gap-8 rounded-3xl p-8">
           {widget}
-          <Photo label="Hero video · Colorado Springs lodge" tone="lake" className="h-80 rounded-2xl" />
+          <Photo src={photos.roomView} label="A suite at the Colorado Springs lodge, with a balcony and mountain view" className="h-80 rounded-2xl" />
         </Card>
       ) : (
         <Card className="gap-4 rounded-3xl p-4">
-          <Photo label="Hero video · Colorado Springs lodge" tone="lake" className="h-36 rounded-2xl" />
+          <Photo src={photos.roomView} label="A suite at the Colorado Springs lodge, with a balcony and mountain view" className="h-40 rounded-2xl" />
           {widget}
         </Card>
       )}
@@ -140,7 +155,8 @@ export function J2Landing() {
 
 /** J2·3: Wiley walks the page to the water park and points at what fits a 3-year-old. */
 export function J2WaterPark() {
-  const { s, desktop, go } = useDemo()
+  const { s, go } = useDemo()
+  const desktop = usePageWide()
   return (
     <Page>
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 type-text-sm-medium text-muted-foreground">
@@ -181,7 +197,8 @@ export function J2WaterPark() {
 
 /** J2·4: things to do around the lodge, filtered by Wiley for kids aged 3 and 6. */
 export function J2ThingsToDo() {
-  const { s, desktop } = useDemo()
+  const { s } = useDemo()
+  const desktop = usePageWide()
   const filtered = s.highlight === 'nearby'
   const list = nearby.filter((a) => a.id !== 'wolf-center')
   return (
@@ -231,7 +248,8 @@ const SUBS: Record<string, { sub: string; tag: string }> = {
 
 /** J2·6: the plan Wiley saved, with booking and sharing on the page itself. */
 export function J2SavedPlan() {
-  const { s, desktop, run } = useDemo()
+  const { s, run } = useDemo()
+  const desktop = usePageWide()
   const things = [
     { id: 'cub-paw', name: 'Cub Paw Pool', sub: 'In the lodge · kiddie splash pad', tag: 'Included' },
     ...s.ideas.map((id) => {
@@ -242,7 +260,9 @@ export function J2SavedPlan() {
   return (
     <Page>
       <Title tag={<WileyTag>Saved by Wiley</WileyTag>}>Your plan</Title>
-      <Card className="gap-3 rounded-2xl p-5">
+      <Card className={cn('gap-4 overflow-hidden rounded-3xl p-0', desktop && 'flex-row')}>
+        <Photo src={photos.den} label="Junior Wolf Pup Den Suite" className={cn('shrink-0', desktop ? 'w-72' : 'h-44')} />
+        <div className={cn('flex flex-col gap-3 p-5', !desktop && 'pt-0')}>
         <p className="gwl-display text-lg">Junior Wolf Pup Den Suite · {s.weekend}</p>
         <p className="type-text-sm-normal text-muted-foreground">2 adults, 2 kids (3, 6) · water park passes included · from $119 / night</p>
         <div className={cn('flex gap-2', desktop ? 'flex-row' : 'flex-col')}>
@@ -252,6 +272,7 @@ export function J2SavedPlan() {
           <Button shape="pill" size="lg" variant="outline" intent="neutral" onClick={() => run([{ do: 'sheet', which: 'share' }])}>
             Share with my partner
           </Button>
+        </div>
         </div>
       </Card>
       <section aria-labelledby="things" className="flex flex-col gap-3">

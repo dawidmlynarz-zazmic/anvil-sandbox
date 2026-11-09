@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Button } from '@anvil/components/ui/button'
 import { CheckIcon, Icon, LinkIcon, MailIcon, MessageSquareIcon, MicIcon, SparklesIcon, XIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
+import { photos } from '~/data/photos'
 import { quoteOf, useDemo } from '~/state/demo'
 import { WileyAvatar } from '../Brand/Brand'
 
@@ -100,8 +101,9 @@ function Join() {
   const { joinVoyagers, run } = useDemo()
   return (
     <NativeSheet label="Join Voyagers Club" onClose={() => run([{ do: 'sheet', which: null }])}>
+      <img src={photos.voyagers} alt="Great Wolf Lodge Voyagers Club" className="mb-3 h-14 w-auto" />
       <h2 className="gwl-display text-xl">Join Voyagers Club, free</h2>
-      <p className="mt-1 type-text-sm-normal text-muted-foreground">Save on every stay. Wiley keeps your plan in your account.</p>
+      <p className="mt-1 type-text-sm-normal text-muted-foreground">Book at the Voyagers Club rate. Wiley keeps your plan in your account.</p>
       <div className="mt-5 flex flex-col gap-2.5">
         <Button shape="pill" variant="outline" intent="neutral" size="lg" onClick={joinVoyagers}>
           Continue with Google

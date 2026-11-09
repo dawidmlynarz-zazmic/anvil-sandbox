@@ -12,7 +12,8 @@ import { lodge } from '~/data/fixtures'
 import { useDemo } from '~/state/demo'
 import type { Msg, Snap } from '~/wiley/types'
 import { WileyAvatar } from '../Brand/Brand'
-import { CaptureCard, Chips, QuestionsCard, TripQuote } from '../WileyCards/WileyCards'
+import { scripts } from '~/wiley/scripts'
+import { AiChip, CaptureCard, Chips, QuestionsCard, TripQuote } from '../WileyCards/WileyCards'
 
 // ANVIL-CANDIDATE (the sheet): a chat that docks into a host page instead of covering it. Below 768px a bottom sheet
 // with peek / half / full snap points that shrinks the page above it (never a modal); from 768px a 420px sidebar
@@ -109,18 +110,26 @@ function Item({ m }: { m: Msg }) {
 }
 
 function Conversation() {
-  const { msgs, typing, composer, say, listen, closeWiley, desktop, journey, step } = useDemo()
+  const { msgs, typing, composer, say, listen, closeWiley, clearChat, pick, desktop, journey, step } = useDemo()
   const live = composer === 'live'
+  const suggestions = scripts[`${journey}.${step}`]?.fallback ?? []
   return (
-    <ChatShell surface={desktop ? 'side-panel' : 'mobile'} className="min-h-0 flex-1 bg-transparent">
+    <ChatShell surface={desktop ? 'side-panel' : 'mobile'} className="gwl-chat min-h-0 flex-1">
       <ChatShellHeader
         media={<WileyAvatar online />}
         title="Wiley"
         subtitle={desktop ? 'Great Wolf AI assistant' : undefined}
         actions={
-          <Button variant="ghost" intent="neutral" size="icon-sm" aria-label="Close Wiley" onClick={closeWiley}>
-            <Icon icon={XIcon} />
-          </Button>
+          <span className="flex items-center gap-2">
+            {msgs.length > 0 && (
+              <button type="button" onClick={clearChat} className="type-text-sm-semibold text-foreground underline underline-offset-2 outline-none focus-visible:focus-ring">
+                Clear chat
+              </button>
+            )}
+            <Button variant="ghost" intent="neutral" size="icon-sm" aria-label="Close Wiley" onClick={closeWiley}>
+              <Icon icon={XIcon} />
+            </Button>
+          </span>
         }
       />
       {desktop && (
@@ -133,9 +142,18 @@ function Conversation() {
         <FollowEnd signal={`${msgs.length}:${typing}`} />
         {msgs.length === 0 && !typing && (
           <MessageScrollerItem messageId="hello">
-            <MessageRow role="assistant" author="Wiley">
-              Howls! I can find the right suite, check what fits your kids and plan things to do in and around the lodge.
-            </MessageRow>
+            <div className="flex flex-col items-center gap-3 px-2 pt-6 pb-2 text-center">
+              <WileyAvatar size={64} />
+              <p className="gwl-display text-xl leading-tight text-foreground">Howls! Ready to book your next adventure?</p>
+              <p className="type-text-sm-normal text-foreground">From picking a suite to planning things to do around the lodge, I’m here to help you plan and book your stay.</p>
+              <div className="mt-2 flex w-full flex-col gap-2">
+                {suggestions.map((o) => (
+                  <AiChip key={o.label} block onClick={() => pick(0, o)}>
+                    {o.label}
+                  </AiChip>
+                ))}
+              </div>
+            </div>
           </MessageScrollerItem>
         )}
         {msgs.map((m) => (
@@ -147,11 +165,17 @@ function Conversation() {
           </MessageScrollerItem>
         )}
       </ChatShellThread>
-      <ChatShellComposer disclaimer="Scripted demo. Wiley never asks for card details in chat.">
+      <ChatShellComposer
+        disclaimer={
+          <span className="block text-center">
+            AI can make mistakes. By using AI Mode you agree to our <span className="underline">Terms</span> and <span className="underline">Privacy Policy</span>.
+          </span>
+        }
+      >
         <PromptInput
           size="compact"
           aria-label="Message Wiley"
-          placeholder={live ? 'Listening…' : 'Talk or type…'}
+          placeholder={live ? 'Listening…' : desktop ? 'Ask me anything about your stay…' : 'Ask about your stay…'}
           onVoice={listen}
           listening={live}
           leading={
