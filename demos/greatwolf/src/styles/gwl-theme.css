@@ -95,6 +95,12 @@
   /* Demo only: the warm page behind the device frames (Container/Warm) and the brand green (Brand/voyagers) */
   --gwl-canvas: #f9f3ee;
   --gwl-forest: #005c3c;
+  /* From the live site screenshots: teal links, the yellow offer button, the AI Planner's pale-blue wash. */
+  --gwl-teal: #00777d;
+  --gwl-yellow: #f2b51c;
+  --gwl-yellow-foreground: #1d1a10;
+  --gwl-sky: #e8f2fd;
+  --gwl-page: #f5f9fd;
 }
 
 .dark {
@@ -175,4 +181,9 @@
   --shadow-color-strong: rgb(0 0 0 / 0.5);
 
   --gwl-canvas: #04101c;
+  --gwl-teal: #4fd1d9;
+  --gwl-yellow: #f2b51c;
+  --gwl-yellow-foreground: #1d1a10;
+  --gwl-sky: #0c2540;
+  --gwl-page: #061524;
 }

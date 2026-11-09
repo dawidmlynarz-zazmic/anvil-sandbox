@@ -1,3 +1,5 @@
+/* The live greatwolf.com display face, for the host page's headings only. Wiley's chat keeps Anvil's type. */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap');
 @import '@anvil/styles/globals.css';
 /* Tailwind v4 only scans this project by default: also generate the classes Anvil's components use. */
 @source '../../../../../anvil-ui/src';
@@ -5,17 +7,60 @@
 /* Great Wolf Lodge colors and shadows over Anvil's tokens (from the GWL Denkit Figma file). */
 @import './gwl-theme.css';
 
-/* The hero's backdrop drifts slowly; it stops for visitors who prefer less motion. */
-@keyframes gwl-drift {
-  from { transform: scale(1.04) translate3d(-1.5%, 0, 0); }
-  to { transform: scale(1.12) translate3d(1.5%, -1%, 0); }
+/* Host page (greatwolf.com) styling: heavy uppercase headings, teal links, pill buttons. */
+.gwl-display {
+  font-family: 'Montserrat', var(--font-sans, ui-sans-serif), system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
-.gwl-drift { animation: gwl-drift 26s ease-in-out infinite alternate; }
-@media (prefers-reduced-motion: reduce) {
-  .gwl-drift { animation: none; }
+.gwl-caps {
+  text-transform: uppercase;
+}
+.gwl-link {
+  color: var(--gwl-teal);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-@keyframes gwl-grow {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
+/* A slow, soft pulse on the element Wiley just changed. Stops for people who prefer less motion. */
+@keyframes gwl-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ring) 55%, transparent); }
+  70% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--ring) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ring) 0%, transparent); }
 }
+.gwl-pulse { animation: gwl-pulse 1.6s ease-out 3; }
+
+@keyframes gwl-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.gwl-in { animation: gwl-in 240ms ease-out both; }
+
+@keyframes gwl-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+.gwl-up { animation: gwl-up 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes gwl-caret {
+  50% { opacity: 0; }
+}
+.gwl-caret::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: gwl-caret 1s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gwl-pulse, .gwl-in, .gwl-up, .gwl-caret::after { animation: none; }
+}
+
+/* Hide the gallery scrollbar; it swipes. */
+.gwl-noscroll { scrollbar-width: none; }
+.gwl-noscroll::-webkit-scrollbar { display: none; }

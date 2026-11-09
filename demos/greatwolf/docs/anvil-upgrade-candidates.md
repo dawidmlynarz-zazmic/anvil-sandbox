@@ -1,44 +1,60 @@
-# Great Wolf Lodge: Anvil upgrade candidates
+# Great Wolf Lodge Journeys v2: Anvil upgrade candidates
 
-Local components in `src/components/local/`, each with a story. Recommendation is for Dawid to decide; nothing here was
-added to Anvil. Fewer pieces are missing than the plan expected: Anvil already has Timeline, Voice Waveform (via Prompt
-Input), Citation Chip and Approval Card, which cover the plan's timeline, voice, cited-answer and suggested-action items.
+Built locally in `src/components/local/` and marked `// ANVIL-CANDIDATE`. Nothing here was added to Anvil; the
+recommendation is for Dawid to decide.
 
-## QuoteCard
+## Docked assistant sheet / sidebar (`WileyPanel`)
 
-- **Type:** agent pattern (itemized quote). Used in screen 1.
-- **Closest Anvil option checked:** Offer Card (one product, no line items), Key Value Row (no total or action).
-- **Proposed API:** `lines` (label, detail, amount), `total`, `actionLabel` / `onAction`, `doneLabel`, `note`.
-- **A11y:** list of lines; total is an `aria-live` region so changes are announced.
-- **Recommendation:** promote. Any agent that builds a basket (trips, tickets, orders) needs it.
+- **Type:** surface. Used on every chat step.
+- **Closest Anvil option checked:** Chat Shell `mobile` and `side-panel` (the content, used inside), Drawer (a modal
+  bottom sheet that covers the page), Launcher (a popover).
+- **Proposed API:** `snap` (`peek` · `half` · `full`), `onSnapChange`, `docked` (`sheet` · `sidebar`, or by breakpoint),
+  `context` (the context bar), `open` / `onOpenChange`. The host page shrinks or is pushed; never covered.
+- **A11y:** a labeled region, not a dialog (the page stays usable); the handle is a button that resizes with Arrow
+  Up / Down and says the current snap.
+- **Recommendation:** promote. "The assistant changed the page and you can see it" needs a container that never hides
+  the page.
 
-## HandoffCard
+## Nav entry pill (`AskWileyPill`)
 
-- **Type:** agent pattern (human handoff). Used in screen 3.
-- **Closest Anvil option checked:** Approval Card (asks a decision; does not show who joins or what was passed on).
-- **Proposed API:** `to`, `eta`, `context` (label and value rows).
-- **A11y:** heading names who is joining; context is a description list.
-- **Recommendation:** promote. The "no need to repeat yourself" proof is the point of a good handoff.
+- **Type:** entry point. Header on every page.
+- **Closest Anvil option checked:** Launcher (floating only), Button.
+- **Proposed API:** `active`, `count`, `badge` (the "AI" tag), `onClick`.
+- **A11y:** `aria-pressed` for the open state; the count has its own label ("1 saved to your plan").
+- **Recommendation:** promote as a Launcher variant (`placement="inline"`).
 
-## TicketStatusCard
+## AI prompt chip (`AiChip`)
 
-- **Type:** agent pattern (status of something filed for the user). Used in screens 4 and 5.
-- **Closest Anvil option checked:** Task Card (an agent's own run), Progress Steps (no message or reference).
-- **Proposed API:** `title`, `reference`, `stage` (requested · reviewing · resolved), `message`.
-- **A11y:** steps are an ordered list with state words; the message is `aria-live`.
-- **Recommendation:** promote, medium confidence. Stage names are specific here; the API should take a step list.
+- **Type:** agent pattern. Suggested next prompts in the thread and on the landing page.
+- **Closest Anvil option checked:** Quick Reply (one style for answers and prompts).
+- **Proposed API:** Quick Reply `variant="prompt"`: dashed outline and a sparkle, solid on hover.
+- **A11y:** a button; the label is the full prompt.
+- **Recommendation:** promote as a Quick Reply variant. Telling "answer this" from "ask the AI this" helps.
 
-## ForecastChart
+## Suite card and rate card (`SuiteCard`, `RateCard`, `Gallery`, `CompactRates`)
 
-- **Type:** data viz. Used in screen 6.
-- **Closest Anvil option checked:** Widget Metric Card (a number, no series); no chart component in Anvil.
-- **Proposed API:** `days` (label, forecast, lastYear), `highlight`, `callout`.
-- **A11y:** `role="img"` with a label, plus a screen-reader table of the same data. Hand-drawn SVG; a real build would
-  likely use Recharts behind the same props.
-- **Recommendation:** needs a decision on a chart library first. Not worth promoting as SVG.
+- **Type:** domain pattern (hospitality). J1·2, J1·3, J2·2, J2·5.
+- **Closest Anvil option checked:** Offer Card (one product, one CTA), Media Gallery, Price.
+- **Proposed API:** `media`, `tier`, `title`, `meta`, `description`, `info`, `price` (`from`, `note`, `promo`),
+  `rates[]` (`plan`, `policy`, `audience`, `price`, `selected`), `expanded`, `tag`, `highlighted`.
+- **A11y:** View / Hide Rates is `aria-expanded`; Select is `aria-pressed`; the gallery counter is a polite live region.
+- **Recommendation:** keep local. It reproduces GWL's live card on purpose; a generic "expandable offer with rates"
+  could come later from Offer Card.
+
+## Plan row (`PlanRow`)
+
+- **Type:** itinerary item with a status tag; "Suggested" is dashed until accepted.
+- **Closest Anvil option checked:** Timeline item (time, title, detail, trailing), which fits except for the dashed
+  suggested state.
+- **Recommendation:** propose a `suggested` state on Timeline item instead of a new component.
+
+## Questions card and capture card (`QuestionsCard`, `CaptureCard`)
+
+- **Closest Anvil option checked:** Clarifying Question (one question at a time, numbered options). The wireframe asks
+  two at once on desktop, with pill answers.
+- **Recommendation:** extend Clarifying Question with `layout="all"`; the capture card is an ordinary form in a Card.
 
 ## Demo-only (not candidates)
 
-`DeviceFrame` (desktop and phone frames), `LockScreen` (a push notification on a lock screen), `AgentChat` (a thin
-wrapper around Chat Shell, Message Row, Quick Reply and Prompt Input that this demo reuses on every screen),
-`Citations` (source chips that open the passage).
+`Brand` (text wordmark, photo placeholders, sample label, Wiley avatar, "Set by Wiley" tag), `AppHeader`, `Overlays`
+(launcher bar, mock Apple Pay, Voyagers join and share sheets, toast, end cards).

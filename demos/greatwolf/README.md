@@ -1,55 +1,66 @@
-# Great Wolf Lodge · AI journey (demo prototype)
+# Great Wolf Lodge · Journeys v2 (clickable prototype)
 
-A clickable, mocked demo of the "AI-first Great Wolf Lodge" vision from the *Great Wolf Lodge AI Roadmap, Q4 2026*
-deck (slide 5). It follows one family, the Martinez family, from booking Mia's 7th birthday weekend to a return offer,
-and shows the staff side of the same moments. No model, no backend, no real booking or payment. Names, prices and
-figures are fictional samples (see "Sample values" below). Built against Anvil `16e2b76`.
+Wiley, Great Wolf Lodge's AI planner, built into the current greatwolf.com experience and upgraded with Anvil UI. Two
+journeys at the Colorado Springs lodge, mobile first, with the desktop layout from the same components. Built from the
+Journeys v2 build script and the Figma page "Demo" (file `[INTERNAL] Great Wolf Lodge`, frames `Screen J… · mobile /
+desktop`). Scripted and mocked: no model, booking, payment or account behind it.
 
 ## Run it
 
-`pnpm greatwolf`, then use **Next moment** (top right) to walk the storyline in about 10 minutes, or the journey rail
-and the **Guest / Staff** toggle to move around.
+`pnpm greatwolf`, then pick a journey. The demo bar at the top is for the presenter:
 
-| # | Moment | Surface | Stage | Roadmap |
-| --- | --- | --- | --- | --- |
-| 1 | Personalized homepage + booking agent | Desktop | Discover & book | P2 |
-| 2 | App booking with (simulated) voice, handoff to the existing checkout | Phone | Plan | P2 |
-| 3 | In-app concierge: push, Saturday plan, sensory-friendly plan, Q&A, handoff to a person | Phone | Stay | P3 |
-| 4 | Charge explainer: duplicate cabana charge, refund request | Phone | Stay | P2 |
-| 5 | Staff assistant: cited answer, limit check, refund | Desktop | Inside the lodge | P2 |
-| 6 | Demand forecast with recommended actions | Desktop | Inside the lodge | P3 |
-| 7 | Post-stay check-in and return offer, which loops back to the homepage | Phone + email | After | P3 |
+- **Next** plays each step's happy path (it picks the scripted chip when the presenter hasn't), and fast-forwards while
+  Wiley is still talking ("Skip ahead"). Journey 1 takes about 10 presses, Journey 2 about 13.
+- **Device:** Auto (768px switches sheet ↔ sidebar), **Mobile 390** (a 390 × 844 phone on a laptop), Desktop.
+- Keys: → / ← step · R reset · D device · 1 / 2 journey · H hides the bar.
 
-Shared state links the screens: a refund approved in 5 resolves the ticket in 4; feedback given in 7 appears under
-Feedback insights in 5; accepting the return offer in 7 changes the homepage in 1. **Reset the demo** is in the ⋯ menu.
+| Step | Journey 1 · Martinez family, signed in | Journey 2 · first-time visitor, signed out |
+| --- | --- | --- |
+| 1 | Personalized lodge home; Wiley in the launcher | Landing: "Describe your trip" beside dates & guests |
+| 2 | Voice; the suites page filters, ranks and highlights | Two questions; suites re-rank |
+| 3 | Member rates only, Flexible selected, party add-on | Guided water park tour (Element Spotlight) |
+| 4 | Weekend plan in and around the lodge | Things to do nearby, highlighted and dimmed |
+| 5 | Checkout prefilled, Apple Pay sheet (mock) | Rates: join Voyagers free or book as guest |
+| 6 | Booked; the plan moves to the app | Save the plan, send it, share it |
 
-## Try this
+## How it is built
 
-- Homepage agent: "Add dining", "Change dates", then **Book**. The page cards follow the agent.
-- App: tap the mic (it plays a pre-written request; there is no speech recognition), then "Book this suite".
-- Concierge: flip **Sensory-friendly**, ask "Where are the towels?", "Move the party to 12:00", "Talk to a person".
-- Anything unscripted gets a short fallback that offers what the screen can do.
+- **The host page is GWL's** (header, lodge bar, Book Now, the live suite card with gallery, Starting Rate and View /
+  Hide Rates, rate cards with "Join for Free"), styled with the Denkit colors in `src/styles/gwl-theme.css`, Montserrat
+  for page headings and pill buttons, as on the live site. **Wiley is Anvil:** Chat Shell, Message Row, Prompt Input
+  (voice, live waveform), Badge, Element Spotlight, Card, Chip, Toggle Group.
+- **Wiley docks, it never covers:** a bottom sheet with peek / half / full below 768px (the page shrinks above it, so
+  what Wiley changed stays in view) and a 420px sidebar that pushes the page from 768px, with a context bar.
+- **Every Wiley action shows on the page** ("Set by Wiley", "Filtered by Wiley", highlight ring, spotlight) and can be
+  undone there (remove a filter chip, Hide Rates, Back to suites).
+- **Engine:** `src/state/demo.tsx` plays the beats in `src/wiley/scripts/` (user line, voice, agent line with typing
+  time, chips, card, page effect). Typed words match a few keywords per step; anything else gets "I'm a demo version of
+  Wiley. Try one of these:" with that step's chips, so free text never dead-ends.
+- **State** (rate, add-ons, plan, sign-in, filters) carries across steps; Reset restores the start of the journey.
+
+## Real and sample values
+
+- **Real (greatwolf.com):** lodge name and contact, suite names and descriptions for Deluxe Queen and Junior Wolf Pup Den,
+  the $109 and $119 starting rates, Deluxe Queen's four rates and cancellation dates, water park, attraction and nearby
+  place names.
+- **Sample (labeled "sample" in the UI or the quote):** Junior Wolf Pup Den's March rates other than $119 ($125 / $123 /
+  $128), KidCabin's rate, the birthday party package ($249), MagiQuest ("from $—"). Sample rates print `[date]` for
+  cancellation deadlines. No real photography: labeled placeholders.
+- **Fictional people:** the Martinez family. Confirmation GWL-48213 is invented.
 
 ## Decisions
 
-- **Dates corrected.** The deck pairs "Fri, Mar 14" with 2027, but Mar 14, 2027 is a Sunday. The stay is Fri Mar 12 to
-  Sun Mar 14, and Mia's birthday is Sat Mar 13.
-- **Duplicate charge.** The cabana is charged twice after the app confirms it a second time; the bill in 4 is seeded
-  that way whatever you do in 1 and 2. The agent in 2 confirms the cabana without claiming it fixed anything.
-- **Not built:** screens 8 (AI-platform booking) and 9 (phone booking), the plan's stretch items.
-- **Folder:** `demos/greatwolf` (the plan said `great-wolf-lodge/`; the repo keeps demos under `demos/`).
-- **Fixtures** are TypeScript modules in `src/data/` (the plan said JSON), conversation scripts live in each screen.
-- **Brand:** Anvil with Great Wolf Lodge's colors and shadows from the GWL Denkit Figma file (`src/styles/gwl-theme.css`, with each mapping noted). Typography, spacing and radius stay Anvil's. Denkit has no dark mode and no purple, so the dark palette and the assistant's teal accent are derived from its blues and teal. A text wordmark, no logo assets.
-- **Next moment** is a secondary-weight header button; the one primary action on a screen is the product's own
-  (for example **Book for $1,122**).
-
-## Sample values to replace
-
-All prices come from the deck except the dining plan ($160) and the cabana's second charge, which are invented for the
-story. Forecast numbers, the 97% peak and "+12 pts" are the deck's; the daily series around them is invented.
+- **Folder:** `demos/greatwolf` (the script says `great-wolf-lodge/`); the previous demo in this folder was replaced.
+- **Docs:** the script's `ANVIL-CANDIDATES.md` is `docs/anvil-upgrade-candidates.md`, as in the other demos.
+- **Dates:** the script's 2027 dates (the J1·1 wireframe says 2026). Mar 12, 2027 and Mar 5, 2027 are Fridays.
+- **Water park:** only Cub Paw Pool has a description in the script; Fort Mackenzie and Howlin' Tornado show their type
+  only, and the rest of the park is listed by name. Nothing about ride rules beyond "height minimums" is claimed.
+- **Suites:** only the three the script describes (Deluxe Queen, Junior Wolf Pup Den, KidCabin). The others on the site
+  need their real descriptions before they're added.
+- **J2·1 chips** follow the build script (the wireframe shows the live site's three chips).
 
 ## Setup
 
-Same as the other demos: Anvil is read from `../../../anvil-ui` (override with `ANVIL_PATH`). `pnpm --filter greatwolf
-typecheck` and `build`. The optional password screen turns on when `VITE_DEMO_GATE` is set at build. Local components
-have stories (`pnpm --filter greatwolf storybook`); see `docs/`.
+Anvil is read from `../../../anvil-ui` (override with `ANVIL_PATH`). `pnpm --filter greatwolf typecheck` and `build`.
+The optional password screen turns on when `VITE_DEMO_GATE` is set at build. Local components with stories:
+`pnpm --filter greatwolf storybook`.
