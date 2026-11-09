@@ -14,6 +14,7 @@ import pup3 from '~/assets/site/pup-den-3.webp'
 import pup4 from '~/assets/site/pup-den-4.webp'
 import pupPlan from '~/assets/site/pup-den-plan.webp'
 import voyagers from '~/assets/site/voyagers-club.png'
+import waterpark from '~/assets/site/waterpark-hero.avif'
 
 export interface SuitePhoto {
   src: string
@@ -48,4 +49,6 @@ export const photos = {
   bunks: pup3,
   roomView,
   voyagers,
+  /** Indoor water park (supplied by Dawid; the photo is of the Niagara lodge). */
+  waterpark,
 }

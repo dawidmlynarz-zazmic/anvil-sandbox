@@ -100,7 +100,8 @@ function Frame() {
   const { framed, barHidden, desktop, s, journey, step, go, openWiley, listen } = useDemo()
   const key = `${journey}.${step}`
   const pageRef = useRef<HTMLElement | null>(null)
-  const launcher = !s.open && (key === '1.1' ? (desktop ? 'pill' : 'bar') : ['1.5', '1.6', '2.1'].includes(key) ? 'pill' : null)
+  // Ask Wiley lives in the header; only J1·1 on mobile also shows the bottom "Ask away…" bar from the wireframe.
+  const launcher = !s.open && key === '1.1' && !desktop ? 'bar' : null
   const toStep2 = () => {
     go('j1/2')
   }

@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ElementSpotlight } from '@anvil/components/agent/element-spotlight'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
-import { ArrowLeftIcon, ArrowUpIcon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Icon, MicIcon, SparklesIcon, UsersIcon } from '@anvil/components/ui/icon'
+import { ArrowLeftIcon, ArrowUpIcon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Icon, MicIcon, SparklesIcon, TagIcon, UsersIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { activityById, lodge, nearby, waterPark } from '~/data/fixtures'
 import { photos } from '~/data/photos'
-import { Photo, WileyAvatar, WileyTag } from '~/components/local/Brand/Brand'
+import { Photo, WileyTag } from '~/components/local/Brand/Brand'
 import { AiChip } from '~/components/local/WileyCards/WileyCards'
 import { useDemo } from '~/state/demo'
 import { usePageWide } from '~/state/layout'
@@ -25,20 +25,47 @@ const BEST_DEAL: Beat[] = [
   { type: 'chips', style: 'ai', options: [{ label: 'Suite for my family vacation', then: [{ type: 'effect', actions: [{ do: 'go', to: 'j2/2' }] }] }] },
 ]
 
-/** J2·1: the lodge landing page for a first-time visitor. "Describe your trip" sits beside the usual dates & guests. */
+/** The three-arc wave mark greatwolf.com sets under the hero's welcome line. */
+function Wave() {
+  return (
+    <svg aria-hidden viewBox="0 0 76 14" className="h-3.5 w-[76px] text-[#7cc0fe]" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+      <path d="M2 3c4 9 18 9 22 0M27 3c4 9 18 9 22 0M52 3c4 9 18 9 22 0" />
+    </svg>
+  )
+}
+
+/** A field in the style of greatwolf.com's booking bar: a label over a white box with a blue outline. */
+function Field({ label, icon, value, className }: { label: string; icon: typeof CalendarIcon; value: string; className?: string }) {
+  return (
+    <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
+      <span className="type-text-md-medium text-foreground">{label}</span>
+      <span className="flex h-14 items-center gap-3 rounded-[4px] border-[1.5px] border-[var(--border-action)] bg-background px-4 type-text-md-medium text-foreground">
+        <Icon icon={icon} />
+        <span className="flex-1 truncate">{value}</span>
+        {icon !== TagIcon && <Icon icon={ChevronDownIcon} />}
+      </span>
+    </div>
+  )
+}
+
+/** J2·1: the lodge home for a first-time visitor. The hero's centre is the trip field; dates & guests is the site's form. */
 export function J2Landing() {
   const { go, openWiley, play } = useDemo()
   const desktop = usePageWide()
   const [tab, setTab] = useState<'dates' | 'describe'>('describe')
   const [typed, setTyped] = useState('')
+  const typedOnce = useRef(false)
   useEffect(() => {
     if (tab !== 'describe') return
-    setTyped('')
+    if (typedOnce.current) return setTyped(PROMPT)
     let i = 0
     const t = window.setInterval(() => {
       i++
       setTyped(PROMPT.slice(0, i))
-      if (i >= PROMPT.length) window.clearInterval(t)
+      if (i >= PROMPT.length) {
+        typedOnce.current = true
+        window.clearInterval(t)
+      }
     }, 38)
     return () => window.clearInterval(t)
   }, [tab])
@@ -54,80 +81,51 @@ export function J2Landing() {
       aria-selected={tab === key}
       onClick={() => setTab(key)}
       className={cn(
-        'inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 type-text-sm-semibold outline-none focus-visible:focus-ring',
-        key === 'describe' ? 'border border-dashed border-foreground/70' : 'border',
-        tab === key ? 'bg-accent' : 'bg-background',
+        '-mb-px inline-flex items-center gap-1.5 border-b-[3px] px-1 pb-2 whitespace-nowrap outline-none focus-visible:focus-ring',
+        desktop ? 'type-text-md-semibold' : 'type-text-sm-semibold',
+        tab === key ? 'border-[var(--gwl-navy)] text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
       )}
     >
       {key === 'describe' && <Icon icon={SparklesIcon} size="xs" />}
       {label}
     </button>
   )
-  const actions = (
-    <div className="flex shrink-0 gap-2">
-      <Button shape="circle" size="icon" aria-label="Talk to Wiley" onClick={() => go('j2/2')}>
-        <Icon icon={MicIcon} />
-      </Button>
-      <Button shape="circle" size="icon" variant="outline" intent="neutral" aria-label="Send to Wiley" onClick={() => go('j2/2')}>
-        <Icon icon={ArrowUpIcon} />
-      </Button>
-    </div>
-  )
-  const text = (
-    <p className={cn('min-w-0 flex-1 type-text-md-normal', !done && 'gwl-caret')} aria-label="Your trip">
-      {typed}
-    </p>
-  )
-  const widget = (
-    <div className="flex flex-col gap-4">
-      <h1 className={cn('gwl-display leading-tight', desktop ? 'text-4xl' : 'text-2xl')}>Welcome to Great Wolf Lodge – {lodge.city}</h1>
-      <p className="type-text-md-normal text-muted-foreground">Tell Wiley what you need. It finds the right suite and plans things to do here.</p>
-      <div role="tablist" aria-label="How to search" className="flex flex-wrap gap-2">
-        {tabBtn('dates', 'Dates & guests')}
+  const panel = (
+    <div className="w-full rounded-[4px] bg-[#ffffffeb] p-5 text-left text-foreground shadow-xl backdrop-blur dark:bg-[#071828eb]" role="region" aria-label="Plan your stay">
+      <div role="tablist" aria-label="How to search" className={cn('mb-5 flex border-b border-[var(--gwl-hairline)]', desktop ? 'gap-6' : 'gap-4')}>
         {tabBtn('describe', 'Describe your trip')}
+        {tabBtn('dates', 'Dates & guests')}
       </div>
       {tab === 'describe' ? (
-        <>
-          {desktop ? (
-            <div className="flex items-center gap-3 rounded-full border-2 border-foreground bg-background py-2 ps-5 pe-2">
-              {text}
-              {actions}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3 rounded-2xl border-2 border-foreground bg-background p-4">
-              <div className="flex items-start gap-3">
-                <WileyAvatar size={28} />
-                {text}
-              </div>
-              <div className="flex justify-end">{actions}</div>
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1.5">
+            <span className="type-text-md-medium">Tell Wiley about your trip</span>
+            <span className={cn('flex items-center gap-3 rounded-[4px] border-[1.5px] border-[var(--border-action)] bg-background ps-4 pe-2', desktop ? 'h-16' : 'min-h-16 py-2')}>
+              <span className={cn('min-w-0 flex-1 type-text-lg-medium', !done && 'gwl-caret')}>{typed}</span>
+              <Button shape="circle" size="icon" aria-label="Talk to Wiley" onClick={() => go('j2/2')}>
+                <Icon icon={MicIcon} />
+              </Button>
+              <Button shape="circle" size="icon" variant="outline" intent="neutral" aria-label="Send to Wiley" onClick={() => go('j2/2')}>
+                <Icon icon={ArrowUpIcon} />
+              </Button>
+            </span>
+          </label>
+          <div className={cn('flex flex-wrap gap-2', desktop && 'justify-center')}>
             <AiChip onClick={bestDeal}>What’s the best deal for my stay?</AiChip>
             <AiChip onClick={() => go('j2/2')}>Suite for my family vacation</AiChip>
             <AiChip onClick={() => go('j2/4')}>Things to do nearby</AiChip>
           </div>
-        </>
+        </div>
       ) : (
-        <div className="flex flex-col gap-4">
-          {[
-            { label: 'Check-In / Check-Out', icon: CalendarIcon, value: 'Select dates' },
-            { label: 'Guests', icon: UsersIcon, value: '2 Guests' },
-          ].map((f) => (
-            <div key={f.label} className="flex flex-col gap-1.5">
-              <span className="type-text-sm-medium">{f.label}</span>
-              <span className="flex h-12 items-center gap-3 rounded-md border-[1.5px] border-[var(--border-action)] bg-background px-4 type-text-md-medium">
-                <Icon icon={f.icon} />
-                <span className="flex-1">{f.value}</span>
-                <Icon icon={ChevronDownIcon} />
-              </span>
-            </div>
-          ))}
-          <div className="flex gap-3">
-            <Button shape="pill" size="lg" className="flex-1" onClick={() => go('j2/2')}>
-              Search
+        <div className={cn('flex gap-4', desktop ? 'items-end' : 'flex-col')}>
+          <Field label="Check-In / Check-Out" icon={CalendarIcon} value="Select dates" className={desktop ? 'min-w-44 flex-[1.3]' : ''} />
+          <Field label="Guests" icon={UsersIcon} value="2 Guests" className={desktop ? 'min-w-36 flex-1' : ''} />
+          <Field label="Promo Code" icon={TagIcon} value="" className={desktop ? 'min-w-28 flex-[0.8]' : ''} />
+          <div className={cn('flex shrink-0 gap-3', !desktop && 'pt-1')}>
+            <Button shape="pill" className="h-14 flex-1 px-7 text-base" onClick={() => go('j2/2')}>
+              Book Now
             </Button>
-            <Button shape="pill" size="lg" variant="outline" intent="neutral" className="flex-1" onClick={() => setTab('describe')}>
+            <Button shape="pill" variant="outline" intent="neutral" className="h-14 flex-1 px-6 text-base" onClick={() => setTab('describe')}>
               <Icon icon={SparklesIcon} /> Plan With AI
             </Button>
           </div>
@@ -136,20 +134,28 @@ export function J2Landing() {
     </div>
   )
   return (
-    <Page className="pb-24">
-      {desktop ? (
-        <Card className="grid grid-cols-[1.15fr_1fr] items-center gap-8 rounded-3xl p-8">
-          {widget}
-          <Photo src={photos.roomView} label="A suite at the Colorado Springs lodge, with a balcony and mountain view" className="h-80 rounded-2xl" />
-        </Card>
-      ) : (
-        <Card className="gap-4 rounded-3xl p-4">
-          <Photo src={photos.roomView} label="A suite at the Colorado Springs lodge, with a balcony and mountain view" className="h-40 rounded-2xl" />
-          {widget}
-        </Card>
-      )}
-      <Popular />
-    </Page>
+    <div className="pb-24">
+      <section aria-labelledby="hero-title" className="relative isolate text-[#ffffff]">
+        {/* The photo is a fixed-height band; the trip panel overlaps its bottom edge, as the booking bar does on greatwolf.com. */}
+        <div aria-hidden className={cn('absolute inset-x-0 top-0 -z-10 overflow-hidden bg-[#072745]', desktop ? 'h-[520px]' : 'h-[440px]')}>
+          <img src={photos.waterpark} alt="" className="h-full w-full object-cover" />
+          {/* Navy wash so the white headline reads over a bright photo. */}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(7_39_69/0.6)_0%,rgb(7_39_69/0.55)_45%,rgb(7_39_69/0.75)_100%)]" />
+        </div>
+        <div className={cn('mx-auto flex max-w-6xl flex-col items-center text-center', desktop ? 'gap-5 px-8 pt-16 pb-4' : 'gap-4 px-4 pt-10 pb-2')}>
+          <p className={cn('[text-shadow:0_1px_8px_rgb(0_0_0/0.35)]', desktop ? 'type-text-lg-medium' : 'type-text-sm-medium')}>Welcome to Great Wolf Lodge – {lodge.city}</p>
+          <Wave />
+          <h1 id="hero-title" className={cn('gwl-display uppercase leading-[0.95] text-[#ffffff] [text-shadow:0_2px_18px_rgb(0_0_0/0.35)]', desktop ? 'text-[64px]' : 'text-[34px]')}>
+            Great family adventure made easy
+          </h1>
+          <p className={cn('max-w-xl text-[#ffffff] [text-shadow:0_1px_8px_rgb(0_0_0/0.45)]', desktop ? 'type-text-lg-normal' : 'type-text-sm-normal')}>Tell Wiley what you need. It finds the right suite and plans things to do here.</p>
+          <div className={cn('w-full', desktop ? 'mt-4 max-w-5xl' : 'mt-2')}>{panel}</div>
+        </div>
+      </section>
+      <Page>
+        <Popular />
+      </Page>
+    </div>
   )
 }
 
