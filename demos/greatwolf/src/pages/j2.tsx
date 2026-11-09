@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ElementSpotlight } from '@anvil/components/agent/element-spotlight'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
@@ -15,6 +15,59 @@ import type { Beat } from '~/wiley/types'
 import { Page, Popular, Title } from './shared'
 
 const PROMPT = 'A weekend in March with a 3 and 6 year old'
+
+/** Sample requests that type, hold, erase and loop in the trip field. The first is the one Wiley's script answers. */
+const SAMPLES = [
+  PROMPT,
+  'A birthday party for an 8-year-old and 6 friends',
+  'Spring break with the grandparents and three kids',
+  'Which suite has bunk beds for two kids?',
+  'Things to do near the lodge with a toddler',
+  'Cheapest weekend in April for a family of five',
+]
+
+/** Types each sample out, holds it, erases it and moves on. Under reduced motion it just swaps them. */
+function useTypewriter(samples: string[], running: boolean) {
+  const [text, setText] = useState('')
+  useEffect(() => {
+    if (!running) return
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let i = 0
+    let pos = 0
+    let phase: 'type' | 'hold' | 'erase' | 'pause' = 'type'
+    let timer = 0
+    const tick = () => {
+      const s = samples[i]
+      if (reduced) {
+        setText(s)
+        i = (i + 1) % samples.length
+        timer = window.setTimeout(tick, 3200)
+        return
+      }
+      if (phase === 'type') {
+        pos++
+        setText(s.slice(0, pos))
+        if (pos >= s.length) phase = 'hold'
+        timer = window.setTimeout(tick, phase === 'hold' ? 2000 : 42)
+      } else if (phase === 'hold') {
+        phase = 'erase'
+        timer = window.setTimeout(tick, 22)
+      } else if (phase === 'erase') {
+        pos--
+        setText(s.slice(0, pos))
+        if (pos <= 0) phase = 'pause'
+        timer = window.setTimeout(tick, phase === 'pause' ? 450 : 22)
+      } else {
+        i = (i + 1) % samples.length
+        phase = 'type'
+        timer = window.setTimeout(tick, 42)
+      }
+    }
+    timer = window.setTimeout(tick, 300)
+    return () => window.clearTimeout(timer)
+  }, [samples, running])
+  return text
+}
 
 const BEST_DEAL: Beat[] = [
   { type: 'user', text: 'What’s the best deal for my stay?' },
@@ -53,23 +106,14 @@ export function J2Landing() {
   const { go, openWiley, play } = useDemo()
   const desktop = usePageWide()
   const [tab, setTab] = useState<'dates' | 'describe'>('describe')
-  const [typed, setTyped] = useState('')
-  const typedOnce = useRef(false)
-  useEffect(() => {
-    if (tab !== 'describe') return
-    if (typedOnce.current) return setTyped(PROMPT)
-    let i = 0
-    const t = window.setInterval(() => {
-      i++
-      setTyped(PROMPT.slice(0, i))
-      if (i >= PROMPT.length) {
-        typedOnce.current = true
-        window.clearInterval(t)
-      }
-    }, 38)
-    return () => window.clearInterval(t)
-  }, [tab])
-  const done = typed.length === PROMPT.length
+  // The field rotates sample requests until the guest sends; then it shows the request Wiley answers.
+  const [sending, setSending] = useState(false)
+  const sample = useTypewriter(SAMPLES, tab === 'describe' && !sending)
+  const send = () => {
+    if (sending) return
+    setSending(true)
+    window.setTimeout(() => go('j2/2'), 500)
+  }
   const bestDeal = () => {
     openWiley('half')
     void play(BEST_DEAL)
@@ -101,11 +145,18 @@ export function J2Landing() {
           <label className="flex flex-col gap-1.5">
             <span className="type-text-md-medium">Tell Wiley about your trip</span>
             <span className={cn('flex items-center gap-3 rounded-[4px] border-[1.5px] border-[var(--border-action)] bg-background ps-4 pe-2', desktop ? 'h-16' : 'min-h-16 py-2')}>
-              <span className={cn('min-w-0 flex-1 type-text-lg-medium', !done && 'gwl-caret')}>{typed}</span>
-              <Button shape="circle" size="icon" aria-label="Talk to Wiley" onClick={() => go('j2/2')}>
+              {sending ? (
+                <span className="min-w-0 flex-1 type-text-lg-medium text-foreground">{PROMPT}</span>
+              ) : (
+                <span className="min-w-0 flex-1 type-text-lg-medium text-muted-foreground gwl-caret" aria-live="off">
+                  <span className="sr-only">For example: </span>
+                  {sample}
+                </span>
+              )}
+              <Button shape="circle" size="icon" aria-label="Talk to Wiley" onClick={send}>
                 <Icon icon={MicIcon} />
               </Button>
-              <Button shape="circle" size="icon" variant="outline" intent="neutral" aria-label="Send to Wiley" onClick={() => go('j2/2')}>
+              <Button shape="circle" size="icon" variant="outline" intent="neutral" aria-label="Send to Wiley" onClick={send}>
                 <Icon icon={ArrowUpIcon} />
               </Button>
             </span>
