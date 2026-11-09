@@ -56,5 +56,5 @@ recommendation is for Dawid to decide.
 
 ## Demo-only (not candidates)
 
-`Brand` (text wordmark, photo placeholders, sample label, Wiley avatar, "Set by Wiley" tag), `AppHeader`, `Overlays`
+`Brand` (the GWL logo from the supplied SVG, photo placeholders, sample label, Wiley avatar, "Set by Wiley" tag), `AppHeader`, `Overlays`
 (launcher bar, mock Apple Pay, Voyagers join and share sheets, toast, end cards).

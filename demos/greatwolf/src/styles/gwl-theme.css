@@ -101,6 +101,8 @@
   --gwl-yellow-foreground: #1d1a10;
   --gwl-sky: #e8f2fd;
   --gwl-page: #f5f9fd;
+  /* The logo's paw (from the supplied GWL logo). */
+  --gwl-paw: #980000;
 }
 
 .dark {
@@ -186,4 +188,5 @@
   --gwl-yellow-foreground: #1d1a10;
   --gwl-sky: #0c2540;
   --gwl-page: #061524;
+  --gwl-paw: #e0525a;
 }

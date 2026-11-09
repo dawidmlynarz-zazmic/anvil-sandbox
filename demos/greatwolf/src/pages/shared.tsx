@@ -5,7 +5,7 @@ import { CalendarIcon, Icon, UsersIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { suiteById, suites } from '~/data/fixtures'
 import { CompactRates, SuiteCard } from '~/components/local/SuiteCard/SuiteCard'
-import { WileyTag } from '~/components/local/Brand/Brand'
+import { Photo, WileyTag } from '~/components/local/Brand/Brand'
 import { useDemo } from '~/state/demo'
 import type { PlanItem } from '~/wiley/types'
 
@@ -88,11 +88,6 @@ export function SuitesPage() {
           </>
         )}
       </div>
-      {narrowed && (
-        <p className="gwl-in type-text-sm-normal text-muted-foreground">
-          Showing {shown.length} of {suites.length} suites that fit. Remove a filter to see them all.
-        </p>
-      )}
       <div className="flex flex-col gap-5">
         {shown.map((id) => {
           const suite = suiteById(id)
@@ -126,7 +121,6 @@ export function RatesPage() {
   const id = s.expanded ?? 'pup-den-jr'
   const suite = suiteById(id)
   const dates = journey === 1 ? 'Mar 12 – 14' : s.weekend
-  const party = journey === 1 ? '2 adults, 2 kids (7, 4)' : '2 adults, 2 kids (3, 6)'
   const back = () => {
     patch({ expanded: null })
     go(journey === 1 ? 'j1/2' : 'j2/2')
@@ -136,12 +130,39 @@ export function RatesPage() {
     <Page>
       {desktop ? (
         <>
-          <Title sub={party}>Choose a rate · {dates}</Title>
-          <SuiteCard suite={suite} desktop signedIn={s.signedIn} tag={s.tags[id]} expanded selected={s.selected?.suite === id ? s.selected.rate : null} onToggleRates={back} onSelectRate={select} />
+          <Title tag={<WileyTag>Set by Wiley</WileyTag>}>{journey === 1 ? 'Choose a suite' : `Choose a rate · ${dates}`}</Title>
+          <SuiteCard suite={suite} desktop signedIn={s.signedIn} tag={journey === 1 ? s.tags[id] : 'Wiley’s pick'} expanded selected={s.selected?.suite === id ? s.selected.rate : null} onToggleRates={back} onSelectRate={select} />
         </>
       ) : (
-        <CompactRates suite={suite} signedIn={s.signedIn} selected={s.selected?.suite === id ? s.selected.rate : null} onToggleRates={back} onSelectRate={select} datesLabel={`${dates} · ${party}`} />
+        <CompactRates suite={suite} signedIn={s.signedIn} selected={s.selected?.suite === id ? s.selected.rate : null} onToggleRates={back} onSelectRate={select} datesLabel={`${dates} · 2 adults, 2 kids`} />
       )}
     </Page>
+  )
+}
+
+const POPULAR = [
+  { name: 'Indoor Water Park', tone: 'lake' },
+  { name: 'Themed Suites', tone: 'den' },
+  { name: 'MagiQuest', tone: 'dusk' },
+  { name: 'Things to do nearby', tone: 'forest' },
+] as const
+
+/** "Popular at this lodge": four tiles, a row on desktop and a swipeable strip on mobile. */
+export function Popular() {
+  const { desktop } = useDemo()
+  return (
+    <section aria-labelledby="popular" className="flex flex-col gap-3">
+      <h2 id="popular" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
+        Popular at this lodge
+      </h2>
+      <ul className={cn('gap-4', desktop ? 'grid grid-cols-4' : 'gwl-noscroll -mx-4 flex overflow-x-auto px-4')}>
+        {POPULAR.map((p) => (
+          <li key={p.name} className={cn('flex flex-col gap-2', !desktop && 'w-52 shrink-0')}>
+            <Photo label={p.name} tone={p.tone} className="h-28 rounded-2xl [&>span]:hidden" />
+            <span className="type-text-sm-semibold">{p.name}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

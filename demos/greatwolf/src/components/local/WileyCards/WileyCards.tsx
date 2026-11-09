@@ -60,10 +60,39 @@ export function Chips({ style, options, onPick }: { style: 'answer' | 'ai'; opti
 }
 
 /** The running trip total. Reads the chosen rate and the cart, so it updates when Wiley adds something. */
-export function TripQuote({ title = 'Your trip · sample prices', className }: { title?: string; className?: string }) {
+export function TripQuote({ title = 'Your trip · sample prices', className, checkout }: { title?: string; className?: string; checkout?: boolean }) {
   const { s } = useDemo()
   const q = quoteOf(s)
   if (!q) return null
+  if (checkout) {
+    // Checkout summary: the rate under the suite, no water park line, no "Just added" tags.
+    const extras = q.lines.filter((l) => l.id !== 'suite' && l.id !== 'passes')
+    const suite = q.lines[0]
+    return (
+      <Card className={cn('w-full gap-0 p-4', className)}>
+        <p className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">{title}</p>
+        <ul className="mt-2 flex flex-col gap-1.5 type-text-sm-normal">
+          <li className="flex items-baseline justify-between gap-3">
+            <span>{suite.label}</span>
+            <span className="type-text-sm-semibold">{money(suite.amount)}</span>
+          </li>
+          <li className="text-muted-foreground">
+            {q.rate.plan} · {q.rate.member ? 'Voyagers Club rate' : 'Non-member rate'}
+          </li>
+          {extras.map((l) => (
+            <li key={l.id} className="flex items-baseline justify-between gap-3">
+              <span>{l.label}</span>
+              <span className="type-text-sm-semibold">{l.id === 'magiquest' ? 'from $—' : money(l.amount)}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-3 flex items-baseline justify-between border-t pt-3">
+          <span className="type-text-sm-semibold">Total</span>
+          <span className="type-text-lg-semibold">{money(q.total)}</span>
+        </div>
+      </Card>
+    )
+  }
   return (
     <Card className={cn('w-full gap-0 p-4', className)} aria-live="polite">
       <p className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">{title}</p>
@@ -109,6 +138,7 @@ export function QuestionsCard({ done, answer: given, onDone }: { done?: boolean;
   }
   return (
     <Card className="w-full gap-4 p-4">
+      <p className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">Quick questions</p>
       <fieldset className="flex flex-col gap-2" disabled={done}>
         <legend className="mb-2 type-text-sm-semibold">Which March weekend?</legend>
         <div className="flex flex-wrap gap-2">

@@ -15,7 +15,7 @@ export function Launcher({ variant, onOpen, onMic }: { variant: 'bar' | 'pill'; 
       <div className="absolute inset-x-3 bottom-3 z-20 flex h-14 items-center gap-2 rounded-full border bg-background ps-2 pe-2 shadow-lg gwl-up">
         <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-2 rounded-full text-left outline-none focus-visible:focus-ring">
           <WileyAvatar size={36} online />
-          <span className="truncate type-text-sm-medium text-muted-foreground">Ask Wiley · talk or type</span>
+          <span className="truncate type-text-sm-medium text-muted-foreground">Ask away…</span>
         </button>
         <Button shape="circle" size="icon" aria-label="Talk to Wiley" onClick={onMic ?? onOpen}>
           <Icon icon={MicIcon} />

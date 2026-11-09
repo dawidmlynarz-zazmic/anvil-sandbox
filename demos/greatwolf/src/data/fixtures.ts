@@ -130,9 +130,9 @@ const GUIDE = 'GWL Things To Do guide'
 export const nearby: Activity[] = [
   { id: 'zoo', name: 'Cheyenne Mountain Zoo', where: 'nearby', blurb: 'Hand-feed giraffes, ride the carousel', tag: 'Great fit', fit: 'great', source: GUIDE },
   { id: 'garden', name: 'Garden of the Gods', where: 'nearby', blurb: 'Red rock trails, free entry', tag: 'Free', fit: 'free', source: GUIDE },
-  { id: 'manitou', name: 'Manitou Springs', where: 'nearby', blurb: 'Historic downtown', tag: 'Nearby', fit: 'ok', source: GUIDE },
-  { id: 'gorge', name: 'Royal Gorge Bridge & Park', where: 'nearby', blurb: 'Zip line, sky coaster', tag: 'Older kids', fit: 'older', source: GUIDE },
-  { id: 'barr', name: 'Barr Trail', where: 'nearby', blurb: 'Advanced hikers only', tag: 'Not for little kids', fit: 'no', source: GUIDE },
+  { id: 'manitou', name: 'Manitou Springs', where: 'nearby', blurb: 'Historic downtown, galleries', tag: 'Nearby', fit: 'ok', source: GUIDE },
+  { id: 'gorge', name: 'Royal Gorge Bridge & Park', where: 'nearby', blurb: 'Zip line and sky coaster, better for older kids', tag: 'Older kids', fit: 'older', source: GUIDE },
+  { id: 'barr', name: 'Barr Trail', where: 'nearby', blurb: 'Pikes Peak summit hike, advanced hikers only', tag: 'Not for little kids', fit: 'no', source: GUIDE },
   { id: 'wolf-center', name: 'Colorado Wolf and Wildlife Center', where: 'nearby', blurb: 'About an hour away', tag: 'Nearby', fit: 'ok', source: GUIDE },
 ]
 
@@ -150,7 +150,7 @@ export interface Attraction {
 /** The three water park cards Wiley points at; only Cub Paw Pool's description is given. The rest is listed by name. */
 export const waterPark: Attraction[] = [
   { id: 'cub-paw', name: 'Cub Paw Pool', kind: 'Kiddie Splash Pad', blurb: 'Shallow water and small slides for the littlest swimmers.' },
-  { id: 'fort-mackenzie', name: 'Fort Mackenzie', kind: 'Water park attraction' },
+  { id: 'fort-mackenzie', name: 'Fort Mackenzie', kind: 'Water Playground' },
   { id: 'howlin-tornado', name: 'Howlin’ Tornado', kind: 'Water Slide · height minimum' },
 ]
 

@@ -57,7 +57,11 @@ desktop`). Scripted and mocked: no model, booking, payment or account behind it.
   only, and the rest of the park is listed by name. Nothing about ride rules beyond "height minimums" is claimed.
 - **Suites:** only the three the script describes (Deluxe Queen, Junior Wolf Pup Den, KidCabin). The others on the site
   need their real descriptions before they're added.
-- **J2·1 chips** follow the build script (the wireframe shows the live site's three chips).
+- **Figma over the build script where they differ** (checked against all 24 frames, mobile and desktop, on 2026-11-09):
+  the header has no lodge bar or Book Now on mobile and the utility bar of the live site on desktop; the Ask Wiley pill
+  has no "AI" tag; J2·1 offers the live site's three prompts ("What's the best deal for my stay?", "Suite for my family
+  vacation", "Things to do nearby"); J2·2 sets the filters and Wiley's pick before asking the two questions; J1·1 desktop
+  is a hero card with "See other dates" and "Popular at this lodge"; J1·5 and J1·6 desktop use the frames' layouts.
 
 ## Setup
 

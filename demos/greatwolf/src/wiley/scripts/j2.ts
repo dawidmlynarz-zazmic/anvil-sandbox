@@ -80,12 +80,20 @@ export const j2: Record<number, StepScript> = {
     enter: [{ do: 'closeSheet' }],
     beats: [],
     voiceLine: 'A weekend in March with a 3 and 6 year old',
-    fallback: [{ label: 'Which suite fits us?', then: [goTo('j2/2')] }],
+    fallback: [{ label: 'Suite for my family vacation', then: [goTo('j2/2')] }],
   },
   2: {
     enter: [{ do: 'openSheet', snap: 'half' }],
     beats: [
       { type: 'user', text: 'A weekend in March with a 3 and 6 year old', reaction: 'wave' },
+      {
+        type: 'effect',
+        actions: [
+          { do: 'setFilters', chips: ['March weekends', '2 adults · 2 kids (3, 6)', 'Sleeps 4+'] },
+          { do: 'rank', order: ['pup-den-jr', 'deluxe-queen'], tag: { id: 'pup-den-jr', label: 'Wiley’s pick · bunks for the kids' } },
+          { do: 'highlight', id: 'pup-den-jr' },
+        ],
+      },
       { type: 'agent', text: 'Fun! Two quick questions so I can narrow it down:', textMobile: 'Fun! Which weekend?' },
       { type: 'card', component: 'questions', then: (p) => ranked(p as Answers) },
     ],

@@ -33,7 +33,7 @@ export function Picker() {
     <main className="min-h-dvh bg-[var(--gwl-page)] px-4 py-10 text-foreground">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <div className="flex items-center gap-3">
-          <Logo />
+          <Logo className="h-7" />
           <span className="type-text-sm-medium text-muted-foreground">Colorado Springs, CO · Journeys v2 prototype</span>
         </div>
         <div className="flex items-start gap-3">

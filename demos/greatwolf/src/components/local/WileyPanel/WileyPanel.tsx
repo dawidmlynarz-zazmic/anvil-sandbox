@@ -5,7 +5,7 @@ import { PromptInput } from '@anvil/components/agent/prompt-input'
 import { ToolLogLine } from '@anvil/components/agent/tool-log-line'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
-import { BookOpenIcon, Icon, MicIcon, XIcon } from '@anvil/components/ui/icon'
+import { BookOpenIcon, Icon, MicIcon, SparklesIcon, XIcon } from '@anvil/components/ui/icon'
 import { MessageScrollerItem, useMessageScroller } from '@anvil/components/ui/message-scroller'
 import { cn } from '@anvil/lib/utils'
 import { lodge } from '~/data/fixtures'
@@ -21,15 +21,15 @@ import { CaptureCard, Chips, QuestionsCard, TripQuote } from '../WileyCards/Wile
 const PAGES: Record<string, string> = {
   '1.1': 'Home',
   '1.2': 'Choose a suite',
-  '1.3': 'Rates',
-  '1.4': 'Your weekend',
+  '1.3': 'Junior Wolf Pup Den rates',
+  '1.4': 'Weekend plan',
   '1.5': 'Checkout',
   '1.6': 'Confirmation',
   '2.1': 'Home',
-  '2.2': 'Suites',
+  '2.2': 'Choose a suite',
   '2.3': 'Water park',
   '2.4': 'Things to do',
-  '2.5': 'Rates',
+  '2.5': 'Junior Wolf Pup Den rates',
   '2.6': 'Your plan',
 }
 
@@ -116,7 +116,7 @@ function Conversation() {
       <ChatShellHeader
         media={<WileyAvatar online />}
         title="Wiley"
-        subtitle={desktop ? 'Your Great Wolf planner' : undefined}
+        subtitle={desktop ? 'Great Wolf AI assistant' : undefined}
         actions={
           <Button variant="ghost" intent="neutral" size="icon-sm" aria-label="Close Wiley" onClick={closeWiley}>
             <Icon icon={XIcon} />
@@ -124,7 +124,8 @@ function Conversation() {
         }
       />
       {desktop && (
-        <p className="border-b bg-[var(--gwl-sky)] px-4 py-2 type-text-xs-medium text-muted-foreground">
+        <p className="flex items-center gap-2 border-b bg-[var(--gwl-sky)] px-4 py-2 type-text-xs-medium text-muted-foreground">
+          <Icon icon={SparklesIcon} size="xs" />
           Context: {lodge.city.split(',')[0]} lodge · {PAGES[`${journey}.${step}`]}
         </p>
       )}

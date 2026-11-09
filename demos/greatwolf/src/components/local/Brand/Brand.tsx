@@ -2,24 +2,20 @@ import type { ReactNode } from 'react'
 import { Badge } from '@anvil/components/ui/badge'
 import { Icon, PawPrintIcon, SparklesIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
+import logo from '~/assets/gwl-logo.svg?raw'
 
-// Demo-only brand pieces for the host page: a text wordmark (no logo assets), photo placeholders (no real GWL
+// Demo-only brand pieces for the host page: the GWL logo (supplied SVG), photo placeholders (no real GWL
 // photography), the "sample" label, Wiley's avatar and the "Set by Wiley" tag.
 
-/** The stacked GREAT / WOLF / LODGE wordmark in its square frame, as on greatwolf.com. Text only. */
+/** The Great Wolf Lodge logo (supplied SVG). Navy follows the text color, so it works in dark mode too. */
 export function Logo({ className }: { className?: string }) {
   return (
     <span
-      aria-label="Great Wolf Lodge"
       role="img"
-      className={cn('gwl-display inline-flex flex-col border-2 border-foreground px-1 py-0.5 text-[10px] leading-[1.05] tracking-[0.06em] text-foreground', className)}
-    >
-      <span aria-hidden>GREAT</span>
-      <span aria-hidden>
-        W<span className="text-[#b5232f]">●</span>LF
-      </span>
-      <span aria-hidden>LODGE</span>
-    </span>
+      aria-label="Great Wolf Lodge"
+      className={cn('inline-block aspect-[315/35] h-[22px] shrink-0 text-[#1c3750] dark:text-foreground [&>svg]:block', className)}
+      dangerouslySetInnerHTML={{ __html: logo }}
+    />
   )
 }
 

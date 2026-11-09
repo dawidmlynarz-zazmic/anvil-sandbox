@@ -1,6 +1,5 @@
-import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
-import { Icon, MenuIcon, SparklesIcon, UserIcon } from '@anvil/components/ui/icon'
+import { ChevronDownIcon, Icon, MenuIcon, SparklesIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { lodge } from '~/data/fixtures'
 import { useDemo } from '~/state/demo'
@@ -24,9 +23,6 @@ export function AskWileyPill({ className }: { className?: string }) {
     >
       <Icon icon={SparklesIcon} />
       Ask Wiley
-      <Badge tone="agent" size="xs" className={cn(s.open && 'bg-primary-foreground text-primary')}>
-        AI
-      </Badge>
       {s.planCount > 0 && (
         <span className="gwl-in absolute -top-2 -right-2 grid size-5 place-items-center rounded-full bg-[#b5232f] text-[11px] font-bold text-[#ffffff] ring-2 ring-background" aria-label={`${s.planCount} saved to your plan`}>
           {s.planCount}
@@ -36,28 +32,18 @@ export function AskWileyPill({ className }: { className?: string }) {
   )
 }
 
-function Account() {
+/** Utility links, as on greatwolf.com: the account links change with sign-in. */
+function Utility() {
   const { s } = useDemo()
-  return s.signedIn ? (
-    <span className="inline-flex items-center gap-1 type-text-sm-semibold">
-      <Icon icon={UserIcon} size="xs" />
-      My account
-    </span>
-  ) : (
-    <span className="type-text-sm-semibold">
-      <span className="underline underline-offset-2">Log In</span> / <span className="underline underline-offset-2">Sign Up</span>
-    </span>
-  )
-}
-
-/** Mobile lodge bar: the account as an icon, so the bar stays on one line at 390px. */
-function AccountIcon() {
-  const { s } = useDemo()
+  const links = ['Groups & Meetings', 'Reservations', ...(s.signedIn ? ['My account'] : ['Log In', 'Sign Up'])]
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 type-text-xs-semibold whitespace-nowrap">
-      <Icon icon={UserIcon} size="xs" />
-      {s.signedIn ? 'Account' : 'Log In'}
-    </span>
+    <nav aria-label="Utility" className="flex items-center gap-5">
+      {links.map((l) => (
+        <span key={l} className="cursor-default text-muted-foreground">
+          {l}
+        </span>
+      ))}
+    </nav>
   )
 }
 
@@ -67,17 +53,18 @@ export function AppHeader() {
     return (
       <header className="shrink-0 border-b bg-background">
         <div className="flex h-9 items-center justify-between gap-4 bg-[var(--gwl-sky)] px-6 type-text-xs-medium">
-          <span>
-            {lodge.name} · {lodge.city} · {lodge.phone}
+          <span className="type-text-xs-semibold">
+            {lodge.name} · {lodge.city}
           </span>
-          <Account />
+          <Utility />
         </div>
         <div className="flex h-16 items-center gap-6 px-6">
-          <Logo />
-          <nav aria-label="Main" className="flex flex-1 items-center gap-5 type-text-sm-semibold">
+          <Logo className="h-[26px]" />
+          <nav aria-label="Main" className="flex flex-1 items-center justify-end gap-6 type-text-sm-semibold">
             {['Explore', 'Stay', 'Day Visits', 'Deals', 'Celebrate'].map((n) => (
-              <span key={n} className="cursor-default">
+              <span key={n} className="inline-flex cursor-default items-center gap-0.5">
                 {n}
+                <Icon icon={ChevronDownIcon} size="xs" />
               </span>
             ))}
           </nav>
@@ -92,18 +79,11 @@ export function AppHeader() {
   return (
     <header className="shrink-0 border-b bg-background">
       <div className="flex h-14 items-center gap-3 px-4">
-        <Logo />
+        <Logo className="h-[18px]" />
         <span className="flex-1" />
         <AskWileyPill />
         <Button variant="ghost" intent="neutral" size="icon" aria-label="Menu">
           <Icon icon={MenuIcon} />
-        </Button>
-      </div>
-      <div className="flex h-11 items-center gap-3 bg-[var(--gwl-sky)] px-4">
-        <span className="min-w-0 flex-1 truncate type-text-sm-semibold">{lodge.city}</span>
-        <AccountIcon />
-        <Button shape="pill" size="sm">
-          Book Now
         </Button>
       </div>
     </header>
