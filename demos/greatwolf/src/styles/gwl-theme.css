@@ -1,0 +1,201 @@
+/*
+ * Great Wolf Lodge colors and shadows over Anvil's tokens. Source: the GWL Denkit Figma file (Color collection,
+ * Semantic and Primitives; effect styles), read on 2026-11-04. Colors and shadows only: no typography, no spacing, and
+ * radius is left alone (Denkit's 4px / 8px / pill already fit Anvil's 8px scale).
+ *
+ * Denkit has no dark mode, so the .dark block is derived from its blues (primary 900/950, deep lake) and is ours.
+ * Where Anvil's component model differs from Denkit's, the choice is noted inline.
+ */
+
+:root,
+.light {
+  /* Surfaces and text (Semantic/Container, Semantic/Text) */
+  --background: #ffffff;
+  --background-inverse: #072745; /* Container/Dark Blue */
+  --muted: #f6f6f6; /* Container/Neutral */
+  --accent: #e1f1ff; /* Controls/Fill/Hover */
+  --foreground: #123d65; /* Text/Default */
+  --foreground-inverse: #ffffff;
+  --foreground-subtle: #6d6d6d; /* greyscale/500 */
+  --foreground-disabled: #888888; /* greyscale/400 */
+  --foreground-link: #1a5c98; /* Link/default */
+  /* Denkit's Text/Subtle is blue (#1a5c98); Anvil uses muted text for hints everywhere, so it stays grey (greyscale/600). */
+  --muted-foreground: #5d5d5d;
+
+  /* Lines (Semantic/Border, Semantic/Controls/Border) */
+  --border: #e7e7e7; /* divider-subtle */
+  --border-strong: #b0b0b0;
+  --input: #237aca; /* Controls/Border/Default */
+  --border-action: #237aca;
+  --border-action-hover: #1a5c98;
+  --ring: #2c99fd; /* Brand/highlight */
+
+  /* Primary action (Semantic/Button/Primary): navy fill, light-blue text */
+  --primary: #123d65;
+  --primary-foreground: #cae6ff;
+  /* Denkit flips to a light-blue fill on hover; Anvil keeps the text color, so hover goes one step lighter in blue. */
+  --button-primary-hover: #1a5c98;
+  --button-neutral: #072745;
+  --button-neutral-foreground: #ffffff;
+  --button-neutral-hover: #123d65;
+  --button-outline: #ffffff;
+  --button-outline-foreground: #123d65; /* Button/Text/Secondary */
+  --button-outline-hover: #cae6ff; /* Button/Fills/Secondary-hover */
+
+  /* Status (Semantic/Controls/Alert and Primitives) */
+  --info: #237aca;
+  --info-foreground: #ffffff;
+  --info-medium: #1a5c98;
+  --info-muted: #a4d3fe;
+  --info-soft: #cae6ff;
+  --info-subtle: #e1f1ff;
+  --info-strong: #123d65;
+
+  --success: #00844f;
+  --success-foreground: #ffffff;
+  --success-medium: #005c3c; /* deep forest green */
+  --success-muted: #91f0ca;
+  --success-soft: #bff6e0;
+  --success-subtle: #f2fdf9;
+  --success-strong: #005349;
+
+  --warning: #ff9838;
+  --warning-foreground: #331e0b;
+  --warning-medium: #995b22;
+  --warning-muted: #ffd3a9;
+  --warning-soft: #ffe5cd;
+  --warning-subtle: #fffaf5;
+  --warning-strong: #663d16;
+
+  --destructive: #a51b32;
+  --destructive-foreground: #ffffff;
+  --button-destructive-hover: #7c1426;
+  --danger: #a51b32;
+  --danger-foreground: #ffffff;
+  --danger-medium: #7c1426;
+  --danger-muted: #eaa0ac;
+  --danger-soft: #f3c8cf;
+  --danger-subtle: #fdf4f5;
+  --danger-strong: #520e19;
+
+  /* The assistant's accent. Denkit has no purple, so it takes kiddie pool blue (the teal in its palette). */
+  --agent: #088f96;
+  --agent-foreground: #ffffff;
+  --agent-medium: #10727a;
+  --agent-muted: #a1fff8;
+  --agent-soft: #cdfffa;
+  --agent-subtle: #ebfffc;
+  --agent-strong: #053f47;
+
+  /* Shadows (effect styles): all Dark Blue at 15%, 25% for the strongest */
+  --shadow-color-soft: rgb(7 39 69 / 0.15);
+  --shadow-color-medium: rgb(7 39 69 / 0.15);
+  --shadow-color-strong: rgb(7 39 69 / 0.25);
+
+  /* Demo only: the warm page behind the device frames (Container/Warm) and the brand green (Brand/voyagers) */
+  --gwl-canvas: #f9f3ee;
+  --gwl-forest: #005c3c;
+  /* From the live site screenshots: teal links, the yellow offer button, the AI Planner's pale-blue wash. */
+  --gwl-teal: #00777d;
+  --gwl-yellow: #f2b51c;
+  --gwl-yellow-foreground: #1d1a10;
+  --gwl-sky: #e8f2fd;
+  --gwl-page: #ffffff;
+  /* The logo's paw (from the supplied GWL logo). */
+  --gwl-paw: #980000;
+  /* AI Planner and site surfaces (greatwolf.com screenshots): navy bubbles, pale agent bubbles, hairlines. */
+  --gwl-navy: #1c3750;
+  --gwl-navy-foreground: #ffffff;
+  --gwl-bubble: #f5f9fe;
+  --gwl-hairline: #dfe7ee;
+}
+
+.dark {
+  --background: #071828; /* primary/950 */
+  --background-inverse: #cae6ff;
+  --muted: #0c2540;
+  --accent: #123d65;
+  --foreground: #e1f1ff;
+  --foreground-inverse: #071828;
+  --foreground-subtle: #96c1e3;
+  --foreground-disabled: #5ea1d2;
+  --foreground-link: #7cc0fe;
+  --muted-foreground: #a4d3fe;
+
+  --border: #20486c;
+  --border-strong: #296aa0;
+  --input: #3a85bd;
+  --border-action: #54acfd;
+  --border-action-hover: #7cc0fe;
+  --ring: #54acfd;
+
+  /* Denkit's inverted primary: light-blue fill, dark text */
+  --primary: #cae6ff;
+  --primary-foreground: #072745;
+  --button-primary-hover: #a4d3fe;
+  --button-neutral: #e1f1ff;
+  --button-neutral-foreground: #071828;
+  --button-neutral-hover: #cae6ff;
+  --button-outline: #071828;
+  --button-outline-foreground: #e1f1ff;
+  --button-outline-hover: #123d65;
+
+  --info: #54acfd;
+  --info-foreground: #071828;
+  --info-medium: #a4d3fe;
+  --info-muted: #1a5c98;
+  --info-soft: #123d65;
+  --info-subtle: #072745;
+  --info-strong: #cae6ff;
+
+  --success: #30e39b;
+  --success-foreground: #00292c;
+  --success-medium: #91f0ca;
+  --success-muted: #00844f;
+  --success-soft: #005349;
+  --success-subtle: #00292c;
+  --success-strong: #bff6e0;
+
+  --warning: #ff9838;
+  --warning-foreground: #331e0b;
+  --warning-medium: #ffd3a9;
+  --warning-muted: #995b22;
+  --warning-soft: #663d16;
+  --warning-subtle: #331e0b;
+  --warning-strong: #ffe5cd;
+
+  --destructive: #c4364e;
+  --destructive-foreground: #ffffff;
+  --button-destructive-hover: #d74c63;
+  --danger: #c4364e;
+  --danger-foreground: #ffffff;
+  --danger-medium: #eaa0ac;
+  --danger-muted: #7c1426;
+  --danger-soft: #520e19;
+  --danger-subtle: #29070d;
+  --danger-strong: #f3c8cf;
+
+  --agent: #00c3c8;
+  --agent-foreground: #053f47;
+  --agent-medium: #a1fff8;
+  --agent-muted: #10727a;
+  --agent-soft: #125e67;
+  --agent-subtle: #053f47;
+  --agent-strong: #cdfffa;
+
+  --shadow-color-soft: rgb(0 0 0 / 0.3);
+  --shadow-color-medium: rgb(0 0 0 / 0.4);
+  --shadow-color-strong: rgb(0 0 0 / 0.5);
+
+  --gwl-canvas: #04101c;
+  --gwl-teal: #4fd1d9;
+  --gwl-yellow: #f2b51c;
+  --gwl-yellow-foreground: #1d1a10;
+  --gwl-sky: #0c2540;
+  --gwl-page: #061524;
+  --gwl-paw: #e0525a;
+  --gwl-navy: #cae6ff;
+  --gwl-navy-foreground: #071828;
+  --gwl-bubble: #0c2540;
+  --gwl-hairline: #20486c;
+}
