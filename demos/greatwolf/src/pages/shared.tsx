@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
 import { Chip } from '@anvil/components/anvil/chip'
 import { Badge } from '@anvil/components/ui/badge'
-import { CalendarIcon, Icon, UsersIcon } from '@anvil/components/ui/icon'
+import { CalendarIcon, Icon, UsersIcon, type LucideIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { suiteById, suites } from '~/data/fixtures'
-import { photos } from '~/data/photos'
+import { art, photos } from '~/data/photos'
 import { CompactRates, SuiteCard } from '~/components/local/SuiteCard/SuiteCard'
 import { Photo, WileyTag } from '~/components/local/Brand/Brand'
 import { useDemo } from '~/state/demo'
@@ -14,7 +14,7 @@ import type { PlanItem } from '~/wiley/types'
 /** The page column: full width on mobile, a shared max width on desktop. */
 export function Page({ children, className, wide }: { children: ReactNode; className?: string; wide?: boolean }) {
   const desktop = usePageWide()
-  return <div className={cn('mx-auto flex w-full flex-col gap-5', desktop ? cn('px-8 py-8', wide ? 'max-w-7xl' : 'max-w-6xl') : 'px-4 py-5', className)}>{children}</div>
+  return <div className={cn('gwl-page mx-auto flex w-full flex-col gap-5', desktop ? cn('px-8 py-8', wide ? 'max-w-7xl' : 'max-w-6xl') : 'px-4 py-5', className)}>{children}</div>
 }
 
 export function Title({ children, tag, sub }: { children: ReactNode; tag?: ReactNode; sub?: ReactNode }) {
@@ -43,12 +43,15 @@ export function PlanRow({ item }: { item: PlanItem }) {
   const suggested = item.status === 'Suggested'
   return (
     <li id={`plan-${item.id}`} className={cn('gwl-in flex scroll-mt-4 items-center gap-4 rounded-2xl border bg-background p-4', suggested && 'border-2 border-dashed border-foreground/50')}>
-      <span className="w-16 shrink-0 type-text-sm-semibold text-muted-foreground">{item.time}</span>
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="type-text-md-semibold">{item.title}</span>
+      <span className="w-14 shrink-0 type-text-sm-semibold text-muted-foreground tabular-nums">{item.time}</span>
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        {/* The status wraps under the title in narrow columns instead of squeezing it. */}
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="type-text-md-semibold">{item.title}</span>
+          {item.status && <span className={cn('shrink-0 rounded-md px-2 py-0.5 type-text-xs-semibold', STATUS[item.status])}>{item.status}</span>}
+        </span>
         {item.sub && <span className="type-text-xs-normal text-muted-foreground">{item.sub}</span>}
       </span>
-      {item.status && <span className={cn('shrink-0 rounded-md px-2 py-0.5 type-text-xs-semibold', STATUS[item.status])}>{item.status}</span>}
     </li>
   )
 }
@@ -145,11 +148,11 @@ export function RatesPage() {
 }
 
 const POPULAR = [
-  { name: 'Indoor Water Park', tone: 'lake' },
+  { name: 'Indoor Water Park', tone: 'lake', src: photos.waterpark },
   { name: 'Themed Suites', tone: 'den', src: photos.bunks },
-  { name: 'MagiQuest', tone: 'dusk' },
-  { name: 'Things to do nearby', tone: 'forest' },
-] as { name: string; tone: 'lake' | 'den' | 'dusk' | 'forest'; src?: string }[]
+  { name: 'MagiQuest', tone: 'dusk', icon: art.magiquest },
+  { name: 'Things to do nearby', tone: 'forest', icon: art.nearby },
+] as { name: string; tone: 'lake' | 'den' | 'dusk' | 'forest'; src?: string; icon?: LucideIcon }[]
 
 /** "Popular at this lodge": four tiles, a row on desktop and a swipeable strip on mobile. */
 export function Popular() {
@@ -162,7 +165,7 @@ export function Popular() {
       <ul className={cn('gap-4', desktop ? 'grid grid-cols-4' : 'gwl-noscroll -mx-4 flex overflow-x-auto px-4')}>
         {POPULAR.map((p) => (
           <li key={p.name} className={cn('flex flex-col gap-2', !desktop && 'w-52 shrink-0')}>
-            <Photo src={p.src} label={p.name} tone={p.tone} className="h-32 rounded-2xl [&>span]:hidden" />
+            <Photo src={p.src} icon={p.icon} label={p.name} tone={p.tone} className="h-32 rounded-2xl" />
             <span className="type-text-sm-semibold">{p.name}</span>
           </li>
         ))}

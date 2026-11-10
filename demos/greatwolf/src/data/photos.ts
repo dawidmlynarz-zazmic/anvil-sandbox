@@ -1,5 +1,6 @@
 // Suite photography from greatwolf.com (Colorado Springs suites page), supplied by Dawid. Photos and floor plans are
 // in the order the gallery shows them.
+import { BirdIcon, CastleIcon, DropletsIcon, FootprintsIcon, MountainIcon, MountainSnowIcon, MusicIcon, StoreIcon, TornadoIcon, TreesIcon, WandSparklesIcon, type LucideIcon } from '@anvil/components/ui/icon'
 import deluxe1 from '~/assets/site/deluxe-queen-1.jpeg'
 import deluxe2 from '~/assets/site/deluxe-queen-2.webp'
 import deluxe3 from '~/assets/site/deluxe-queen-3.webp'
@@ -15,6 +16,22 @@ import pup4 from '~/assets/site/pup-den-4.webp'
 import pupPlan from '~/assets/site/pup-den-plan.webp'
 import voyagers from '~/assets/site/voyagers-club.png'
 import waterpark from '~/assets/site/waterpark-hero.avif'
+
+/** Glyphs for places and activities we have no photo of: they render as illustrated tiles, not grey boxes. */
+export const art: Record<string, LucideIcon> = {
+  zoo: BirdIcon,
+  garden: MountainIcon,
+  manitou: StoreIcon,
+  gorge: MountainSnowIcon,
+  barr: FootprintsIcon,
+  'wolf-center': TreesIcon,
+  'cub-paw': DropletsIcon,
+  'fort-mackenzie': CastleIcon,
+  'howlin-tornado': TornadoIcon,
+  dance: MusicIcon,
+  magiquest: WandSparklesIcon,
+  nearby: MountainIcon,
+}
 
 export interface SuitePhoto {
   src: string

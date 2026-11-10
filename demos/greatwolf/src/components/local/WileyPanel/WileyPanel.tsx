@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { ChatShell, ChatShellComposer, ChatShellHeader, ChatShellThread } from '@anvil/components/agent/chat-shell'
 import { MessageRow } from '@anvil/components/agent/message-row'
 import { PromptInput } from '@anvil/components/agent/prompt-input'
-import { ToolLogLine } from '@anvil/components/agent/tool-log-line'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { BookOpenIcon, Icon, MicIcon, SparklesIcon, XIcon } from '@anvil/components/ui/icon'
@@ -34,6 +33,8 @@ const PAGES: Record<string, string> = {
   '2.6': 'Your plan',
 }
 
+const REACTIONS: Record<string, string> = { 'thumbs up': '👍', wave: '👋' }
+
 const HEIGHT: Record<Snap, string> = { peek: '148px', half: '50%', full: '92%' }
 const ORDER: Snap[] = ['peek', 'half', 'full']
 
@@ -61,9 +62,10 @@ function Item({ m }: { m: Msg }) {
           )}
           <MessageRow role="user">{m.voice ? `“${m.text}”` : m.text}</MessageRow>
           {m.reaction && (
-            <Badge tone="agent" variant="subtle" size="xs" className="gwl-in">
-              Wiley reacted · {m.reaction}
-            </Badge>
+            // Wiley reacts to the message like a person would: an emoji tucked under the bubble's corner.
+            <span role="img" aria-label={`Wiley reacted: ${m.reaction}`} className="gwl-in -mt-4 me-3 grid h-7 min-w-7 place-items-center rounded-full border border-[var(--gwl-hairline)] bg-background px-1.5 text-[15px] leading-none shadow-sm">
+              {REACTIONS[m.reaction] ?? '👍'}
+            </span>
           )}
         </div>
       </MessageScrollerItem>
@@ -161,7 +163,11 @@ function Conversation() {
         ))}
         {typing && (
           <MessageScrollerItem messageId="typing">
-            <MessageRow role="assistant" author="Wiley" widget={<ToolLogLine status="running">Wiley is typing…</ToolLogLine>} />
+            <div role="status" aria-label="Wiley is typing" className="gwl-typing gwl-in w-fit">
+              <span />
+              <span />
+              <span />
+            </div>
           </MessageScrollerItem>
         )}
       </ChatShellThread>
@@ -210,7 +216,7 @@ function Sheet() {
       <button
         type="button"
         aria-label={`Resize Wiley (now ${s.snap})`}
-        className="flex h-5 w-full shrink-0 cursor-grab touch-none items-center justify-center outline-none focus-visible:focus-ring"
+        className="flex h-7 w-full shrink-0 cursor-grab touch-none items-center justify-center outline-none focus-visible:focus-ring active:cursor-grabbing"
         onPointerDown={(e) => {
           start.current = e.clientY
           e.currentTarget.setPointerCapture(e.pointerId)
@@ -226,7 +232,7 @@ function Sheet() {
           if (e.key === 'ArrowDown') (e.preventDefault(), move(-1))
         }}
       >
-        <span className="h-1 w-10 rounded-full bg-border-strong" />
+        <span className="h-1.5 w-11 rounded-full bg-border-strong" />
       </button>
       <Conversation />
     </section>

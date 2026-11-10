@@ -7,7 +7,7 @@ import { Progress } from '@anvil/components/ui/progress'
 import { ToggleGroup, ToggleGroupItem } from '@anvil/components/ui/toggle-group'
 import { cn } from '@anvil/lib/utils'
 import { dates, families, money, nearby } from '~/data/fixtures'
-import { photos } from '~/data/photos'
+import { art, photos } from '~/data/photos'
 import { Photo, WileyAvatar, WileyTag } from '~/components/local/Brand/Brand'
 import { TripQuote } from '~/components/local/WileyCards/WileyCards'
 import { quoteOf, useDemo } from '~/state/demo'
@@ -95,8 +95,8 @@ export function J1Home() {
     )
   }
   const around = [
-    { name: 'Family dance party', where: 'In the lodge · included', tone: 'lake' as const },
-    { name: nearby[0].name, where: 'Nearby · feed the giraffes', tone: 'forest' as const },
+    { name: 'Family dance party', where: 'In the lodge · included', tone: 'lake' as const, icon: art.dance },
+    { name: nearby[0].name, where: 'Nearby · feed the giraffes', tone: 'forest' as const, icon: art.zoo },
   ]
   return (
     <Page className="pb-24">
@@ -112,7 +112,7 @@ export function J1Home() {
         <div className="grid gap-3">
           {around.map((a) => (
             <Card key={a.name} className="flex-row items-center gap-3 overflow-hidden rounded-2xl p-0">
-              <Photo label={a.name} tone={a.tone} className="h-16 w-20 shrink-0 [&>span]:hidden" />
+              <Photo icon={a.icon} label={a.name} tone={a.tone} className="h-16 w-20 shrink-0" />
               <div className="flex min-w-0 flex-col py-3 pe-3">
                 <span className="type-text-sm-semibold">{a.name}</span>
                 <span className="type-text-xs-normal text-muted-foreground">{a.where}</span>
@@ -173,7 +173,7 @@ export function J1Plan() {
             <div className="grid grid-cols-3 gap-4">
               {MORE.filter((m) => !plan.some((p) => p.id === m.id)).map((m) => (
                 <Card key={m.id} className="gap-2 rounded-2xl p-3">
-                  <Photo label={m.name} tone={m.tone} className="h-24 rounded-xl [&>span]:hidden" />
+                  <Photo icon={art[m.id]} label={m.name} tone={m.tone} className="h-24 rounded-xl" />
                   <span className="type-text-sm-semibold">{m.name}</span>
                   <span className="-mt-1.5 type-text-xs-normal text-muted-foreground">{m.sub}</span>
                 </Card>

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Button } from '@anvil/components/ui/button'
 import { CheckIcon, Icon, LinkIcon, MailIcon, MessageSquareIcon, MicIcon, SparklesIcon, XIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
@@ -49,15 +49,46 @@ export function Toast() {
   )
 }
 
+/** Moves focus into a dialog, keeps Tab inside it, closes on Escape and hands focus back afterwards. */
+function useDialog(onClose?: () => void) {
+  const ref = useRef<HTMLDivElement | null>(null)
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    const el = ref.current
+    const before = document.activeElement as HTMLElement | null
+    el?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && close.current) return (e.stopPropagation(), close.current())
+      if (e.key !== 'Tab' || !el) return
+      const items = [...el.querySelectorAll<HTMLElement>('button, [href], input, [tabindex]:not([tabindex="-1"])')].filter((x) => !x.hasAttribute('disabled'))
+      if (!items.length) return e.preventDefault()
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === el)) (e.preventDefault(), last.focus())
+      else if (!e.shiftKey && document.activeElement === last) (e.preventDefault(), first.focus())
+    }
+    document.addEventListener('keydown', onKey, true)
+    return () => {
+      document.removeEventListener('keydown', onKey, true)
+      before?.focus?.()
+    }
+  }, [])
+  return ref
+}
+
 function NativeSheet({ label, onClose, children, className }: { label: string; onClose: () => void; children: ReactNode; className?: string }) {
+  const ref = useDialog(onClose)
   return (
-    <div className="absolute inset-0 z-30 flex items-end justify-center bg-overlay" onClick={onClose}>
+    <div className="gwl-fade absolute inset-0 z-30 flex items-end justify-center bg-overlay" onClick={onClose}>
       <div
+        ref={ref}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={label}
         onClick={(e) => e.stopPropagation()}
-        className={cn('gwl-up w-full max-w-md rounded-t-3xl bg-background p-5 pb-8 shadow-2xl', className)}
+        className={cn('gwl-up w-full max-w-md rounded-t-3xl bg-background p-5 pb-8 shadow-2xl outline-none', className)}
       >
         {children}
       </div>
@@ -152,6 +183,15 @@ export function NativeSheets() {
   return null
 }
 
+function EndDialog({ label, children }: { label: string; children: ReactNode }) {
+  const ref = useDialog()
+  return (
+    <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={label} className="gwl-in w-full max-w-sm rounded-3xl bg-background p-6 shadow-2xl outline-none">
+      {children}
+    </div>
+  )
+}
+
 export function EndCard() {
   const { endCard, setEndCard, reset, startJourney, journey } = useDemo()
   if (!endCard) return null
@@ -161,8 +201,8 @@ export function EndCard() {
     plan: { title: 'End of Journey 2', body: 'The saved plan and the chat come back from the link Wiley sent.' },
   }[endCard]
   return (
-    <div className="absolute inset-0 z-50 grid place-items-center bg-overlay p-4">
-      <div role="dialog" aria-modal="true" aria-label={copy.title} className="gwl-in w-full max-w-sm rounded-3xl bg-background p-6 shadow-2xl">
+    <div className="gwl-fade absolute inset-0 z-50 grid place-items-center bg-overlay p-4">
+      <EndDialog label={copy.title}>
         <WileyAvatar size={40} />
         <h2 className="gwl-display mt-4 text-xl">{copy.title}</h2>
         <p className="mt-2 type-text-sm-normal text-muted-foreground">{copy.body}</p>
@@ -179,7 +219,7 @@ export function EndCard() {
             Start Journey {journey === 1 ? 2 : 1}
           </Button>
         </div>
-      </div>
+      </EndDialog>
     </div>
   )
 }

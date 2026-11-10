@@ -49,6 +49,8 @@ export interface DemoState {
   /** Journey 2: the Voyagers join sheet, the share sheet; Journey 1: the Apple Pay sheet. */
   sheet: null | 'join' | 'share' | 'apple'
   planSaved: boolean
+  /** Journey 2: what the visitor typed in the hero's trip field, if they wrote their own request. */
+  tripText: string | null
   /** The plan counter on the Ask Wiley pill. */
   planCount: number
 }
@@ -61,7 +63,7 @@ export type Action =
   | { do: 'spotlight'; id: string | null }
   | { do: 'scrollTo'; id: string }
   | { do: 'expandRates'; suite: string | null }
-  | { do: 'selectRate'; suite: string; rate: RateKey | 'Standard' | 'Flexible' }
+  | { do: 'selectRate'; suite: string | '@current'; rate: RateKey | 'Standard' | 'Flexible' }
   | { do: 'addToCart'; item: string }
   | { do: 'addToPlan'; item: string }
   | { do: 'go'; to: string }
@@ -83,8 +85,9 @@ export interface Option {
 export type CardKind = 'quote' | 'questions' | 'capture'
 
 export type Beat =
-  | { type: 'user'; text: string; voice?: boolean | 'mobile'; reaction?: string }
-  | { type: 'agent'; text: string; textMobile?: string; source?: string; delayMs?: number; desktopOnly?: boolean }
+  /** `text` can read the demo state, e.g. to say the weekend the family picked. */
+  | { type: 'user'; text: string | ((s: DemoState) => string); voice?: boolean | 'mobile'; reaction?: string }
+  | { type: 'agent'; text: string | ((s: DemoState) => string); textMobile?: string; source?: string; delayMs?: number; desktopOnly?: boolean }
   | { type: 'chips'; style: 'answer' | 'ai'; options: Option[] }
   | { type: 'card'; component: CardKind; props?: Record<string, unknown>; then?: (payload: unknown) => Beat[] }
   | { type: 'effect'; actions: Action[] }

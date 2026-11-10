@@ -163,7 +163,9 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
           case 'selectRate':
             setS((x) => {
               const key: RateKey = a.rate === 'Standard' ? (x.signedIn ? 'std-voy' : 'std-non') : a.rate === 'Flexible' ? (x.signedIn ? 'flex-voy' : 'flex-non') : a.rate
-              return { ...x, selected: { suite: a.suite, rate: key } }
+              // '@current' is the suite whose rates are open (the favorite unless the family chose another).
+              const suite = a.suite === '@current' ? (x.expanded ?? 'pup-den-jr') : a.suite
+              return { ...x, selected: { suite, rate: key } }
             })
             break
           case 'addToCart':
@@ -241,8 +243,9 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
         if (!alive()) return
         if (b.type === 'agent' && b.desktopOnly && !deskRef.current) continue
         if (b.type === 'user') {
+          const text = typeof b.text === 'function' ? b.text(sRef.current) : b.text
           const last = msgsRef.current[msgsRef.current.length - 1]
-          if (last?.role === 'user' && last.text === b.text) continue
+          if (last?.role === 'user' && last.text === text) continue
           const voice = b.voice === 'mobile' ? !deskRef.current : b.voice
           if (voice) {
             setComposer('live')
@@ -253,14 +256,15 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
             await sleep(450)
             if (!alive()) return
           }
-          push({ role: 'user', text: b.text, voice, reaction: b.reaction })
+          push({ role: 'user', text, voice, reaction: b.reaction })
           await sleep(350)
         } else if (b.type === 'agent') {
+          const text = typeof b.text === 'function' ? b.text(sRef.current) : b.text
           setTyping(true)
-          await sleep(b.delayMs ?? Math.min(600 + 15 * b.text.length, 1800))
+          await sleep(b.delayMs ?? Math.min(600 + 15 * text.length, 1800))
           if (!alive()) return
           setTyping(false)
-          push({ role: 'agent', text: b.text, textMobile: b.textMobile, source: b.source })
+          push({ role: 'agent', text, textMobile: b.textMobile, source: b.source })
         } else if (b.type === 'chips') {
           push({ role: 'agent', chips: { style: b.style, options: b.options } })
         } else if (b.type === 'card') {
@@ -363,7 +367,9 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
   }, [journey, step, go, run, play])
 
   const joinVoyagers = useCallback(() => {
-    run([{ do: 'sheet', which: null }, { do: 'signIn' }, { do: 'selectRate', suite: 'pup-den-jr', rate: 'std-voy' }, { do: 'toast', text: 'Welcome to Voyagers Club' }])
+    // Keep the family's choice of Standard or Flexible; joining only swaps in the member price.
+    const flex = sRef.current.selected?.rate.startsWith('flex')
+    run([{ do: 'sheet', which: null }, { do: 'signIn' }, { do: 'selectRate', suite: 'pup-den-jr', rate: flex ? 'flex-voy' : 'std-voy' }, { do: 'toast', text: 'Welcome to Voyagers Club' }])
     void play(afterRate)
   }, [run, play])
 

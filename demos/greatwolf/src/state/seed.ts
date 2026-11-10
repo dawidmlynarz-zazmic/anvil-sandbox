@@ -36,5 +36,6 @@ export function seed(journey: Journey): DemoState {
     sheet: null,
     planSaved: false,
     planCount: 0,
+    tripText: null,
   }
 }
