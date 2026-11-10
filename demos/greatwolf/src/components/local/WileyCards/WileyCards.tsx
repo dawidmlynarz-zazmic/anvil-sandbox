@@ -93,7 +93,7 @@ export function TripQuote({ title = 'Your trip · sample prices', className, che
           <span className="type-text-sm-semibold">Total</span>
           <span className="type-text-lg-semibold">{money(q.total)}</span>
         </div>
-        {q.unpriced && <p className="mt-1 type-text-xs-normal text-muted-foreground">Plus items the lodge prices at booking</p>}
+        {q.sample && <p className="mt-1 type-text-xs-normal text-muted-foreground">* Sample price: the lodge doesn’t list one</p>}
       </Card>
     )
   }
@@ -116,7 +116,7 @@ export function TripQuote({ title = 'Your trip · sample prices', className, che
         <span className="type-text-sm-semibold">Total</span>
         <span className="type-text-lg-semibold">{money(q.total)}</span>
       </div>
-      {q.unpriced && <p className="mt-1 type-text-xs-normal text-muted-foreground">Plus items the lodge prices at booking</p>}
+      {q.sample && <p className="mt-1 type-text-xs-normal text-muted-foreground">* Sample price: the lodge doesn’t list one</p>}
     </Card>
   )
 }

@@ -1,4 +1,5 @@
 import { extraById, hasExtra, type ExtraKind } from '~/data/extras'
+import { money } from '~/data/fixtures'
 import type { Beat, DemoState, Option } from '../types'
 
 // Wiley in the Trip Builder: once the suite is chosen it suggests what comes next, one section at a time, in the
@@ -28,7 +29,7 @@ export function nextKind(s: DemoState, j: J): ExtraKind | null {
 const PITCH: Record<J, Partial<Record<ExtraKind, (s: DemoState) => string>>> = {
   1: {
     birthday: () => 'Mia turns 7 on Saturday. The Birthday Bash is pizza, cake, balloons and an arcade card, booked with your stay. Birthday Fun is smaller: cake, balloons and a door decoration.',
-    pass: () => 'Last time Mia and Leo did MagiQuest. The Paw Pass includes it, plus a keepsake, treats and arcade games. MagiQuest on its own is $34.99 for the game and wand.',
+    pass: () => 'Last time Mia and Leo did MagiQuest. The Paw Pass includes it, plus a keepsake, treats and arcade games. MagiQuest on its own is $34.99 for the game and wand; the Paw Pass is $64.99 a pass (a sample price).',
     dining: (s) =>
       `${hasExtra(s, 'birthday-bash') ? 'The Bash covers the party pizza, so that leaves dinners. Loose Moose Family Kitchen does breakfast and dinner.' : 'Loose Moose Family Kitchen does breakfast and dinner, and Hungry As A Wolf does pizza.'} The Gold Dining Credit gives you $100 to spend for $85. I couldn’t confirm which restaurants take it, so it’s flagged.`,
     experience: () => 'Check-out is 11am on Sunday, and your water park passes last until closing that day. Late check-out keeps the suite until 2pm, for one more swim and a change before the drive.',
@@ -80,7 +81,7 @@ export function addedLine(id: string, s: DemoState): string {
   if (e.covers?.includes('magiquest') && s.journey === 1) parts.push('MagiQuest on Saturday morning is covered now; I marked it in your plan.')
   if (e.id === 'late-checkout') parts.push(s.journey === 1 ? 'Sunday’s check-out moved to 2pm in your plan.' : 'Check-out moves to 2pm.')
   if (e.kind === 'birthday' && s.journey === 1) parts.push('It’s on Saturday at 1pm in your plan.')
-  if (e.amount === null) parts.push('The lodge doesn’t list its price, so it shows as [price] until booking.')
+  if (e.sample) parts.push(`That’s ${money(e.amount)}${e.qty ? ` ${e.qty.text}` : ''}, a sample price: the lodge doesn’t list one.`)
   if (e.checkSay) parts.push(e.checkSay)
   return parts.join(' ')
 }
@@ -103,7 +104,7 @@ function alternatives(k: ExtraKind, j: J): Option[] {
         label: 'Compare passes',
         then: [
           fx({ do: 'scrollTo', id: 'trip-pass' }),
-          say('Paw Pass: MagiQuest, a keepsake, treats and arcade games. Wolf Pass: top attractions and treats for all ages, including MagiQuest and the ropes course. Pup Pass: Build-A-Bear, treats, an arcade card and a souvenir. The lodge doesn’t list their prices.', {
+          say('Paw Pass: MagiQuest, a keepsake, treats and arcade games. Wolf Pass: top attractions and treats for all ages, including MagiQuest and the ropes course. Pup Pass: Build-A-Bear, treats, an arcade card and a souvenir. Sample prices, per pass: Paw $64.99, Wolf $84.99, Pup $44.99.', {
             textMobile: 'Paw Pass: MagiQuest and arcade. Wolf Pass: more attractions, ropes course too. Pup Pass: Build-A-Bear, for little ones.',
           }),
           {

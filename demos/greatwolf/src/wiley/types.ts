@@ -19,7 +19,7 @@ export interface CartLine {
   amount: number
   /** Trip Builder section the line belongs to. */
   kind?: 'pass' | 'dining' | 'birthday' | 'experience'
-  /** The price as shown when the lodge lists none ("[price]"); the line then adds nothing to the total. */
+  /** The price as shown when it is a sample (starred, "$129.98*"): the lodge lists none. */
   price?: string
   /** True right after it was added, so the quote can tag it "Just added". */
   fresh?: boolean

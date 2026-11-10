@@ -2,9 +2,9 @@ import { CakeIcon, ClockIcon, CroissantIcon, GiftIcon, PartyPopperIcon, TicketIc
 import type { DemoState } from '~/wiley/types'
 
 // What the Trip Builder sells, from greatwolf.com/colorado-springs as read on 2026-11-10 (docs/colorado-springs-offering.md).
-// Names and inclusions are the lodge's own. Prices are the listed ones where the site lists them; otherwise
-// `[price]`, and the item adds nothing to the total. `confidence: 'check'` marks what the site does not state for
-// this lodge, so the page flags it instead of presenting it as confirmed.
+// Names and inclusions are the lodge's own. Prices are the listed ones where the site lists them; otherwise a sample
+// price (`sample: true`), shown with a "sample" tag on the card and an asterisk in the totals. `confidence: 'check'`
+// marks what the site does not state for this lodge, so the page flags it instead of presenting it as confirmed.
 
 export type ExtraKind = 'pass' | 'dining' | 'birthday' | 'experience'
 
@@ -16,10 +16,14 @@ export interface Extra {
   short?: string
   blurb: string
   includes?: string[]
-  /** As the page shows it. */
+  /** As the card shows it (per pass, per person…). */
   price: string
-  /** Counted in the total; null when the lodge lists no price. */
-  amount: number | null
+  /** What it adds to the trip total, for this family (e.g. two passes). */
+  amount: number
+  /** The lodge lists no price: this one is a sample. */
+  sample?: boolean
+  /** How many the total counts: "× 2" on the quote line, "for the 2 kids" when Wiley says it. */
+  qty?: { label: string; text: string }
   confidence: 'listed' | 'check'
   checkNote?: string
   /** What Wiley says about the open question, in a full sentence. */
@@ -47,8 +51,10 @@ export const extras: Extra[] = [
     name: 'Paw Pass',
     short: 'the Paw Pass',
     blurb: 'MagiQuest, a keepsake, treats and Northern Lights Arcade games.',
-    price: '[price] per pass',
-    amount: null,
+    price: '$64.99 per pass',
+    amount: 129.98,
+    sample: true,
+    qty: { label: '× 2', text: 'for the 2 kids' },
     confidence: 'listed',
     covers: ['magiquest'],
     icon: WandSparklesIcon,
@@ -60,8 +66,10 @@ export const extras: Extra[] = [
     name: 'Wolf Pass',
     short: 'the Wolf Pass',
     blurb: 'Top attractions and treats, for all ages. Includes MagiQuest and Howlers Peak Ropes Course.',
-    price: '[price] per pass',
-    amount: null,
+    price: '$84.99 per pass',
+    amount: 169.98,
+    sample: true,
+    qty: { label: '× 2', text: 'for the 2 kids' },
     confidence: 'check',
     checkNote: 'Full list of attractions to confirm with the lodge',
     checkSay: 'The site doesn’t list everything it covers, so I flagged that.',
@@ -75,8 +83,10 @@ export const extras: Extra[] = [
     name: 'Pup Pass',
     short: 'the Pup Pass',
     blurb: 'Made for little ones: Build-A-Bear, treats, an arcade card and a souvenir.',
-    price: '[price] per pass',
-    amount: null,
+    price: '$44.99 per pass',
+    amount: 89.98,
+    sample: true,
+    qty: { label: '× 2', text: 'for the 2 kids' },
     confidence: 'listed',
     icon: GiftIcon,
     tone: 'forest',
@@ -87,8 +97,9 @@ export const extras: Extra[] = [
     name: 'Birthday Bash',
     short: 'the Birthday Bash',
     blurb: 'Pizza, cake, balloons and an arcade card.',
-    price: '[price]',
-    amount: null,
+    price: '$129.99',
+    amount: 129.99,
+    sample: true,
     confidence: 'listed',
     icon: PartyPopperIcon,
     tone: 'dusk',
@@ -101,8 +112,9 @@ export const extras: Extra[] = [
     name: 'Birthday Fun',
     short: 'Birthday Fun',
     blurb: 'Cake, balloons and a door decoration.',
-    price: '[price]',
-    amount: null,
+    price: '$79.99',
+    amount: 79.99,
+    sample: true,
     confidence: 'listed',
     icon: CakeIcon,
     tone: 'den',
@@ -145,8 +157,10 @@ export const extras: Extra[] = [
     name: 'Wolf Wakeup Breakfast',
     short: 'the Wolf Wakeup Breakfast',
     blurb: 'All-you-can-eat breakfast, per person per day.',
-    price: '[price] per person',
-    amount: null,
+    price: '$17.99 per person, per day',
+    amount: 143.92,
+    sample: true,
+    qty: { label: '× 4 × 2 days', text: 'for the 4 of you, both mornings' },
     confidence: 'check',
     checkNote: 'Where it’s served: to confirm',
     checkSay: 'I couldn’t find where it’s served, so I flagged it.',
@@ -172,8 +186,9 @@ export const extras: Extra[] = [
     name: 'Late check-out to 2pm',
     short: 'late check-out',
     blurb: 'Check-out is 11am. Keep the suite until 2pm.',
-    price: '[price]',
-    amount: null,
+    price: '$49.99',
+    amount: 49.99,
+    sample: true,
     confidence: 'listed',
     icon: ClockIcon,
     tone: 'lake',
