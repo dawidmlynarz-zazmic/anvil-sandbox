@@ -2,13 +2,13 @@ import type { DemoState, Journey, PlanItem } from '~/wiley/types'
 
 const J1_PLAN: PlanItem[] = [
   { id: 'water', day: 'fri', time: '3:00 pm', title: 'Water park', sub: 'Passes included' },
-  { id: 'dinner', day: 'fri', time: '6:30 pm', title: 'Dinner at the lodge', sub: 'Dining' },
-  { id: 'magiquest', day: 'sat', time: '10:00', title: 'MagiQuest', sub: 'In the lodge', status: 'Added' },
-  { id: 'party', day: 'sat', time: '1:00 pm', title: 'Mia’s birthday party', sub: 'Party package', status: 'Booked' },
+  { id: 'dinner', day: 'fri', time: '6:30 pm', title: 'Dinner at Loose Moose Family Kitchen', sub: 'In the lodge' },
+  { id: 'magiquest', day: 'sat', time: '10:00', title: 'MagiQuest', sub: 'In the lodge' },
+  { id: 'party', day: 'sat', time: '1:00 pm', title: 'Mia’s birthday', sub: 'At the lodge' },
   { id: 'golf', day: 'sat', time: '4:00 pm', title: 'Howl in One Mini Golf', sub: 'In the lodge' },
-  { id: 'dance', day: 'sat', time: '7:30 pm', title: 'Family dance party', sub: 'In the lodge · included' },
+  { id: 'dance', day: 'sat', time: '7:30 pm', title: 'Family dance party', sub: 'In the lodge · free every night' },
   { id: 'zoo', day: 'sun', time: '9:30', title: 'Cheyenne Mountain Zoo', sub: 'Near the lodge · hand-feed giraffes', status: 'Suggested' },
-  { id: 'checkout', day: 'sun', time: '12:00', title: 'Check out and head home' },
+  { id: 'checkout', day: 'sun', time: '11:00', title: 'Check out and head home' },
 ]
 
 export function seed(journey: Journey): DemoState {
@@ -37,6 +37,9 @@ export function seed(journey: Journey): DemoState {
     planSaved: false,
     planCount: 0,
     tripText: null,
+    tripVoice: false,
+    loadingSuites: false,
     planDay: null,
+    skipped: [],
   }
 }

@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChatShell, ChatShellComposer, ChatShellHeader, ChatShellThread } from '@anvil/components/agent/chat-shell'
 import { MessageRow } from '@anvil/components/agent/message-row'
 import { PromptInput } from '@anvil/components/agent/prompt-input'
+import { TextShimmer } from '@anvil/components/agent/text-shimmer'
+import { ThinkingPanel, ThinkingPanelTrigger } from '@anvil/components/agent/thinking-panel'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { BookOpenIcon, Icon, MicIcon, SparklesIcon, XIcon } from '@anvil/components/ui/icon'
@@ -46,6 +48,22 @@ function FollowEnd({ signal }: { signal: string }) {
     return () => window.clearTimeout(late)
   }, [signal, scrollToEnd])
   return null
+}
+
+/** The part of a reply that has streamed in so far (whole words). */
+function streamed(text: string, reveal?: number) {
+  if (reveal === undefined) return text
+  const words = text.split(' ')
+  return words.slice(0, Math.max(1, Math.ceil(words.length * reveal))).join(' ')
+}
+
+/** Wiley thinking: Anvil's Thinking Panel, with what it is doing right now in a shimmer. */
+function Thinking({ phrase }: { phrase: string }) {
+  return (
+    <ThinkingPanel status="running" className="gwl-fade w-fit max-w-full">
+      <ThinkingPanelTrigger disabled title={<TextShimmer key={phrase} className="gwl-fade">{phrase}…</TextShimmer>} className="cursor-default [&>svg:last-child]:hidden" />
+    </ThinkingPanel>
+  )
 }
 
 function Item({ m }: { m: Msg }) {
@@ -93,8 +111,9 @@ function Item({ m }: { m: Msg }) {
       <MessageRow
         role="assistant"
         author="Wiley"
+        status={m.reveal !== undefined ? 'streaming' : 'complete'}
         widget={
-          m.source ? (
+          m.source && m.reveal === undefined ? (
             <span className="flex items-center gap-1.5 type-text-xs-normal text-muted-foreground">
               Source:
               <Badge variant="subtle" size="xs">
@@ -105,15 +124,17 @@ function Item({ m }: { m: Msg }) {
           ) : undefined
         }
       >
-        {desktop ? m.text : (m.textMobile ?? m.text)}
+        {streamed(desktop ? (m.text ?? '') : (m.textMobile ?? m.text ?? ''), m.reveal)}
       </MessageRow>
     </MessageScrollerItem>
   )
 }
 
 function Conversation() {
-  const { msgs, typing, composer, say, listen, closeWiley, clearChat, pick, desktop, journey, step } = useDemo()
+  const { msgs, thinking, composer, draft, playing, say, listen, closeWiley, clearChat, pick, desktop, journey, step } = useDemo()
   const live = composer === 'live'
+  // The composer is controlled so a voice request can transcribe into it, word by word.
+  const [text, setText] = useState('')
   const suggestions = scripts[`${journey}.${step}`]?.fallback ?? []
   return (
     <ChatShell surface={desktop ? 'side-panel' : 'mobile'} className="gwl-chat min-h-0 flex-1">
@@ -141,8 +162,9 @@ function Conversation() {
         </p>
       )}
       <ChatShellThread>
-        <FollowEnd signal={`${msgs.length}:${typing}`} />
-        {msgs.length === 0 && !typing && (
+        <FollowEnd signal={`${msgs.length}:${thinking ?? ''}:${msgs.at(-1)?.reveal ?? 1}`} />
+        {/* The welcome only shows in an idle, empty chat, never as a flash before a scripted request. */}
+        {msgs.length === 0 && !thinking && !playing && composer === 'idle' && (
           <MessageScrollerItem messageId="hello">
             <div className="flex flex-col items-center gap-3 px-2 pt-6 pb-2 text-center">
               <WileyAvatar size={64} />
@@ -161,12 +183,10 @@ function Conversation() {
         {msgs.map((m) => (
           <Item key={m.id} m={m} />
         ))}
-        {typing && (
-          <MessageScrollerItem messageId="typing">
-            <div role="status" aria-label="Wiley is typing" className="gwl-typing gwl-in w-fit">
-              <span />
-              <span />
-              <span />
+        {thinking && (
+          <MessageScrollerItem messageId="thinking">
+            <div role="status" aria-live="polite">
+              <Thinking phrase={thinking} />
             </div>
           </MessageScrollerItem>
         )}
@@ -174,7 +194,9 @@ function Conversation() {
       <ChatShellComposer
         disclaimer={
           <span className="block text-center">
-            AI can make mistakes. By using AI Mode you agree to our <span className="underline">Terms</span> and <span className="underline">Privacy Policy</span>.
+            {desktop ? 'AI can make mistakes. By using AI Mode you agree to our ' : 'AI can make mistakes. '}
+            <span className="underline">Terms</span> and <span className="underline">Privacy Policy</span>
+            {desktop ? '.' : ' apply.'}
           </span>
         }
       >
@@ -182,9 +204,15 @@ function Conversation() {
           size="compact"
           aria-label="Message Wiley"
           placeholder={live ? 'Listening…' : desktop ? 'Ask me anything about your stay…' : 'Ask about your stay…'}
+          value={composer === 'transcribing' ? draft : text}
+          onValueChange={setText}
           onVoice={listen}
           listening={live}
-          onSubmit={(t) => t.trim() && say(t.trim())}
+          onSubmit={(t) => {
+            if (!t.trim()) return
+            say(t.trim())
+            setText('')
+          }}
         />
       </ChatShellComposer>
     </ChatShell>

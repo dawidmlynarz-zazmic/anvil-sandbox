@@ -17,6 +17,10 @@ export interface CartLine {
   id: string
   label: string
   amount: number
+  /** Trip Builder section the line belongs to. */
+  kind?: 'pass' | 'dining' | 'birthday' | 'experience'
+  /** The price as shown when the lodge lists none ("[price]"); the line then adds nothing to the total. */
+  price?: string
   /** True right after it was added, so the quote can tag it "Just added". */
   fresh?: boolean
 }
@@ -53,6 +57,12 @@ export interface DemoState {
   planDay: 'fri' | 'sat' | 'sun' | null
   /** Journey 2: what the visitor typed in the hero's trip field, if they wrote their own request. */
   tripText: string | null
+  /** Journey 2: the hero request was spoken (the chat tags it as voice). */
+  tripVoice: boolean
+  /** The suites list is loading (skeletons show). */
+  loadingSuites: boolean
+  /** Trip Builder sections the family said no to; Wiley stops suggesting them. */
+  skipped: ('pass' | 'dining' | 'birthday' | 'experience')[]
   /** The plan counter on the Ask Wiley pill. */
   planCount: number
 }
@@ -67,6 +77,7 @@ export type Action =
   | { do: 'expandRates'; suite: string | null }
   | { do: 'selectRate'; suite: string | '@current'; rate: RateKey | 'Standard' | 'Flexible' }
   | { do: 'addToCart'; item: string }
+  | { do: 'removeFromCart'; item: string }
   | { do: 'addToPlan'; item: string }
   | { do: 'go'; to: string }
   | { do: 'toast'; text: string }
@@ -76,6 +87,8 @@ export type Action =
   | { do: 'sheet'; which: DemoState['sheet'] }
   | { do: 'patch'; fn: (s: DemoState) => Partial<DemoState> }
   | { do: 'end'; card: 'checkout' | 'companion' | 'plan' }
+  /** Show the suites' loading skeletons for `ms`, as if the list were being fetched. */
+  | { do: 'loadSuites'; ms: number }
 
 export interface Option {
   label: string
@@ -88,12 +101,29 @@ export type CardKind = 'quote' | 'questions' | 'capture'
 
 export type Beat =
   /** `text` can read the demo state, e.g. to say the weekend the family picked. */
-  | { type: 'user'; text: string | ((s: DemoState) => string); voice?: boolean | 'mobile'; reaction?: string }
-  | { type: 'agent'; text: string | ((s: DemoState) => string); textMobile?: string; source?: string; delayMs?: number; desktopOnly?: boolean }
+  | {
+      type: 'user'
+      text: string | ((s: DemoState) => string)
+      voice?: boolean | 'mobile'
+      /** Tag the message as voice without playing the listening state again (it already played elsewhere). */
+      voiceTag?: (s: DemoState) => boolean
+      reaction?: string
+    }
+  | {
+      type: 'agent'
+      text: string | ((s: DemoState) => string)
+      textMobile?: string | ((s: DemoState) => string)
+      source?: string
+      delayMs?: number
+      desktopOnly?: boolean
+      /** What Wiley shows it is doing before it answers. Defaults to the step's `thinking`. */
+      thinking?: string[]
+      when?: (s: DemoState) => boolean
+    }
   /** `options` can read the demo state, e.g. not to offer the party once it is booked. An empty list shows nothing. */
-  | { type: 'chips'; style: 'answer' | 'ai'; options: Option[] | ((s: DemoState) => Option[]) }
+  | { type: 'chips'; style: 'answer' | 'ai'; options: Option[] | ((s: DemoState) => Option[]); when?: (s: DemoState) => boolean }
   | { type: 'card'; component: CardKind; props?: Record<string, unknown>; then?: (payload: unknown) => Beat[] }
-  | { type: 'effect'; actions: Action[] }
+  | { type: 'effect'; actions: Action[]; when?: (s: DemoState) => boolean }
 
 export interface Msg {
   id: number
@@ -103,6 +133,8 @@ export interface Msg {
   voice?: boolean
   reaction?: string
   source?: string
+  /** 0–1 while the reply streams in; absent once it is complete. */
+  reveal?: number
   chips?: { style: 'answer' | 'ai'; options: Option[] }
   card?: { component: CardKind; props?: Record<string, unknown>; then?: (payload: unknown) => Beat[]; done?: boolean; answer?: unknown }
 }
@@ -119,6 +151,10 @@ export interface StepScript {
   rules?: [RegExp, Beat[]][]
   /** Offered when nothing matches. */
   fallback: Option[]
+  /** What Wiley says it is doing while it thinks on this step, in order (the first two or three show). */
+  thinking?: string[]
   /** A rate picked on the page (a rate card's Select). The chat answers it like the matching chip. */
   onRate?: (key: RateKey) => Beat[]
+  /** An extra added or removed on the Trip Builder page. The chat answers it like the matching chip. */
+  onExtra?: (id: string, added: boolean) => Beat[]
 }

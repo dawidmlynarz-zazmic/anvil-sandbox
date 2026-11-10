@@ -85,10 +85,10 @@ export function AppHeader() {
   }
   return (
     <header className="gwl-noprint shrink-0 border-b bg-background">
-      <div className="flex h-14 items-center gap-3 px-4">
-        <Logo className="h-[18px]" />
+      <div className="flex h-14 items-center gap-2 ps-4 pe-2">
+        <Logo className="h-[17px]" />
         <span className="flex-1" />
-        <AskWileyPill />
+        <AskWileyPill className="h-9 px-3" />
         <Button variant="ghost" intent="neutral" size="icon" aria-label="Menu">
           <Icon icon={MenuIcon} />
         </Button>

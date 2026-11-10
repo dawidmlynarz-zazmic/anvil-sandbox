@@ -6,12 +6,13 @@ import { CalendarPlusIcon, CheckIcon, Icon, PrinterIcon, QrCodeIcon, SparklesIco
 import { Progress } from '@anvil/components/ui/progress'
 import { ToggleGroup, ToggleGroupItem } from '@anvil/components/ui/toggle-group'
 import { cn } from '@anvil/lib/utils'
-import { dates, families, lodge, money, nearby } from '~/data/fixtures'
+import { dates, families, lodge, money } from '~/data/fixtures'
 import { downloadCalendar } from '~/lib/calendar'
 import { art, photos } from '~/data/photos'
 import { Logo, Photo, WileyAvatar, WileyTag } from '~/components/local/Brand/Brand'
 import { TripQuote } from '~/components/local/WileyCards/WileyCards'
 import { quoteOf, useDemo } from '~/state/demo'
+import { j1Plan } from '~/state/plan'
 import { usePageWide } from '~/state/layout'
 import type { PlanItem } from '~/wiley/types'
 import { Page, PlanRow, Popular, Title } from './shared'
@@ -95,33 +96,13 @@ export function J1Home() {
       </Page>
     )
   }
-  const around = [
-    { name: 'Family dance party', where: 'In the lodge · included', tone: 'lake' as const, icon: art.dance },
-    { name: nearby[0].name, where: 'Nearby · feed the giraffes', tone: 'forest' as const, icon: art.zoo },
-  ]
   return (
     <Page className="pb-24">
       <Photo src={photos.den} label="Junior Wolf Pup Den Suite, the family’s favorite" className="h-48 rounded-3xl" />
       {tag}
       {intro}
+      {/* On a phone the page stays on the one thing that matters: this weekend. */}
       {weekend}
-      {lastVisit}
-      <section aria-labelledby="around" className="flex flex-col gap-3">
-        <h2 id="around" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
-          In and around the lodge that weekend
-        </h2>
-        <div className="grid gap-3">
-          {around.map((a) => (
-            <Card key={a.name} className="flex-row items-center gap-3 overflow-hidden rounded-2xl p-0">
-              <Photo icon={a.icon} label={a.name} tone={a.tone} className="h-16 w-20 shrink-0" />
-              <div className="flex min-w-0 flex-col py-3 pe-3">
-                <span className="type-text-sm-semibold">{a.name}</span>
-                <span className="type-text-xs-normal text-muted-foreground">{a.where}</span>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </section>
     </Page>
   )
 }
@@ -132,11 +113,10 @@ const DAYS = [
   { key: 'sun', label: 'Sun', long: 'Sunday' },
 ] as const
 
-/** The plan as the page shows it: the party is "Booked" only if it's in the cart. */
+/** The plan as the page shows it, read against the trip (passes, birthday package, dining, late check-out). */
 function usePlan() {
   const { s } = useDemo()
-  const hasParty = s.cart.some((c) => c.id === 'party')
-  return s.plan.map((p): PlanItem => (p.id === 'party' && !hasParty ? { ...p, sub: 'In the lodge', status: 'Suggested' } : p))
+  return j1Plan(s)
 }
 
 const MORE = [
@@ -338,11 +318,12 @@ export function J1Checkout() {
       {step}
       <WileyNote>I filled everything in from your account. I’ll never ask for card details in chat.</WileyNote>
       <TripQuote checkout title={title} />
-      <Card className="flex-row items-center justify-between gap-3 rounded-2xl p-4">
+      <Card className="items-start gap-1.5 rounded-2xl p-4">
+        {prefilled}
         <span className="type-text-sm-semibold">
           {fam.lead} {fam.name} · 2 adults, 2 kids
         </span>
-        {prefilled}
+        <span className="type-text-xs-normal text-muted-foreground">Mia (7), Leo (4)</span>
       </Card>
       {applePay}
       {savedCard}
@@ -357,9 +338,9 @@ export function J1Booked() {
   const plan = usePlan()
   const q = quoteOf(s)
   const sunday = plan.find((p) => p.day === 'sun' && (p.id === 'zoo' || p.id === 'garden'))
-  const items = [...plan.filter((p) => ['magiquest', 'party', 'dance'].includes(p.id) && p.status !== 'Suggested'), ...(sunday ? [sunday] : [])]
+  const items = [...plan.filter((p) => ['magiquest', 'party', 'dinner', 'ropes', 'dance'].includes(p.id) && p.status !== 'Suggested'), ...(sunday ? [sunday] : [])]
   const when = (p: PlanItem) => `${p.day === 'sat' ? 'Sat' : p.day === 'sun' ? 'Sun' : 'Fri'} ${p.time}`
-  const hasParty = s.cart.some((c) => c.id === 'party')
+  const hasParty = s.cart.some((c) => c.kind === 'birthday')
   const list = (
     <div className="flex min-w-0 flex-1 flex-col gap-3">
       <Label>Your weekend plan, in the app</Label>

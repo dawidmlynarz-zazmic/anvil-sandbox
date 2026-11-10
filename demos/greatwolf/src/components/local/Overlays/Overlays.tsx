@@ -235,6 +235,22 @@ function PlanPreview() {
               {lodge.name}, {lodge.city}
             </dd>
           </dl>
+          {p.extras.length > 0 && (
+            <section aria-labelledby="plan-extras" className="flex flex-col gap-3">
+              <h3 id="plan-extras" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
+                Added to your trip ({p.extras.length})
+              </h3>
+              <ul className="flex flex-col gap-2">
+                {p.extras.map((x) => (
+                  <li key={x.id} className="flex items-center gap-3">
+                    <Photo icon={x.icon} label={x.name} tone={x.tone} className="size-12 shrink-0 rounded-lg" />
+                    <span className="min-w-0 flex-1 type-text-sm-semibold">{x.name}</span>
+                    <span className="type-text-sm-normal whitespace-nowrap">{x.price}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <section aria-labelledby="plan-things" className="flex flex-col gap-3">
             <h3 id="plan-things" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
               Things to do ({p.things.length})
