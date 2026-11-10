@@ -23,6 +23,21 @@ desktop`). Scripted and mocked: no model, booking, payment or account behind it.
 | 5 | Checkout prefilled, Apple Pay sheet (mock) | Rates: join Voyagers free or book as guest |
 | 6 | Booked; the plan moves to the app | Save the plan, send it, share it |
 
+## Choices Wiley reacts to
+
+Every chip leads somewhere different, on the page and in the chat. **Next** always takes the first (happy-path) choice.
+
+| Step | Choices |
+| --- | --- |
+| J1·2 | See the rates · More room for the kids (KidCabin to the top) · Something cheaper (Deluxe Queen to the top) |
+| J1·3 | Add the party · Add MagiQuest · What’s the difference? (then Keep Flexible or Switch to Standard) · Not now. The rates follow the suite picked in J1·2 |
+| J1·4 | Zoo on Sunday · Garden of the Gods instead · Keep Sunday free; then Go to checkout or Move MagiQuest to Friday |
+| J2·2 | The two questions re-rank and re-tag; then the water park · Compare the top two · See rates |
+| J2·3 | What else is nearby? · And for our 6-year-old? (spotlight moves to Fort Mackenzie) · Back to suites |
+| J2·4 | Add the zoo · Add Garden of the Gods · Plan our Sunday · Why skip Barr Trail? |
+| J2·5 | Join free and save · Book as guest · Flexible instead (joining keeps Flexible at the member rate). The request names the weekend picked in J2·2 |
+| J2·6 | Send the plan, then Share with my partner too or Book it now |
+
 ## How it is built
 
 - **It should read as greatwolf.com:** Montserrat throughout the site and Wiley (the site's typeface), the site's suite

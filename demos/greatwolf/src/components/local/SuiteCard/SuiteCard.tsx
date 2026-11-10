@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon, CircleCheckIcon, Icon, InfoIcon } from '@anvil/components/ui/icon'
+import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, CircleCheckIcon, Icon, InfoIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { money, ratesFor, type Rate, type RateKey, type Suite } from '~/data/fixtures'
 import { suitePhotos } from '~/data/photos'
@@ -16,10 +16,25 @@ import { Sample } from '../Brand/Brand'
 export function Gallery({ suite, className }: { suite: Suite; className?: string }) {
   const [i, setI] = useState(0)
   const shots = suitePhotos[suite.id] ?? []
+  const strip = useRef<HTMLDivElement | null>(null)
+  const show = (n: number) => {
+    const el = strip.current
+    if (el) el.scrollTo({ left: Math.max(0, Math.min(shots.length - 1, n)) * el.clientWidth, behavior: 'smooth' })
+  }
+  const arrow = 'absolute top-1/2 z-10 grid size-9 -translate-y-1/2 place-items-center rounded-full bg-[#ffffffe6] text-[#1c3750] shadow-md outline-none transition-opacity hover:bg-[#ffffff] focus-visible:focus-ring focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/gallery:opacity-100'
   return (
-    <div className={cn('relative overflow-hidden', className)}>
+    <div className={cn('group/gallery relative overflow-hidden', className)}>
       <div
-        className="gwl-noscroll absolute inset-0 flex snap-x snap-mandatory overflow-x-auto"
+        ref={strip}
+        tabIndex={0}
+        role="group"
+        aria-roledescription="carousel"
+        onKeyDown={(e) => {
+          // Arrow keys page the photos here; stop them reaching the presenter's step shortcuts.
+          if (e.key === 'ArrowRight') (e.preventDefault(), e.stopPropagation(), show(i + 1))
+          if (e.key === 'ArrowLeft') (e.preventDefault(), e.stopPropagation(), show(i - 1))
+        }}
+        className="gwl-noscroll absolute inset-0 flex snap-x snap-mandatory overflow-x-auto outline-none focus-visible:focus-ring"
         onScroll={(e) => {
           const el = e.currentTarget
           setI(Math.round(el.scrollLeft / el.clientWidth))
@@ -41,7 +56,17 @@ export function Gallery({ suite, className }: { suite: Suite; className?: string
       <span className="absolute top-3 right-3 rounded-sm border border-[#ffffff] bg-[#000000] px-2 py-0.5 type-text-xs-semibold text-[#ffffff]" aria-live="polite">
         {i + 1} / {shots.length}
       </span>
-      <span className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5" aria-hidden>
+      {i > 0 && (
+        <button type="button" aria-label="Previous photo" className={cn(arrow, 'left-3')} onClick={() => show(i - 1)}>
+          <Icon icon={ChevronLeftIcon} />
+        </button>
+      )}
+      {i < shots.length - 1 && (
+        <button type="button" aria-label="Next photo" className={cn(arrow, 'right-3')} onClick={() => show(i + 1)}>
+          <Icon icon={ChevronRightIcon} />
+        </button>
+      )}
+      <span className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-[#00000059] px-2 py-1.5" aria-hidden>
         {shots.map((_, n) => (
           <span key={n} className={cn('size-2 rounded-full', n === i ? 'bg-[#ffffff]' : 'bg-[#ffffff80]')} />
         ))}

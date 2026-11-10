@@ -7,6 +7,11 @@
 /* Great Wolf Lodge colors and shadows over Anvil's tokens (from the GWL Denkit Figma file). */
 @import './gwl-theme.css';
 
+/* Anvil's radius scale stops at 2xl (16px). greatwolf.com's cards and sheets are rounder. */
+@theme {
+  --radius-3xl: 28px;
+}
+
 /* Host page (greatwolf.com) styling: heavy uppercase headings, teal links, pill buttons. */
 .gwl-display {
   font-family: 'Montserrat', var(--font-sans, ui-sans-serif), system-ui, sans-serif;
@@ -107,3 +112,32 @@
   padding: 12px 16px;
 }
 .gwl-chat [data-slot='chat-shell-composer'] { background: transparent; }
+
+/* A step's page eases in, so moving between steps reads as navigation, not a jump cut. */
+@keyframes gwl-page {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.gwl-page { animation: gwl-page 280ms ease-out both; }
+
+@keyframes gwl-fade { from { opacity: 0; } to { opacity: 1; } }
+.gwl-fade { animation: gwl-fade 180ms ease-out both; }
+
+/* Wiley is typing: three dots in an agent bubble. */
+@keyframes gwl-dot {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+.gwl-typing {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--gwl-bubble); border: 1px solid var(--gwl-hairline);
+  border-radius: 14px 14px 14px 4px; padding: 14px 16px;
+}
+.gwl-typing > span { width: 7px; height: 7px; border-radius: 9999px; background: var(--foreground); animation: gwl-dot 1.2s ease-in-out infinite; }
+.gwl-typing > span:nth-child(2) { animation-delay: 0.15s; }
+.gwl-typing > span:nth-child(3) { animation-delay: 0.3s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gwl-page, .gwl-fade, .gwl-typing > span { animation: none; }
+  .gwl-typing > span { opacity: 0.7; }
+}

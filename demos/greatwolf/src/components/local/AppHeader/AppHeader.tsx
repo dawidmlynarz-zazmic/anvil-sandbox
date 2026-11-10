@@ -39,9 +39,9 @@ function Utility() {
   return (
     <nav aria-label="Utility" className="flex items-center gap-5">
       {links.map((l) => (
-        <span key={l} className="cursor-default text-muted-foreground">
+        <button key={l} type="button" className="rounded-sm text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:focus-ring">
           {l}
-        </span>
+        </button>
       ))}
     </nav>
   )
@@ -63,10 +63,10 @@ export function AppHeader() {
           {!roomyNav && <span className="flex-1" />}
           <nav aria-label="Main" className={cn('flex flex-1 items-center justify-end gap-6 type-text-sm-semibold', !roomyNav && 'hidden')}>
             {['Explore', 'Stay', 'Day Visits', 'Deals', 'Celebrate'].map((n) => (
-              <span key={n} className="inline-flex cursor-default items-center gap-0.5">
+              <button key={n} type="button" aria-haspopup="menu" className="inline-flex items-center gap-0.5 rounded-sm py-1 decoration-2 underline-offset-8 outline-none hover:underline focus-visible:focus-ring">
                 {n}
                 <Icon icon={ChevronDownIcon} size="xs" />
-              </span>
+              </button>
             ))}
           </nav>
           <AskWileyPill />

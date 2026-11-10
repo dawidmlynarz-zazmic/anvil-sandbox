@@ -38,8 +38,14 @@ export function AnswerChip({ children, onClick, pressed }: { children: string; o
 }
 
 export function Chips({ style, options, onPick }: { style: 'answer' | 'ai'; options: Option[]; onPick: (o: Option) => void }) {
+  // On a phone the sheet is short: the choices sit on one swipeable row, so Wiley's reply stays in view above them.
+  const { desktop } = useDemo()
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Suggested replies">
+    <div
+      className={cn('flex gap-2', desktop ? 'flex-wrap' : 'gwl-noscroll -mx-4 overflow-x-auto px-4 pb-1 [&>button]:shrink-0 [&>button]:whitespace-nowrap')}
+      role="group"
+      aria-label="Suggested replies"
+    >
       {options.map((o) =>
         style === 'ai' ? (
           <AiChip key={o.label} onClick={() => onPick(o)}>

@@ -6,7 +6,7 @@ import { Card } from '@anvil/components/ui/card'
 import { ArrowLeftIcon, ArrowUpIcon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Icon, MicIcon, SparklesIcon, TagIcon, UsersIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { activityById, lodge, nearby, waterPark } from '~/data/fixtures'
-import { photos } from '~/data/photos'
+import { art, photos } from '~/data/photos'
 import { Photo, WileyTag } from '~/components/local/Brand/Brand'
 import { AiChip } from '~/components/local/WileyCards/WileyCards'
 import { useDemo } from '~/state/demo'
@@ -103,14 +103,21 @@ function Field({ label, icon, value, className }: { label: string; icon: typeof 
 
 /** J2·1: the lodge home for a first-time visitor. The hero's centre is the trip field; dates & guests is the site's form. */
 export function J2Landing() {
-  const { go, openWiley, play } = useDemo()
+  const { go, openWiley, play, patch } = useDemo()
   const desktop = usePageWide()
   const [tab, setTab] = useState<'dates' | 'describe'>('describe')
-  // The field rotates sample requests until the guest sends; then it shows the request Wiley answers.
+  // A real field: sample requests rotate inside it until the visitor focuses or types. Sending an empty field sends
+  // the request Wiley's script answers; their own words are carried into the chat.
   const [sending, setSending] = useState(false)
-  const sample = useTypewriter(SAMPLES, tab === 'describe' && !sending)
+  const [value, setValue] = useState('')
+  const [focused, setFocused] = useState(false)
+  const idle = !sending && !focused && value === ''
+  const sample = useTypewriter(SAMPLES, tab === 'describe' && idle)
   const send = () => {
     if (sending) return
+    const text = value.trim()
+    if (!text) setValue(PROMPT)
+    patch({ tripText: text || null })
     setSending(true)
     window.setTimeout(() => go('j2/2'), 500)
   }
@@ -142,25 +149,52 @@ export function J2Landing() {
       </div>
       {tab === 'describe' ? (
         <div className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1.5">
-            <span className="type-text-md-medium">Tell Wiley about your trip</span>
-            <span className={cn('flex items-center gap-3 rounded-[4px] border-[1.5px] border-[var(--border-action)] bg-background ps-4 pe-2', desktop ? 'h-16' : 'min-h-16 py-2')}>
-              {sending ? (
-                <span className="min-w-0 flex-1 type-text-lg-medium text-foreground">{PROMPT}</span>
-              ) : (
-                <span className="min-w-0 flex-1 type-text-lg-medium text-muted-foreground gwl-caret" aria-live="off">
-                  <span className="sr-only">For example: </span>
-                  {sample}
-                </span>
+          <form
+            className="flex flex-col gap-1.5"
+            onSubmit={(e) => {
+              e.preventDefault()
+              send()
+            }}
+          >
+            <label htmlFor="trip" className="type-text-md-medium">
+              Tell Wiley about your trip
+            </label>
+            <div
+              className={cn(
+                'flex items-center gap-3 rounded-[4px] border-[1.5px] border-[var(--border-action)] bg-background ps-4 pe-2 transition-shadow focus-within:border-[var(--ring)] focus-within:ring-4 focus-within:ring-[var(--ring)]/25',
+                desktop ? 'h-16' : 'min-h-16 py-2',
               )}
-              <Button shape="circle" size="icon" aria-label="Talk to Wiley" onClick={send}>
+            >
+              <div className="relative flex min-w-0 flex-1 items-center self-stretch">
+                {/* The rotating sample sits under the input and sets the height on narrow screens. */}
+                <span aria-hidden className={cn('type-text-lg-medium text-muted-foreground', idle ? 'gwl-caret' : 'invisible')}>
+                  {idle ? sample : '\u00a0'}
+                </span>
+                <input
+                  id="trip"
+                  value={value}
+                  readOnly={sending}
+                  onChange={(e) => setValue(e.target.value)}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  placeholder={focused ? 'Dates, who’s coming, what matters most…' : ''}
+                  aria-describedby="trip-hint"
+                  autoComplete="off"
+                  enterKeyHint="send"
+                  className="absolute inset-0 w-full bg-transparent type-text-lg-medium text-foreground outline-none placeholder:text-muted-foreground"
+                />
+              </div>
+              <Button type="button" shape="circle" size="icon" aria-label="Talk to Wiley" onClick={send}>
                 <Icon icon={MicIcon} />
               </Button>
-              <Button shape="circle" size="icon" variant="outline" intent="neutral" aria-label="Send to Wiley" onClick={send}>
+              <Button type="submit" shape="circle" size="icon" variant="outline" intent="neutral" aria-label="Send to Wiley">
                 <Icon icon={ArrowUpIcon} />
               </Button>
+            </div>
+            <span id="trip-hint" className="sr-only">
+              For example: {PROMPT}
             </span>
-          </label>
+          </form>
           <div className={cn('flex flex-wrap gap-2', desktop && 'justify-center')}>
             <AiChip onClick={bestDeal}>What’s the best deal for my stay?</AiChip>
             <AiChip onClick={() => go('j2/2')}>Suite for my family vacation</AiChip>
@@ -223,11 +257,11 @@ export function J2WaterPark() {
         <span aria-hidden>/</span> Explore <Icon icon={ChevronRightIcon} size="xs" /> <span className="text-foreground">Water Park</span>
       </nav>
       <Title>Explore our Indoor Water Park</Title>
-      <div className={cn('grid gap-5 pt-2', desktop ? 'grid-cols-3' : 'grid-cols-1')}>
+      <div className={cn('grid gap-x-5', desktop ? 'grid-cols-3' : 'grid-cols-1')}>
         {waterPark.map((a) => {
           const card = (
-            <Card className={cn('gap-0 overflow-hidden rounded-2xl p-0 transition-opacity', s.dim.includes(a.id) && 'opacity-45')}>
-              <Photo label={a.name} tone={a.id === 'cub-paw' ? 'lake' : a.id === 'fort-mackenzie' ? 'den' : 'dusk'} className="h-40" />
+            <Card className={cn('h-full gap-0 overflow-hidden rounded-2xl p-0 transition-opacity', s.dim.includes(a.id) && 'opacity-45')}>
+              <Photo icon={art[a.id]} label={a.name} tone={a.id === 'cub-paw' ? 'lake' : a.id === 'fort-mackenzie' ? 'den' : 'dusk'} className="h-40" />
               <div className="flex flex-col gap-1 p-4">
                 <span className="type-text-xs-semibold text-muted-foreground">{a.kind}</span>
                 <span className="gwl-display text-lg">{a.name}</span>
@@ -236,9 +270,9 @@ export function J2WaterPark() {
             </Card>
           )
           return (
-            <div key={a.id} id={`att-${a.id}`} className="scroll-mt-10">
+            <div key={a.id} id={`att-${a.id}`} className="flex scroll-mt-10 flex-col pt-7 [&>*]:flex-1">
               {s.spotlight === a.id ? (
-                <ElementSpotlight status="referenced" label="Wiley is showing you this" className="gwl-pulse mt-7 rounded-2xl">
+                <ElementSpotlight status="referenced" label="Wiley is showing you this" className="gwl-pulse rounded-2xl [&>[data-slot=card]]:h-full">
                   {card}
                 </ElementSpotlight>
               ) : (
@@ -281,7 +315,7 @@ export function J2ThingsToDo() {
           return (
             <li key={a.id} id={`act-${a.id}`} className="scroll-mt-4">
               <Card className={cn('flex-row items-center gap-4 rounded-2xl p-3 transition-opacity', hi && 'gwl-pulse ring-2 ring-primary', dim && 'opacity-45')}>
-                <Photo label={a.name} tone={a.fit === 'free' ? 'dusk' : 'forest'} className={cn('shrink-0 rounded-xl [&>span]:hidden', desktop ? 'h-20 w-24' : 'size-16')} />
+                <Photo icon={art[a.id]} label={a.name} tone={a.fit === 'free' ? 'dusk' : a.fit === 'ok' ? 'den' : 'forest'} className={cn('shrink-0 rounded-xl', desktop ? 'h-20 w-24' : 'size-16')} />
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="type-text-md-semibold">{a.name}</span>
                   <span className="type-text-xs-normal text-muted-foreground">{a.blurb}</span>
@@ -339,7 +373,7 @@ export function J2SavedPlan() {
         <ul className="flex flex-col gap-3">
           {things.map((t) => (
             <li key={t.id} className="flex items-center gap-4 rounded-2xl border bg-background p-3">
-              <Photo label={t.name} tone={t.id === 'cub-paw' ? 'lake' : 'forest'} className="h-16 w-20 shrink-0 rounded-lg [&>span]:hidden" />
+              <Photo icon={art[t.id]} label={t.name} tone={t.id === 'cub-paw' ? 'lake' : t.id === 'garden' ? 'dusk' : 'forest'} className="h-16 w-20 shrink-0 rounded-lg" />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="type-text-sm-semibold">{t.name}</span>
                 <span className="type-text-xs-normal text-muted-foreground">{t.sub}</span>

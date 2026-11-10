@@ -102,6 +102,10 @@ function Frame() {
   const pageRef = useRef<HTMLElement | null>(null)
   // Ask Wiley lives in the header; only J1·1 on mobile also shows the bottom "Ask away…" bar from the wireframe.
   const launcher = !s.open && key === '1.1' && !desktop ? 'bar' : null
+  // Each step starts at the top of its page; Wiley's own scroll-to effects run after this.
+  useEffect(() => {
+    if (pageRef.current) pageRef.current.scrollTop = 0
+  }, [key])
   const toStep2 = () => {
     go('j1/2')
   }

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Badge } from '@anvil/components/ui/badge'
-import { Icon, PawPrintIcon, SparklesIcon } from '@anvil/components/ui/icon'
+import { Icon, PawPrintIcon, SparklesIcon, type LucideIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import logo from '~/assets/gwl-logo.svg?raw'
 
@@ -26,12 +26,26 @@ const TONES = {
   den: 'from-[#efe0c8] to-[#b98d5c] dark:from-[#3f2c18] dark:to-[#26190d]',
 }
 
-/** A real photo when there is one (`src`), otherwise a labeled placeholder saying what the photo would show. */
-export function Photo({ label, tone = 'lake', className, children, src }: { label: string; tone?: keyof typeof TONES; className?: string; children?: ReactNode; src?: string }) {
+/**
+ * A real photo when there is one (`src`). Without one: an illustrated tile (`icon`) in the brand's tones, which reads
+ * as a deliberate graphic, or a labeled placeholder saying what the photo would show.
+ */
+export function Photo({ label, tone = 'lake', className, children, src, icon }: { label: string; tone?: keyof typeof TONES; className?: string; children?: ReactNode; src?: string; icon?: LucideIcon }) {
   if (src) {
     return (
       <div className={cn('relative overflow-hidden', className)}>
         <img src={src} alt={label} className="absolute inset-0 h-full w-full object-cover" />
+        {children}
+      </div>
+    )
+  }
+  if (icon) {
+    return (
+      <div role="img" aria-label={label} className={cn('relative grid place-items-center overflow-hidden bg-gradient-to-br', TONES[tone], className)}>
+        {/* Soft rings behind the glyph, echoing the wave mark. */}
+        <span aria-hidden className="absolute aspect-square h-[150%] rounded-full border-[14px] border-[#ffffff40] dark:border-[#ffffff14]" />
+        <span aria-hidden className="absolute aspect-square h-[85%] rounded-full bg-[#ffffff59] dark:bg-[#ffffff14]" />
+        <Icon icon={icon} className="relative h-[38%] max-h-12 min-h-5 w-auto text-[#123d65] dark:text-[#cae6ff]" strokeWidth={1.75} />
         {children}
       </div>
     )
