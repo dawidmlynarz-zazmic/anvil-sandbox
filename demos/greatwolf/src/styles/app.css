@@ -126,6 +126,9 @@
 @keyframes gwl-close { from { height: var(--radix-collapsible-content-height); opacity: 1; } to { height: 0; opacity: 0; } }
 .gwl-collapse[data-state='open'] { animation: gwl-open 220ms ease-out; }
 .gwl-collapse[data-state='closed'] { animation: gwl-close 180ms ease-in; }
+/* A suite card's rates opening inside the card. */
+@keyframes gwl-accordion { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.gwl-accordion { animation: gwl-accordion 220ms ease-out both; }
 .gwl-fade { animation: gwl-fade 180ms ease-out both; }
 
 /* Wiley is typing: three dots in an agent bubble. */
@@ -143,7 +146,7 @@
 .gwl-typing > span:nth-child(3) { animation-delay: 0.3s; }
 
 @media (prefers-reduced-motion: reduce) {
-  .gwl-page, .gwl-fade, .gwl-typing > span, .gwl-collapse { animation: none; }
+  .gwl-page, .gwl-fade, .gwl-typing > span, .gwl-collapse, .gwl-accordion { animation: none; }
   .gwl-typing > span { opacity: 0.7; }
 }
 

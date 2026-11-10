@@ -1,11 +1,12 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Chip } from '@anvil/components/anvil/chip'
 import { Badge } from '@anvil/components/ui/badge'
 import { CalendarIcon, Icon, UsersIcon, type LucideIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { suiteById, suites } from '~/data/fixtures'
 import { art, photos } from '~/data/photos'
-import { CompactRates, SuiteCard, SuiteCardSkeleton } from '~/components/local/SuiteCard/SuiteCard'
+import { SuiteCard, SuiteCardSkeleton } from '~/components/local/SuiteCard/SuiteCard'
+import { reveal } from '~/lib/reveal'
 import { TextShimmer } from '@anvil/components/agent/text-shimmer'
 import { Photo, WileyTag } from '~/components/local/Brand/Brand'
 import { useDemo } from '~/state/demo'
@@ -61,15 +62,28 @@ export function PlanRow({ item }: { item: PlanItem }) {
   )
 }
 
-/** J1·2 and J2·2: the suites page. Wiley sets the filter chips, ranks and highlights; removing a chip shows all again. */
+/**
+ * J1·2–3 and J2·2, J2·5: the suites page. Wiley sets the filter chips, ranks and highlights; removing a chip shows all
+ * again. View Rates opens a suite's rates inside its card, like an accordion (one at a time), and the other suites stay
+ * where they are. Opening rates from the suites step moves the journey to its rates step, where Wiley follows the
+ * choice; the page itself doesn't change. Once a rate is chosen on the rates step, the page becomes the Trip Builder.
+ */
 export function SuitesPage() {
-  const { s, journey, patch, go, chooseRate } = useDemo()
+  const { s, step, journey, patch, go, chooseRate } = useDemo()
   const desktop = usePageWide()
+  const ratesStep = journey === 1 ? 3 : 5
+  const onRates = step === ratesStep
+  // The open card's rates come into view (under the header, above the Wiley sheet) when it opens.
+  const opened = useRef(s.expanded)
+  useEffect(() => {
+    if (s.expanded && s.expanded !== opened.current && !s.selected) window.setTimeout(() => reveal(`rates-${s.expanded}`), 260)
+    opened.current = s.expanded
+  }, [s.expanded, s.selected])
   const ranked = s.ranked.length > 0 && s.filters.length > 0
   const narrowed = ranked && !s.widened
   const order = ranked ? [...s.ranked, ...suites.map((x) => x.id).filter((id) => !s.ranked.includes(id))] : suites.map((x) => x.id)
   const shown = narrowed ? order.filter((id) => s.ranked.includes(id)) : order
-  const ratesStep = journey === 1 ? 'j1/3' : 'j2/5'
+  if (onRates && s.selected) return <TripBuilder />
   return (
     <Page>
       <Title tag={s.setByWiley && s.filters.length > 0 ? <WileyTag>Set by Wiley</WileyTag> : undefined}>{journey === 1 ? 'Choose a suite' : 'Suites for your family'}</Title>
@@ -120,45 +134,16 @@ export function SuitesPage() {
               highlighted={s.highlight === id}
               expanded={s.expanded === id}
               selected={s.selected?.suite === id ? s.selected.rate : null}
-              // Any suite's rates open on the rates step, where Wiley follows the choice.
               onToggleRates={() => {
+                if (s.expanded === id) return patch({ expanded: null })
                 patch({ expanded: id })
-                go(ratesStep)
+                if (!onRates) go(`j${journey}/${ratesStep}`)
               }}
               onSelectRate={(rate) => chooseRate(id, rate)}
             />
           )
         })}
       </div>
-      )}
-    </Page>
-  )
-}
-
-/** J1·3 and J2·5: one suite with its rates open. Signed-in members see their two Voyagers rates only. */
-export function RatesPage() {
-  const { s, journey, patch, go, chooseRate } = useDemo()
-  const desktop = usePageWide()
-  const id = s.expanded ?? 'pup-den-jr'
-  const suite = suiteById(id)
-  const dates = journey === 1 ? 'Mar 12 – 14' : s.weekend
-  const back = () => {
-    patch({ expanded: null })
-    go(journey === 1 ? 'j1/2' : 'j2/2')
-  }
-  // Select answers in the chat: the choice shows as the family's message and Wiley replies.
-  const select = (rate: Parameters<typeof SuiteCard>[0]['selected']) => rate && chooseRate(id, rate)
-  // Choosing a rate is the start of the trip, not the end: the page becomes the Trip Builder.
-  if (s.selected?.suite === id) return <TripBuilder />
-  return (
-    <Page>
-      {desktop ? (
-        <>
-          <Title tag={<WileyTag>Set by Wiley</WileyTag>}>{journey === 1 ? 'Choose a suite' : `Choose a rate · ${dates}`}</Title>
-          <SuiteCard suite={suite} desktop signedIn={s.signedIn} tag={journey === 1 ? s.tags[id] : 'Wiley’s pick'} expanded selected={s.selected?.suite === id ? s.selected.rate : null} onToggleRates={back} onSelectRate={select} />
-        </>
-      ) : (
-        <CompactRates suite={suite} signedIn={s.signedIn} selected={s.selected?.suite === id ? s.selected.rate : null} onToggleRates={back} onSelectRate={select} datesLabel={`${dates} · 2 adults, 2 kids`} />
       )}
     </Page>
   )

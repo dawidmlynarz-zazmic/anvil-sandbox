@@ -131,7 +131,7 @@ function Rates({ suite, desktop, signedIn, selected, onSelectRate }: Pick<Props,
   const rates = ratesFor(suite.id).filter((r) => !signedIn || r.member)
   const sample = !suite.real
   return (
-    <div className={cn('grid gap-4 border-t bg-muted/40 p-4', desktop && (rates.length > 2 ? 'grid-cols-4 p-6' : 'grid-cols-2 p-6'))}>
+    <div id={`rates-${suite.id}`} className={cn('gwl-accordion grid scroll-mt-4 gap-4 border-t bg-muted/40 p-4', desktop && (rates.length > 2 ? 'grid-cols-4 p-6' : 'grid-cols-2 p-6'))}>
       {rates.map((r) => (
         <RateCard key={r.key} rate={r} signedIn={signedIn} selected={selected === r.key} onSelect={() => onSelectRate(r.key)} sample={sample} />
       ))}
