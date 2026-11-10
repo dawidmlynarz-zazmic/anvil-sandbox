@@ -39,6 +39,8 @@ interface Demo {
   play: (beats: Beat[]) => Promise<void>
   joinVoyagers: () => void
   chooseRate: (suite: string, key: RateKey) => void
+  /** The family moved a plan item themselves; Wiley confirms it (and says if it clashes with check-out). */
+  movePlanItem: (id: string, day: 'fri' | 'sat' | 'sun', time: string, reply: string) => void
   /** Add or remove a Trip Builder extra from the page; the chat shows it and Wiley answers. */
   toggleExtra: (id: string) => void
   payApple: () => void
@@ -500,6 +502,15 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
     [journey, step, run, push, play],
   )
 
+  const movePlanItem = useCallback(
+    (id: string, day: 'fri' | 'sat' | 'sun', time: string, reply: string) => {
+      setS((x) => ({ ...x, planEdits: { ...x.planEdits, [id]: { day, time } }, planDay: day }))
+      // Only when Wiley isn't mid-script: a move never interrupts what it's saying.
+      if (!playingRef.current) void play([{ type: 'agent', text: reply, thinking: ['Updating your plan'] }])
+    },
+    [play],
+  )
+
   const payApple = useCallback(() => {
     run([{ do: 'sheet', which: null }])
     go('j1/6')
@@ -608,6 +619,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       joinVoyagers,
       chooseRate,
       toggleExtra,
+      movePlanItem,
       payApple,
       listen,
       pick,
@@ -624,7 +636,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       reset,
       go,
     }),
-    [s, step, journey, msgs, typing, thinking, draft, playing, composer, desktop, framed, w, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, chooseRate, toggleExtra, payApple, listen, pick, submitCard, setSnap, toggleWiley, clearChat, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
+    [s, step, journey, msgs, typing, thinking, draft, playing, composer, desktop, framed, w, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, chooseRate, toggleExtra, movePlanItem, payApple, listen, pick, submitCard, setSnap, toggleWiley, clearChat, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

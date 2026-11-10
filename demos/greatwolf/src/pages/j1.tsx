@@ -1,21 +1,19 @@
-import { useEffect, useState } from 'react'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
-import { CalendarPlusIcon, CheckIcon, Icon, PrinterIcon, QrCodeIcon, SparklesIcon } from '@anvil/components/ui/icon'
+import { CheckIcon, Icon, QrCodeIcon, SparklesIcon } from '@anvil/components/ui/icon'
 import { Progress } from '@anvil/components/ui/progress'
-import { ToggleGroup, ToggleGroupItem } from '@anvil/components/ui/toggle-group'
 import { cn } from '@anvil/lib/utils'
-import { dates, families, lodge, money } from '~/data/fixtures'
-import { downloadCalendar } from '~/lib/calendar'
-import { art, photos } from '~/data/photos'
-import { Logo, Photo, WileyAvatar, WileyTag } from '~/components/local/Brand/Brand'
+import { dates, families, money } from '~/data/fixtures'
+import { photos } from '~/data/photos'
+import { Photo, WileyAvatar, WileyTag } from '~/components/local/Brand/Brand'
 import { TripQuote } from '~/components/local/WileyCards/WileyCards'
 import { quoteOf, useDemo } from '~/state/demo'
 import { j1Plan } from '~/state/plan'
 import { usePageWide } from '~/state/layout'
 import type { PlanItem } from '~/wiley/types'
-import { Page, PlanRow, Popular, Title } from './shared'
+import { Page, Popular, Title } from './shared'
+import { WeekendPlan } from './weekend'
 
 const fam = families.martinez
 
@@ -107,150 +105,32 @@ export function J1Home() {
   )
 }
 
-const DAYS = [
-  { key: 'fri', label: 'Fri', long: 'Friday' },
-  { key: 'sat', label: 'Sat', long: 'Saturday' },
-  { key: 'sun', label: 'Sun', long: 'Sunday' },
-] as const
-
 /** The plan as the page shows it, read against the trip (passes, birthday package, dining, late check-out). */
 function usePlan() {
   const { s } = useDemo()
   return j1Plan(s)
 }
 
-const MORE = [
-  { id: 'garden', name: 'Garden of the Gods', sub: 'Free · red rock trails', tone: 'dusk' as const },
-  { id: 'manitou', name: 'Manitou Springs', sub: 'Historic downtown', tone: 'den' as const },
-  { id: 'wolf-center', name: 'Colorado Wolf and Wildlife Center', sub: 'About an hour away', tone: 'forest' as const },
-]
-
-/** J1·4: the weekend in and around the lodge, built with Wiley. Day tabs on mobile, three columns on desktop. */
-const DAY_DATE = { fri: '2027-03-12', sat: '2027-03-13', sun: '2027-03-14' } as const
-
-/** The full weekend for print: every day in order, whatever tab is open on screen. */
-function PrintablePlan({ plan, suite }: { plan: PlanItem[]; suite: string }) {
-  return (
-    <div className="hidden flex-col gap-5 print:flex">
-      <div className="flex flex-col gap-1 border-b pb-4">
-        <Logo className="h-6 self-start" />
-        <p className="mt-3 type-text-lg-semibold">Your weekend · {dates.j1.long}</p>
-        <p className="type-text-sm-normal">
-          {fam.name} family · 2 adults, 2 kids (Mia 7, Leo 4) · {suite} · {lodge.name}, {lodge.city}
-        </p>
-      </div>
-      {DAYS.map((d) => (
-        <section key={d.key} className="flex flex-col gap-2 break-inside-avoid">
-          <h2 className="type-text-sm-semibold uppercase">{d.long}</h2>
-          <table className="w-full type-text-sm-normal">
-            <tbody>
-              {plan.filter((p) => p.day === d.key).map((p) => (
-                <tr key={p.id} className="border-b align-top">
-                  <td className="w-24 py-1.5 font-semibold">{p.time}</td>
-                  <td className="py-1.5">
-                    {p.title}
-                    {p.sub && <span className="text-muted-foreground"> · {p.sub}</span>}
-                  </td>
-                  <td className="w-24 py-1.5 text-right">{p.status ?? ''}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      ))}
-      <p className="type-text-xs-normal">Prototype itinerary. Times are planned, not reserved, unless marked Booked.</p>
-    </div>
-  )
-}
-
-/** J1·4: the weekend in and around the lodge, built with Wiley. Day tabs on mobile (Friday first), three columns on desktop. */
+/** J1·4: the weekend in and around the lodge, built with Wiley from the trip. */
 export function J1Plan() {
-  const { s, run } = useDemo()
-  const desktop = usePageWide()
+  const { s, go } = useDemo()
   const plan = usePlan()
-  const [day, setDay] = useState<'fri' | 'sat' | 'sun'>('fri')
-  // When Wiley points at a day (Sunday's suggestion, MagiQuest moved to Friday), the tabs follow.
-  useEffect(() => {
-    if (s.planDay) setDay(s.planDay)
-  }, [s.planDay])
   const suite = quoteOf(s)?.suite.name ?? 'Junior Wolf Pup Den Suite'
-  const exportCalendar = () => {
-    downloadCalendar(
-      'great-wolf-weekend.ics',
-      plan.map((p) => ({
-        title: p.status === 'Suggested' ? `${p.title} (suggested)` : p.title,
-        date: DAY_DATE[p.day],
-        time: p.time,
-        location: p.sub?.startsWith('Near') ? p.title : `${lodge.name}, ${lodge.city}`,
-        description: [p.sub, p.status].filter(Boolean).join(' · '),
-      })),
-    )
-    run([{ do: 'toast', text: 'Calendar file downloaded' }])
-  }
-  const actions = (
-    <>
-      <Button shape="pill" variant="outline" intent="neutral" onClick={exportCalendar}>
-        <Icon icon={CalendarPlusIcon} /> Add to calendar
-      </Button>
-      <Button shape="pill" variant="outline" intent="neutral" onClick={() => window.print()}>
-        <Icon icon={PrinterIcon} /> Print
-      </Button>
-    </>
-  )
   return (
-    <Page>
-      <div className="flex flex-col gap-5 print:hidden">
-        <Title tag={<WileyTag>Built with Wiley</WileyTag>} actions={actions}>
-          Your weekend · {dates.j1.short}
-        </Title>
-        {desktop ? (
-          <>
-            <div className="grid grid-cols-3 gap-4">
-              {DAYS.map((d) => (
-                <section key={d.key} aria-label={d.long} className="flex flex-col gap-3">
-                  <h2 className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">{d.long}</h2>
-                  <ul className="flex flex-col gap-3">
-                    {plan.filter((p) => p.day === d.key).map((p) => (
-                      <PlanRow key={p.id} item={p} />
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
-            <section aria-labelledby="more-near" className="flex flex-col gap-3">
-              <h2 id="more-near" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
-                More near the lodge
-              </h2>
-              <div className="grid grid-cols-3 gap-4">
-                {MORE.filter((m) => !plan.some((p) => p.id === m.id)).map((m) => (
-                  <Card key={m.id} className="gap-2 rounded-2xl p-3">
-                    <Photo icon={art[m.id]} label={m.name} tone={m.tone} className="h-24 rounded-xl" />
-                    <span className="type-text-sm-semibold">{m.name}</span>
-                    <span className="-mt-1.5 type-text-xs-normal text-muted-foreground">{m.sub}</span>
-                  </Card>
-                ))}
-              </div>
-            </section>
-          </>
-        ) : (
-          <>
-            <ToggleGroup type="single" value={day} onValueChange={(v) => v && setDay(v as typeof day)} aria-label="Day" className="gap-2">
-              {DAYS.map((d) => (
-                <ToggleGroupItem key={d.key} value={d.key} className="h-9 rounded-full border px-4">
-                  {d.label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-            <ul className="flex flex-col gap-3">
-              {plan.filter((p) => p.day === day).map((p) => (
-                <PlanRow key={p.id} item={p} />
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
-      <PrintablePlan plan={plan} suite={suite} />
-    </Page>
+    <WeekendPlan
+      plan={plan}
+      title={`Your weekend · ${dates.j1.short}`}
+      tag={<WileyTag>Built with Wiley</WileyTag>}
+      primary={
+        <Button shape="pill" onClick={() => go('j1/5')}>
+          Go to checkout
+        </Button>
+      }
+      iso={{ fri: '2027-03-12', sat: '2027-03-13', sun: '2027-03-14' }}
+      printWhen={dates.j1.long}
+      printWho={`${fam.name} family · 2 adults, 2 kids (Mia 7, Leo 4) · ${suite}`}
+      file="great-wolf-weekend.ics"
+    />
   )
 }
 

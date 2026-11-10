@@ -58,3 +58,19 @@ recommendation is for Dawid to decide.
 
 `Brand` (the GWL logo from the supplied SVG, photo placeholders, sample label, Wiley avatar, "Set by Wiley" tag), `AppHeader`, `Overlays`
 (launcher bar, mock Apple Pay, Voyagers join and share sheets, toast, end cards).
+
+## Rearrangeable day plan (PlanRow with drag and Move menu) · `pages/weekend.tsx`, `pages/shared.tsx`
+
+- **Type:** new pattern (itinerary board).
+- **Closest Anvil option checked:** `Timeline`, `TaskPlan`, `SlotList`. None reorders, and Anvil has no drag and drop.
+- **Proposed API:** `<ItineraryBoard days={[{ id, label, items }]} onMove={(id, day, index) => …} locked={(item) => …} />` with `ItineraryItem` slots (time, title, status, sub). Drop line between items, columns on wide screens and tabs on narrow ones (tabs take drops), plus a per-item Move menu.
+- **A11y:** the Move menu is the keyboard and screen-reader path (another day, 30 minutes earlier or later); the grip is pointer and touch only. Moves are announced (dnd-kit live region) and confirmed in the chat. Locked items say why ("Set by the lodge").
+- **Recommendation:** worth adding if more demos plan days. Built here on `@dnd-kit/core` 6.3.1 (touch long-press, mouse distance threshold).
+
+## Pinned summary (TripBar) · `pages/trip.tsx`
+
+- **Type:** new pattern (sticky, collapsible summary).
+- **Closest Anvil option checked:** `Collapsible` (used inside it), `AnnouncementBar`.
+- **Proposed API:** `<PinnedSummary label total count lines={[{ id, label, value }]} flash="Just added: …" onLineSelect />`.
+- **A11y:** the trigger is a real button with Show/Hide; the summary line is a polite live region so additions are announced.
+- **Recommendation:** adopt for any mobile flow that builds a basket while scrolling.

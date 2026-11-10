@@ -4,7 +4,7 @@ import { CheckIcon, Icon, LinkIcon, MailIcon, MessageSquareIcon, MicIcon, Sparkl
 import { cn } from '@anvil/lib/utils'
 import { photos } from '~/data/photos'
 import { quoteOf, useDemo } from '~/state/demo'
-import { savedPlan } from '~/state/plan'
+import { j2Plan, savedPlan } from '~/state/plan'
 import { lodge } from '~/data/fixtures'
 import { Photo, Sample, WileyAvatar } from '../Brand/Brand'
 
@@ -181,6 +181,7 @@ function Share() {
 function PlanPreview() {
   const { s, run, desktop } = useDemo()
   const p = savedPlan(s)
+  const plan = j2Plan(s)
   const close = () => run([{ do: 'sheet', which: null }])
   const ref = useDialog(close)
   return (
@@ -251,24 +252,24 @@ function PlanPreview() {
               </ul>
             </section>
           )}
-          <section aria-labelledby="plan-things" className="flex flex-col gap-3">
-            <h3 id="plan-things" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
-              Things to do ({p.things.length})
-            </h3>
-            <ul className="flex flex-col gap-2">
-              {p.things.map((x) => (
-                <li key={x.id} className="flex items-center gap-3">
-                  <Photo icon={x.icon} label={x.name} tone={x.id === 'cub-paw' ? 'lake' : x.id === 'garden' ? 'dusk' : 'forest'} className="size-12 shrink-0 rounded-lg" />
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="type-text-sm-semibold">{x.name}</span>
-                    <span className="type-text-xs-normal text-muted-foreground">
-                      {x.when} · {x.where}
+          {(['fri', 'sat', 'sun'] as const).map((d) => (
+            <section key={d} aria-labelledby={`plan-${d}`} className="flex flex-col gap-2">
+              <h3 id={`plan-${d}`} className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
+                {d === 'fri' ? 'Friday' : d === 'sat' ? 'Saturday' : 'Sunday'}
+              </h3>
+              <ul className="flex flex-col gap-1.5">
+                {plan.filter((x) => x.day === d).map((x) => (
+                  <li key={x.id} className="flex gap-3 type-text-sm-normal">
+                    <span className="w-14 shrink-0 type-text-sm-semibold tabular-nums">{x.time}</span>
+                    <span className="min-w-0 flex-1">
+                      {x.title}
+                      {x.status === 'Suggested' && <span className="text-muted-foreground"> (suggested)</span>}
                     </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
           <p className="type-text-xs-normal text-muted-foreground">
             {s.planSaved ? 'Wiley sent a link to this plan. It brings back this plan and your chat. ' : ''}Not booked yet: nothing is reserved until you book.
           </p>

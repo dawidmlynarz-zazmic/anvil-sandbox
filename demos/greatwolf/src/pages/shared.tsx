@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { Chip } from '@anvil/components/anvil/chip'
 import { Badge } from '@anvil/components/ui/badge'
 import { CalendarIcon, Icon, UsersIcon, type LucideIcon } from '@anvil/components/ui/icon'
@@ -44,11 +44,20 @@ const STATUS: Record<NonNullable<PlanItem['status']>, string> = {
   Free: 'bg-success-soft text-success-strong',
 }
 
-/** ANVIL-CANDIDATE (PlanRow): an itinerary row with a status tag; "Suggested" is dashed until it's accepted. */
-export function PlanRow({ item }: { item: PlanItem }) {
+/**
+ * ANVIL-CANDIDATE (PlanRow): an itinerary row with a status tag; "Suggested" is dashed until it's accepted. Optional
+ * `handle` (drag grip) and `menu` (Move menu) sit at either end when the plan can be rearranged.
+ */
+export function PlanRow({ item, handle, menu, className, ref, ...rest }: { item: PlanItem; handle?: ReactNode; menu?: ReactNode; ref?: Ref<HTMLLIElement> } & HTMLAttributes<HTMLLIElement>) {
   const suggested = item.status === 'Suggested'
   return (
-    <li id={`plan-${item.id}`} className={cn('gwl-in flex scroll-mt-4 items-center gap-4 rounded-2xl border bg-background p-4', suggested && 'border-2 border-dashed border-foreground/50')}>
+    <li
+      ref={ref}
+      id={`plan-${item.id}`}
+      className={cn('gwl-in relative flex scroll-mt-4 items-center gap-3 rounded-2xl border bg-background p-4', handle && 'ps-2', menu && 'pe-2', suggested && 'border-2 border-dashed border-foreground/50', className)}
+      {...rest}
+    >
+      {handle}
       <span className="w-14 shrink-0 type-text-sm-semibold text-muted-foreground tabular-nums">{item.time}</span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         {/* The status wraps under the title in narrow columns instead of squeezing it. */}
@@ -58,6 +67,7 @@ export function PlanRow({ item }: { item: PlanItem }) {
         </span>
         {item.sub && <span className="type-text-xs-normal text-muted-foreground">{item.sub}</span>}
       </span>
+      {menu}
     </li>
   )
 }
