@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { rateOf, suiteById, type RateKey } from '~/data/fixtures'
+import { money, rateOf, suiteById, type RateKey } from '~/data/fixtures'
 import { extraById } from '~/data/extras'
 import { reveal } from '~/lib/reveal'
 import { afterJoinPickRate, afterJoinWithRate, scripts } from '~/wiley/scripts'
@@ -203,7 +203,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
               if (!e || x.cart.some((c) => c.id === e.id)) return x
               // One birthday package and one dining credit per trip: a new one replaces the old.
               const others = x.cart.filter((c) => !(e.group && extraById(c.id)?.group === e.group))
-              const line = { id: e.id, label: e.name, amount: e.amount ?? 0, price: e.amount === null ? e.price : undefined, kind: e.kind, fresh: true }
+              const line = { id: e.id, label: e.qty ? `${e.name} ${e.qty.label}` : e.name, amount: e.amount, price: e.sample ? `${money(e.amount)}*` : undefined, kind: e.kind, fresh: true }
               return { ...x, cart: [...others.map((c) => ({ ...c, fresh: false })), line] }
             })
             break
@@ -642,7 +642,7 @@ export function quoteOf(s: DemoState, nights = 2) {
     ...s.cart.map((c) => ({ id: c.id, label: c.label, detail: c.fresh ? 'Just added' : '', amount: c.amount, price: c.price })),
   ]
   const total = Math.round((base + s.cart.reduce((n, c) => n + c.amount, 0)) * 100) / 100
-  /** Some lines have no listed price yet, so the total leaves them out. */
-  const unpriced = s.cart.some((c) => c.price)
-  return { lines, total, rate, suite, unpriced }
+  /** Some lines use sample prices (the lodge lists none); they're starred. */
+  const sample = s.cart.some((c) => c.price)
+  return { lines, total, rate, suite, sample }
 }

@@ -10,7 +10,7 @@ import { cn } from '@anvil/lib/utils'
 import { activityById, money, suiteById } from '~/data/fixtures'
 import { extras, SECTIONS, type Extra, type ExtraKind } from '~/data/extras'
 import { suitePhotos } from '~/data/photos'
-import { Photo, WileyTag } from '~/components/local/Brand/Brand'
+import { Photo, Sample, WileyTag } from '~/components/local/Brand/Brand'
 import { CompactRates, SuiteCard } from '~/components/local/SuiteCard/SuiteCard'
 import { TripQuote } from '~/components/local/WileyCards/WileyCards'
 import { quoteOf, useDemo } from '~/state/demo'
@@ -55,7 +55,12 @@ function ExtraOffer({ e, added, suggested, onToggle, desktop }: { e: Extra; adde
           )}
         </>
       }
-      price={e.price}
+      price={
+        <>
+          {e.price}
+          {e.sample && <Sample className="ms-1.5 align-middle" />}
+        </>
+      }
       ctaLabel={added ? 'Remove' : 'Add'}
       onCta={onToggle}
     />
@@ -165,7 +170,7 @@ function TripBar() {
                 <Icon icon={CheckIcon} size="xs" /> Just added: {flash}
               </span>
             ) : (
-              `${items} ${items === 1 ? 'item' : 'items'} · ${money(q.total)}${q.unpriced ? ' + lodge prices' : ''}`
+              `${items} ${items === 1 ? 'item' : 'items'} · ${money(q.total)}`
             )}
           </span>
         </span>
@@ -197,7 +202,7 @@ function TripBar() {
           <span className="type-text-sm-semibold">Total</span>
           <span className="type-text-lg-semibold">{money(q.total)}</span>
         </div>
-        {q.unpriced && <p className="px-4 pb-3 type-text-xs-normal text-muted-foreground">Plus items the lodge prices at booking</p>}
+        {q.sample && <p className="px-4 pb-3 type-text-xs-normal text-muted-foreground">* Sample price: the lodge doesn’t list one</p>}
       </CollapsibleContent>
     </Collapsible>
   )

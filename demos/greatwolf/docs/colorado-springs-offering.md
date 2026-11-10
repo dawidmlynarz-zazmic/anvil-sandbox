@@ -2,7 +2,7 @@
 
 Read from greatwolf.com/colorado-springs on 2026-11-10, for the Trip Builder. Prices change often; anything shown
 in the demo as a listed price was seen on that date. Flags: **C** confirmed on the lodge's own pages, **G** general GWL
-page only, **N** not found. Not found means the demo shows `[price]` or "To confirm with the lodge".
+page only, **N** not found. Where the lodge lists no price, the demo uses a sample price, tagged "sample" on the card and starred in totals; unconfirmed details say "To confirm with the lodge".
 
 ## Included with a suite (C)
 - Water park passes for every registered guest, from opening on arrival day until closing on departure day.

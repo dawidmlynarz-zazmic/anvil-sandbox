@@ -91,7 +91,7 @@ const lateCheckout: Option = {
   label: 'Add late check-out',
   then: [
     { type: 'effect', actions: [{ do: 'addToCart', item: 'late-checkout' }, { do: 'toast', text: 'Late check-out added' }, { do: 'patch', fn: () => ({ planDay: 'sun' }) }, { do: 'scrollTo', id: 'plan-checkout' }] },
-    say('Done: check-out moves to 2pm, so after Sunday morning you still have the suite for a swim and a change. The lodge doesn’t list its price, so it shows as [price].'),
+    say('Done: check-out moves to 2pm, so after Sunday morning you still have the suite for a swim and a change. That’s $49.99, a sample price: the lodge doesn’t list one.'),
     chips({ label: 'Go to checkout', then: [goTo('j1/5')] }),
   ],
 }
