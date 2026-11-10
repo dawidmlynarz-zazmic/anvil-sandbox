@@ -32,7 +32,7 @@ function DemoBar() {
   const { journey, step, startJourney, goStep, back, next, reset, deviceMode, setDeviceMode, playing } = useDemo()
   const { dark, toggle } = useTheme()
   return (
-    <div className="dark flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b bg-background px-3 py-1.5 text-foreground">
+    <div className="gwl-noprint dark flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b bg-background px-3 py-1.5 text-foreground">
       <ToggleGroup type="single" variant="outline" size="sm" value={String(journey)} onValueChange={(v) => v && startJourney(Number(v) as Journey)} aria-label="Journey">
         <ToggleGroupItem value="1">Journey 1</ToggleGroupItem>
         <ToggleGroupItem value="2">Journey 2</ToggleGroupItem>
@@ -51,9 +51,6 @@ function DemoBar() {
           </button>
         ))}
       </div>
-      <span className="hidden min-w-0 truncate type-text-xs-medium text-muted-foreground md:inline">
-        J{journey}·{step} · {TITLES[`${journey}.${step}`]}
-      </span>
       <span className="flex-1" />
       <div className="flex items-center gap-1">
         <Button size="sm" variant="ghost" intent="neutral" onClick={back} disabled={step === 1} aria-label="Back">
@@ -89,7 +86,7 @@ function PhoneFrame({ children }: { children: ReactNode }) {
   }, [])
   return (
     <div className="grid h-full place-items-center overflow-auto bg-[var(--gwl-canvas)] p-4">
-      <div style={{ zoom }} className="relative h-[844px] w-[390px] shrink-0 overflow-hidden rounded-[48px] border-[10px] border-[#0b1520] bg-background shadow-2xl [transform:translateZ(0)]">
+      <div style={{ zoom }} className="gwl-phone relative h-[844px] w-[390px] shrink-0 overflow-hidden rounded-[48px] border-[10px] border-[#0b1520] bg-background shadow-2xl [transform:translateZ(0)]">
         {children}
       </div>
     </div>

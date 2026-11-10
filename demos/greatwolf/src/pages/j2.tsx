@@ -3,13 +3,14 @@ import { ElementSpotlight } from '@anvil/components/agent/element-spotlight'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
-import { ArrowLeftIcon, ArrowUpIcon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Icon, MicIcon, SparklesIcon, TagIcon, UsersIcon } from '@anvil/components/ui/icon'
+import { ArrowLeftIcon, ArrowUpIcon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, EyeIcon, Icon, MicIcon, SparklesIcon, TagIcon, UsersIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
-import { activityById, lodge, nearby, waterPark } from '~/data/fixtures'
+import { lodge, nearby, waterPark } from '~/data/fixtures'
 import { art, photos } from '~/data/photos'
 import { Photo, WileyTag } from '~/components/local/Brand/Brand'
 import { AiChip } from '~/components/local/WileyCards/WileyCards'
 import { useDemo } from '~/state/demo'
+import { savedPlan } from '~/state/plan'
 import { usePageWide } from '~/state/layout'
 import type { Beat } from '~/wiley/types'
 import { Page, Popular, Title } from './shared'
@@ -332,51 +333,53 @@ export function J2ThingsToDo() {
   )
 }
 
-const SUBS: Record<string, { sub: string; tag: string }> = {
-  zoo: { sub: 'Near the lodge · Sunday morning', tag: 'Nearby' },
-  garden: { sub: 'Near the lodge · free', tag: 'Free' },
-}
-
-/** J2·6: the plan Wiley saved, with booking and sharing on the page itself. */
+/** J2·6: the plan Wiley saved, with booking, a full preview and sharing on the page itself. */
 export function J2SavedPlan() {
   const { s, run } = useDemo()
   const desktop = usePageWide()
-  const things = [
-    { id: 'cub-paw', name: 'Cub Paw Pool', sub: 'In the lodge · kiddie splash pad', tag: 'Included' },
-    ...s.ideas.map((id) => {
-      const a = activityById(id)!
-      return { id, name: a.name, sub: SUBS[id]?.sub ?? 'Near the lodge', tag: SUBS[id]?.tag ?? a.tag }
-    }),
-  ]
+  const p = savedPlan(s)
   return (
     <Page>
       <Title tag={<WileyTag>Saved by Wiley</WileyTag>}>Your plan</Title>
-      <Card className={cn('gap-4 overflow-hidden rounded-3xl p-0', desktop && 'flex-row')}>
-        <Photo src={photos.den} label="Junior Wolf Pup Den Suite" className={cn('shrink-0', desktop ? 'w-72' : 'h-44')} />
-        <div className={cn('flex flex-col gap-3 p-5', !desktop && 'pt-0')}>
-        <p className="gwl-display text-lg">Junior Wolf Pup Den Suite · {s.weekend}</p>
-        <p className="type-text-sm-normal text-muted-foreground">2 adults, 2 kids (3, 6) · water park passes included · from $119 / night</p>
-        <div className={cn('flex gap-2', desktop ? 'flex-row' : 'flex-col')}>
-          <Button shape="pill" size="lg" onClick={() => run([{ do: 'end', card: 'checkout' }])}>
-            Book now
-          </Button>
-          <Button shape="pill" size="lg" variant="outline" intent="neutral" onClick={() => run([{ do: 'sheet', which: 'share' }])}>
-            Share with my partner
-          </Button>
-        </div>
+      <Card className={cn('gap-0 overflow-hidden rounded-3xl p-0', desktop && 'flex-row')}>
+        <Photo src={p.photo} label={p.suite.name} className={cn('shrink-0', desktop ? 'w-72' : 'h-44')} />
+        <div className="flex min-w-0 flex-1 flex-col gap-3 p-5">
+          <p className="gwl-display text-lg leading-tight">
+            {p.suite.name} · {p.weekend.short}
+          </p>
+          <p className="type-text-sm-normal text-muted-foreground">
+            {p.guests} · water park passes included · {p.nights} nights
+          </p>
+          <p className="type-text-sm-semibold">
+            {p.rateLine}
+            {p.total && <span className="type-text-sm-normal text-muted-foreground"> · {p.total} total</span>}
+          </p>
+          <div className={cn('mt-1 flex gap-2', desktop ? 'flex-row flex-wrap' : 'flex-col')}>
+            <Button shape="pill" size="lg" onClick={() => run([{ do: 'end', card: 'checkout' }])}>
+              Book now
+            </Button>
+            <Button shape="pill" size="lg" variant="outline" intent="neutral" onClick={() => run([{ do: 'sheet', which: 'plan' }])}>
+              <Icon icon={EyeIcon} /> Preview plan
+            </Button>
+            <Button shape="pill" size="lg" variant="outline" intent="neutral" onClick={() => run([{ do: 'sheet', which: 'share' }])}>
+              Share with my partner
+            </Button>
+          </div>
         </div>
       </Card>
       <section aria-labelledby="things" className="flex flex-col gap-3">
         <h2 id="things" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
-          Things to do
+          Things to do ({p.things.length})
         </h2>
         <ul className="flex flex-col gap-3">
-          {things.map((t) => (
+          {p.things.map((t) => (
             <li key={t.id} className="flex items-center gap-4 rounded-2xl border bg-background p-3">
-              <Photo icon={art[t.id]} label={t.name} tone={t.id === 'cub-paw' ? 'lake' : t.id === 'garden' ? 'dusk' : 'forest'} className="h-16 w-20 shrink-0 rounded-lg" />
+              <Photo icon={t.icon} label={t.name} tone={t.id === 'cub-paw' ? 'lake' : t.id === 'garden' ? 'dusk' : 'forest'} className="h-16 w-20 shrink-0 rounded-lg" />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="type-text-sm-semibold">{t.name}</span>
-                <span className="type-text-xs-normal text-muted-foreground">{t.sub}</span>
+                <span className="type-text-xs-normal text-muted-foreground">
+                  {t.when} · {t.where}
+                </span>
               </span>
               <Badge variant="subtle" size="sm">
                 {t.tag}

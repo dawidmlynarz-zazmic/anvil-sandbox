@@ -37,5 +37,6 @@ export function seed(journey: Journey): DemoState {
     planSaved: false,
     planCount: 0,
     tripText: null,
+    planDay: null,
   }
 }

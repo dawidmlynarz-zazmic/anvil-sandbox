@@ -184,13 +184,6 @@ function Conversation() {
           placeholder={live ? 'Listening…' : desktop ? 'Ask me anything about your stay…' : 'Ask about your stay…'}
           onVoice={listen}
           listening={live}
-          leading={
-            live ? (
-              <Badge tone="destructive" size="xs" className="ms-1">
-                LIVE
-              </Badge>
-            ) : undefined
-          }
           onSubmit={(t) => t.trim() && say(t.trim())}
         />
       </ChatShellComposer>
@@ -210,7 +203,7 @@ function Sheet() {
   return (
     <section
       aria-label="Wiley"
-      className="gwl-up relative z-10 flex shrink-0 flex-col overflow-hidden rounded-t-2xl border-t bg-background shadow-[0_-8px_24px_rgb(7_39_69/0.15)] transition-[height] duration-300 ease-out"
+      className="gwl-noprint gwl-up relative z-10 flex shrink-0 flex-col overflow-hidden rounded-t-2xl border-t bg-background shadow-[0_-8px_24px_rgb(7_39_69/0.15)] transition-[height] duration-300 ease-out"
       style={{ height: HEIGHT[s.snap] }}
     >
       <button
@@ -244,7 +237,7 @@ export function WileyPanel() {
   if (!s.open) return null
   if (!desktop) return <Sheet />
   return (
-    <aside aria-label="Wiley" className={cn('gwl-in flex w-[420px] shrink-0 flex-col border-l bg-background')}>
+    <aside aria-label="Wiley" className={cn('gwl-noprint gwl-in flex w-[420px] shrink-0 flex-col border-l bg-background')}>
       <Conversation />
     </aside>
   )

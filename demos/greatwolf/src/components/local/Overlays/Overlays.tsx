@@ -4,7 +4,9 @@ import { CheckIcon, Icon, LinkIcon, MailIcon, MessageSquareIcon, MicIcon, Sparkl
 import { cn } from '@anvil/lib/utils'
 import { photos } from '~/data/photos'
 import { quoteOf, useDemo } from '~/state/demo'
-import { WileyAvatar } from '../Brand/Brand'
+import { savedPlan } from '~/state/plan'
+import { lodge } from '~/data/fixtures'
+import { Photo, Sample, WileyAvatar } from '../Brand/Brand'
 
 // Demo-only overlays. The native sheets are mocks of the phone's own UI (Apple Pay, share) and of a sign-up sheet;
 // nothing is paid, shared or created.
@@ -40,7 +42,7 @@ export function Toast() {
   const { s } = useDemo()
   if (!s.toast) return null
   return (
-    <div role="status" className="gwl-in pointer-events-none absolute top-3 left-1/2 z-40 -translate-x-1/2">
+    <div role="status" className="gwl-noprint gwl-in pointer-events-none absolute top-3 left-1/2 z-40 -translate-x-1/2">
       <span className="inline-flex items-center gap-2 rounded-full bg-background-inverse px-4 py-2 type-text-sm-medium text-foreground-inverse shadow-lg">
         <Icon icon={CheckIcon} size="xs" />
         {s.toast}
@@ -175,8 +177,102 @@ function Share() {
   )
 }
 
+/** J2·6: the saved plan in full, as the link Wiley sends would show it. */
+function PlanPreview() {
+  const { s, run, desktop } = useDemo()
+  const p = savedPlan(s)
+  const close = () => run([{ do: 'sheet', which: null }])
+  const ref = useDialog(close)
+  return (
+    <div className={cn('gwl-fade absolute inset-0 z-30 flex justify-center bg-overlay', desktop ? 'items-center p-6' : 'items-end')} onClick={close}>
+      <div
+        ref={ref}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="plan-title"
+        onClick={(e) => e.stopPropagation()}
+        className={cn('flex max-h-[92%] w-full max-w-lg flex-col overflow-hidden bg-background shadow-2xl outline-none', desktop ? 'gwl-in rounded-3xl' : 'gwl-up rounded-t-3xl')}
+      >
+        <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
+          <div className="flex flex-col">
+            <span className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">Saved by Wiley</span>
+            <h2 id="plan-title" className="gwl-display text-xl leading-tight">
+              Your Great Wolf plan
+            </h2>
+          </div>
+          <Button variant="ghost" intent="neutral" size="icon-sm" aria-label="Close" onClick={close}>
+            <Icon icon={XIcon} />
+          </Button>
+        </div>
+        <div className="flex flex-col gap-5 overflow-y-auto px-5 py-5">
+          <div className="flex gap-4">
+            {p.photo && <img src={p.photo} alt="" className="h-24 w-32 shrink-0 rounded-xl object-cover" />}
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="type-text-md-semibold">{p.suite.name}</span>
+              <span className="type-text-sm-normal">{p.weekend.long} · {p.nights} nights</span>
+              <span className="type-text-sm-normal text-muted-foreground">{p.guests} · sleeps up to {p.suite.sleeps}</span>
+            </div>
+          </div>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-2xl bg-muted p-4 type-text-sm-normal">
+            <dt className="text-muted-foreground">Rate</dt>
+            <dd>
+              {p.rateLine}
+              {p.sample && <Sample className="ms-1.5 align-middle" />}
+            </dd>
+            {p.total && (
+              <>
+                <dt className="text-muted-foreground">Suite total</dt>
+                <dd className="type-text-sm-semibold">
+                  {p.total} for {p.nights} nights, before taxes
+                </dd>
+              </>
+            )}
+            <dt className="text-muted-foreground">Included</dt>
+            <dd>Water park passes for 3 days</dd>
+            <dt className="text-muted-foreground">Lodge</dt>
+            <dd>
+              {lodge.name}, {lodge.city}
+            </dd>
+          </dl>
+          <section aria-labelledby="plan-things" className="flex flex-col gap-3">
+            <h3 id="plan-things" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
+              Things to do ({p.things.length})
+            </h3>
+            <ul className="flex flex-col gap-2">
+              {p.things.map((x) => (
+                <li key={x.id} className="flex items-center gap-3">
+                  <Photo icon={x.icon} label={x.name} tone={x.id === 'cub-paw' ? 'lake' : x.id === 'garden' ? 'dusk' : 'forest'} className="size-12 shrink-0 rounded-lg" />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="type-text-sm-semibold">{x.name}</span>
+                    <span className="type-text-xs-normal text-muted-foreground">
+                      {x.when} · {x.where}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <p className="type-text-xs-normal text-muted-foreground">
+            {s.planSaved ? 'Wiley sent a link to this plan. It brings back this plan and your chat. ' : ''}Not booked yet: nothing is reserved until you book.
+          </p>
+        </div>
+        <div className="flex justify-end gap-2 border-t px-5 py-4">
+          <Button shape="pill" variant="outline" intent="neutral" onClick={close}>
+            Close
+          </Button>
+          <Button shape="pill" onClick={() => run([{ do: 'sheet', which: null }, { do: 'end', card: 'checkout' }])}>
+            Book now
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function NativeSheets() {
   const { s } = useDemo()
+  if (s.sheet === 'plan') return <PlanPreview />
   if (s.sheet === 'apple') return <ApplePay />
   if (s.sheet === 'join') return <Join />
   if (s.sheet === 'share') return <Share />

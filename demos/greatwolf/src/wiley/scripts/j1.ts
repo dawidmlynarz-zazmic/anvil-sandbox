@@ -1,3 +1,4 @@
+import { suiteById, type RateKey } from '~/data/fixtures'
 import type { Action, Beat, Option, StepScript } from '../types'
 
 // Journey 1: the Martinez family, signed in as Voyagers Club members, plans Mia's 7th birthday weekend.
@@ -72,20 +73,41 @@ const addMagiQuest: Beat[] = [
   ...nextStep('MagiQuest is in, like last time. Its price is still to be confirmed. Want me to plan the weekend around it?'),
 ]
 
-const switchToStandard: Option = {
-  label: 'Switch to Standard',
-  then: [
-    { type: 'effect', actions: [{ do: 'selectRate', suite: '@current', rate: 'Standard' }, { do: 'scrollTo', id: 'rate-std-voy' }] },
-    say('Switched to Standard at your Voyagers rate. It’s $6 a night less; you can change or cancel for free until [date].'),
-    chips({ label: 'Add birthday party package', then: addParty }, { label: 'Add MagiQuest', then: addMagiQuest }, { label: 'Not now', then: nextStep('No problem. Want me to plan the rest of the weekend?') }),
-  ],
-}
+/** A rate chosen in the chat or with a card's Select: select it, confirm it, then offer what comes next. */
+const rateChosen = (key: RateKey): Beat[] => [
+  { type: 'effect', actions: [{ do: 'selectRate', suite: '@current', rate: key }, { do: 'scrollTo', id: `rate-${key}` }] },
+  {
+    type: 'agent',
+    text: (s) => {
+      const lead = key.startsWith('flex')
+        ? 'Done: Flexible at your Voyagers rate, so you can cancel for free until closer to the trip.'
+        : 'Done: Standard at your Voyagers rate, $6 a night less, with free changes and cancellation until [date].'
+      return s.cart.some((c) => c.id === 'party') ? `${lead} Your party package is still in.` : `${lead} Mia’s birthday is Saturday. Add the party package?`
+    },
+  },
+  { type: 'card', component: 'quote' },
+  {
+    type: 'chips',
+    style: 'ai',
+    options: (s) =>
+      s.cart.some((c) => c.id === 'party')
+        ? [{ label: 'Plan our weekend', then: [goTo('j1/4')] }, { label: 'Go to checkout', then: [goTo('j1/5')] }]
+        : [
+            { label: 'Add birthday party package', then: addParty },
+            { label: 'Add MagiQuest', then: addMagiQuest },
+            { label: 'Not now', then: nextStep('No problem. Want me to plan the rest of the weekend?') },
+          ],
+  },
+]
+
+const flexible: Option = { label: 'Flexible', say: 'Flexible, please', then: rateChosen('flex-voy') }
+const standard: Option = { label: 'Standard', say: 'Standard, please', then: rateChosen('std-voy') }
 
 const rateDifference: Option = {
   label: 'What’s the difference?',
   then: [
     say('Both are your Voyagers Club rates. Standard is $6 a night less, with free changes and cancellation until [date]. Flexible is risk-free: free cancellation until [date], closer to the trip.'),
-    chips({ label: 'Keep Flexible', then: [say('Flexible it is. Add the party package for Saturday?'), chips({ label: 'Add birthday party package', then: addParty }, { label: 'Not now', then: nextStep('No problem. Want me to plan the rest of the weekend?') })] }, switchToStandard),
+    chips(flexible, standard),
   ],
 }
 
@@ -101,7 +123,7 @@ const ready: Beat[] = [
         {
           type: 'effect',
           actions: [
-            { do: 'patch', fn: (s) => ({ plan: s.plan.map((p) => (p.id === 'magiquest' ? { ...p, day: 'fri', time: '7:30 pm' } : p)) }) },
+            { do: 'patch', fn: (s) => ({ planDay: 'fri', plan: s.plan.map((p) => (p.id === 'magiquest' ? { ...p, day: 'fri', time: '7:30 pm' } : p)) }) },
             { do: 'toast', text: 'MagiQuest moved to Friday' },
             { do: 'scrollTo', id: 'plan-magiquest' },
           ],
@@ -172,39 +194,35 @@ export const j1: Record<number, StepScript> = {
     fallback: [favoriteRates, moreRoom, cheaper],
   },
   3: {
-    // Rates for the suite chosen on the suites page (the favorite unless the family picked another).
+    // Rates for the suite chosen on the suites page (the favorite unless the family picked another). Nothing is
+    // selected for them: they pick with a card's Select or by telling Wiley.
     enter: [{ do: 'patch', fn: (s) => (s.expanded ? {} : { expanded: 'pup-den-jr' }) }, { do: 'openSheet', snap: 'half' }],
     beats: [
-      { type: 'user', text: 'Flexible please. Can we make it a party?' },
-      { type: 'effect', actions: [{ do: 'selectRate', suite: '@current', rate: 'Flexible' }, { do: 'scrollTo', id: 'rate-flex-voy' }] },
-      say('Done: Flexible at your Voyagers rate, so you can cancel free until closer to the trip. Mia’s birthday is Saturday. Add the party package?'),
-      { type: 'card', component: 'quote' },
-      chips(
-        { label: 'Add birthday party package', then: addParty },
-        { label: 'Add MagiQuest', then: addMagiQuest },
-        rateDifference,
-        { label: 'Not now', then: nextStep('No problem. Want me to plan the rest of the weekend?') },
-      ),
+      {
+        type: 'agent',
+        text: (s) => `Here are your Voyagers Club rates for the ${suiteById(s.expanded ?? 'pup-den-jr').name}. Pick one on the page or here, and I’ll add it to your trip.`,
+        textMobile: 'Here are your Voyagers Club rates. Pick one on the page or here.',
+      },
+      chips(flexible, standard, rateDifference),
     ],
-    path: ['Add birthday party package', 'Plan our weekend'],
-    voiceLine: 'Add the birthday party',
+    onRate: rateChosen,
+    path: ['Flexible', 'Add birthday party package', 'Plan our weekend'],
+    voiceLine: 'Flexible please, and can we make it a party?',
     rules: [
+      [/flex/i, rateChosen('flex-voy')],
+      [/standard|cheaper/i, rateChosen('std-voy')],
       [/party|birthday/i, addParty],
       [/magi/i, addMagiQuest],
-      [/standard|cheaper/i, switchToStandard.then],
-      [/difference|flexible|cancel/i, rateDifference.then],
+      [/difference|cancel/i, rateDifference.then],
       [/checkout|pay|book/i, [goTo('j1/5')]],
     ],
-    fallback: [
-      { label: 'Add birthday party package', then: addParty },
-      rateDifference,
-      { label: 'Plan our weekend', then: [goTo('j1/4')] },
-    ],
+    fallback: [flexible, standard, rateDifference],
   },
   4: {
     enter: [{ do: 'openSheet', snap: 'half' }],
     beats: [
       { type: 'user', text: 'Anything for Sunday morning before we head home?', voice: 'mobile' },
+      { type: 'effect', actions: [{ do: 'patch', fn: () => ({ planDay: 'sun' }) }, { do: 'scrollTo', id: 'plan-zoo' }] },
       say(
         'Cheyenne Mountain Zoo is a favorite near the lodge: kids can hand-feed giraffes and ride the carousel. Garden of the Gods is free if you’d rather walk the red rocks.',
         { textMobile: 'Cheyenne Mountain Zoo is a favorite near the lodge: kids can hand-feed giraffes. Garden of the Gods is free.', source: GUIDE },

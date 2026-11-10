@@ -16,7 +16,7 @@ export function AskWileyPill({ className }: { className?: string }) {
       onClick={toggleWiley}
       aria-pressed={s.open}
       className={cn(
-        'relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 type-text-sm-semibold transition-colors outline-none focus-visible:focus-ring',
+        'relative inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border-2 px-4 type-text-sm-semibold transition-colors outline-none focus-visible:focus-ring',
         s.open ? 'border-primary bg-primary text-primary-foreground' : 'border-foreground bg-background text-foreground hover:bg-accent',
         className,
       )}
@@ -51,7 +51,7 @@ export function AppHeader() {
   const { desktop, roomyNav } = useDemo()
   if (desktop) {
     return (
-      <header className="shrink-0 border-b bg-background">
+      <header className="gwl-noprint shrink-0 border-b bg-background">
         <div className="flex h-9 items-center justify-between gap-4 bg-[var(--gwl-sky)] px-6 type-text-xs-medium">
           <span className="type-text-xs-semibold">
             {lodge.name} · {lodge.city}
@@ -70,7 +70,8 @@ export function AppHeader() {
             ))}
           </nav>
           <AskWileyPill />
-          <Button shape="pill" size="lg">
+          {/* Same height as the Ask Wiley pill beside it. */}
+          <Button shape="pill" className="h-10 px-5">
             Book Now
           </Button>
           {!roomyNav && (
@@ -83,7 +84,7 @@ export function AppHeader() {
     )
   }
   return (
-    <header className="shrink-0 border-b bg-background">
+    <header className="gwl-noprint shrink-0 border-b bg-background">
       <div className="flex h-14 items-center gap-3 px-4">
         <Logo className="h-[18px]" />
         <span className="flex-1" />

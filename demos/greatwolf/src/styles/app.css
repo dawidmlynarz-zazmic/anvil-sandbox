@@ -141,3 +141,15 @@
   .gwl-page, .gwl-fade, .gwl-typing > span { animation: none; }
   .gwl-typing > span { opacity: 0.7; }
 }
+
+/* Print: just the page. The presenter bar, the site header and Wiley stay on screen only, and the scroll
+   containers let the page run across sheets of paper. */
+@media print {
+  html, body, #root, .h-dvh, .h-dvh > div, .gwl-site, .gwl-site > div, #page-scroll {
+    height: auto !important; overflow: visible !important; display: block !important; background: #ffffff !important;
+  }
+  .gwl-phone { zoom: 1 !important; width: auto !important; height: auto !important; border: 0 !important; box-shadow: none !important; }
+  .gwl-page { animation: none; }
+  /* Last and doubled up, so it beats the layout resets above (which match the presenter bar too). */
+  :root .gwl-noprint.gwl-noprint { display: none !important; }
+}
