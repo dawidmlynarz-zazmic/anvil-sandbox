@@ -1,11 +1,15 @@
 import { money, rateOf, suiteById, type RateKey } from '~/data/fixtures'
 import type { Beat, DemoState, Option, StepScript } from '../types'
+import { onExtra, suggestNext, tripRules } from './trip'
 
 // Journey 2: a first-time family, signed out, with kids aged 3 and 6. The lodge is the context; Wiley never asks where.
 // Every choice gets its own answer and its own change on the page; Next follows the `path` (the happy path).
 
 const GUIDE = 'GWL Things To Do guide'
 const WATER = 'Lodge water park guide'
+
+/** The mobile sheet (a section; the desktop sidebar is an aside). Only it needs room for the questions. */
+const sheetOnScreen = () => Boolean(document.querySelector('section[aria-label=Wiley]'))
 
 const goTo = (to: string): Beat => ({ type: 'effect', actions: [{ do: 'go', to }] })
 const say = (text: string, extra: Partial<Extract<Beat, { type: 'agent' }>> = {}): Beat => ({ ...extra, type: 'agent', text })
@@ -39,6 +43,7 @@ function ranked(a: Answers): Beat[] {
     {
       type: 'effect',
       actions: [
+        { do: 'loadSuites', ms: 1100 },
         { do: 'patch', fn: () => ({ weekend: a.weekend === 'Mar 12 – 14' ? 'Mar 12 – 14' : 'Mar 5 – 7', priority: a.priority }) },
         { do: 'setFilters', chips: [weekendChip, '2 adults · 2 kids (3, 6)', 'Sleeps 4+'] },
         { do: 'rank', order: cheap ? ['deluxe-queen', 'pup-den-jr'] : ['pup-den-jr', 'deluxe-queen'], tag: { id: top, label: tag } },
@@ -105,12 +110,6 @@ const whyNotBarr: Option = {
 
 const ratedSuite = (s: DemoState) => s.expanded ?? 'pup-den-jr'
 
-/** After a rate is chosen, as a guest or a new member. */
-const afterRateOptions: Option[] = [
-  { label: 'Go to checkout', then: [{ type: 'effect', actions: [{ do: 'end', card: 'checkout' }] }] },
-  { label: 'Not ready yet', then: [goTo('j2/6')] },
-]
-
 const join: Option = { label: 'Join free and save', then: [{ type: 'effect', actions: [{ do: 'sheet', which: 'join' }] }] }
 
 /** A rate chosen in the chat or with a card's Select. A member rate picked while signed out opens the join sheet. */
@@ -122,7 +121,7 @@ const rateChosen = (key: RateKey): Beat[] => {
       type: 'effect',
       actions: [
         { do: 'selectRate', suite: '@current', rate: key },
-        { do: 'scrollTo', id: `rate-${key}` },
+        { do: 'scrollTo', id: 'trip-suite' },
         { do: 'patch', fn: (s) => (needsJoin(s) ? { sheet: 'join' } : {}) },
       ],
     },
@@ -132,14 +131,11 @@ const rateChosen = (key: RateKey): Beat[] => {
         if (needsJoin(s)) return 'That’s the Voyagers Club rate. Join for free and I’ll keep it for you.'
         const r = rateOf(ratedSuite(s), key)
         const terms = r.plan === 'Flexible' ? 'You can cancel for free until [date].' : 'Free changes and cancellation until [date].'
-        return `${r.plan} ${member ? 'at your Voyagers Club rate' : 'as a guest'}: ${money(r.price)} a night. ${terms}`
+        return `${r.plan} ${member ? 'at your Voyagers Club rate' : 'as a guest'}: ${money(r.price)} a night. ${terms} Your suite is the start of your trip now.`
       },
     },
-    {
-      type: 'chips',
-      style: 'ai',
-      options: (s) => (needsJoin(s) ? [] : s.signedIn ? afterRateOptions : [...afterRateOptions, { ...join, label: 'Join free and save $4 a night' }]),
-    },
+    // While the join sheet is open, Wiley waits; joining picks up from there (afterJoinWithRate).
+    ...suggestNext(2).map((b) => ({ ...b, when: (s: DemoState) => !needsJoin(s) }) as Beat),
   ]
 }
 
@@ -149,7 +145,7 @@ const standardGuest: Option = { label: 'Standard as a guest', say: 'Standard as 
 const flexibleGuest: Option = { label: 'Flexible as a guest', say: 'Flexible as a guest, please', then: rateChosen('flex-non') }
 
 /** Played by the join sheet when the family had already picked a rate: it is kept, at the member price. */
-export const afterJoinWithRate: Beat[] = [say('Welcome to Voyagers Club! I kept your choice, now at the member rate.'), chips(...afterRateOptions)]
+export const afterJoinWithRate: Beat[] = [say('Welcome to Voyagers Club! I kept your choice, now at the member rate. Your suite is the start of your trip.'), ...suggestNext(2)]
 
 /** Played by the join sheet when no rate was picked yet: Wiley asks instead of choosing for them. */
 export const afterJoinPickRate: Beat[] = [say('Welcome to Voyagers Club! Your member rates are showing. Which one would you like?'), chips(standardMember, flexibleMember)]
@@ -176,18 +172,21 @@ export const j2: Record<number, StepScript> = {
     fallback: [{ label: 'Suite for my family vacation', then: [goTo('j2/2')] }],
   },
   2: {
-    enter: [{ do: 'openSheet', snap: 'half' }],
+    enter: [{ do: 'loadSuites', ms: 1300 }, { do: 'openSheet', snap: 'half' }],
     beats: [
-      { type: 'user', text: (s) => s.tripText ?? 'A weekend in March with a 3 and 6 year old', reaction: 'wave' },
+      { type: 'user', text: (s) => s.tripText ?? 'A weekend in March with a 3 and 6 year old', voiceTag: (s) => s.tripVoice, reaction: 'wave' },
       {
         type: 'effect',
         actions: [
+          { do: 'loadSuites', ms: 1500 },
           { do: 'setFilters', chips: ['March weekends', '2 adults · 2 kids (3, 6)', 'Sleeps 4+'] },
           { do: 'rank', order: ['pup-den-jr', 'deluxe-queen'], tag: { id: 'pup-den-jr', label: 'Wiley’s pick · bunks for the kids' } },
           { do: 'highlight', id: 'pup-den-jr' },
         ],
       },
-      say('Fun! Two quick questions so I can narrow it down:', { textMobile: 'Fun! Which weekend?' }),
+      say('Fun! Two quick questions so I can narrow it down:', { textMobile: 'Fun! Two quick questions:' }),
+      // On a phone the sheet opens fully while Wiley asks; it settles back to half when the suites re-rank.
+      { type: 'effect', actions: [{ do: 'patch', fn: (s) => (s.snap === 'half' && sheetOnScreen() ? { snap: 'full' } : {}) }] },
       { type: 'card', component: 'questions', then: (p) => ranked(p as Answers) },
     ],
     path: ['Is the water park OK for a 3-year-old?'],
@@ -264,12 +263,14 @@ export const j2: Record<number, StepScript> = {
       chips(join, standardGuest, flexibleGuest),
     ],
     onRate: rateChosen,
-    path: ['Join free and save', 'Standard', 'Not ready yet'],
+    onExtra: onExtra(2),
+    path: ['Join free and save', 'Standard', 'Add the Pup Pass', 'Add the Wolf Wakeup Breakfast', 'Not needed', 'Save my trip'],
     voiceLine: 'Standard as a guest',
     rules: [
       [/join|member|voyager|save/i, join.then],
       [/flex|cancel/i, rateChosen('flex-non')],
       [/guest|standard/i, rateChosen('std-non')],
+      ...tripRules(2),
     ],
     fallback: [join, standardGuest, flexibleGuest],
   },
@@ -289,3 +290,14 @@ export const j2: Record<number, StepScript> = {
     fallback: [{ label: 'Preview the plan', then: [{ type: 'effect', actions: [{ do: 'sheet', which: 'plan' }] }] }, { label: 'Share with my partner', then: share }],
   },
 }
+
+// What Wiley shows it is doing while it thinks, per step (the first reply of a turn shows up to three).
+const THINKING: Record<number, string[]> = {
+  1: ['Looking at Voyagers Club rates'],
+  2: ['Reading your request', 'Checking March weekends', 'Matching suites for a 3 and 6 year old'],
+  3: ['Opening the lodge water park guide', 'Finding spots for little ones'],
+  4: ['Checking the GWL Things To Do guide', 'Filtering for kids aged 3 and 6', 'Adding it to your plan'],
+  5: ['Pulling rates for your weekend', 'Checking passes for a 3 and 6 year old', 'Updating your trip'],
+  6: ['Saving your plan', 'Preparing the link'],
+}
+for (const [step, phrases] of Object.entries(THINKING)) j2[Number(step)].thinking = phrases

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ClarifyingQuestion } from '@anvil/components/agent/clarifying-question'
 import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
 import { Checkbox } from '@anvil/components/ui/checkbox'
@@ -12,7 +13,7 @@ import type { Option } from '~/wiley/types'
 // ANVIL-CANDIDATE (AiChip): a suggested next prompt. Styled as greatwolf.com's AI Planner options (an outlined box
 // with bold navy text), plus a sparkle so it reads as "ask the AI this". Anvil's Quick Reply is one style for all.
 const CHIP =
-  'gwl-in inline-flex min-h-11 items-center gap-2 rounded-xl border-[1.5px] px-4 py-2.5 text-left type-text-sm-semibold font-bold transition-colors outline-none focus-visible:focus-ring'
+  'inline-flex min-h-11 items-center gap-2 rounded-xl border-[1.5px] px-4 py-2.5 text-left type-text-sm-semibold font-bold transition-colors outline-none focus-visible:focus-ring'
 
 export function AiChip({ children, onClick, block }: { children: string; onClick: () => void; block?: boolean }) {
   return (
@@ -42,7 +43,7 @@ export function Chips({ style, options, onPick }: { style: 'answer' | 'ai'; opti
   const { desktop } = useDemo()
   return (
     <div
-      className={cn('flex gap-2', desktop ? 'flex-wrap' : 'gwl-noscroll -mx-4 overflow-x-auto px-4 pb-1 [&>button]:shrink-0 [&>button]:whitespace-nowrap')}
+      className={cn('gwl-fade flex gap-2', desktop ? 'flex-wrap' : 'gwl-noscroll -mx-4 overflow-x-auto px-4 pb-1 [&>button]:shrink-0 [&>button]:whitespace-nowrap')}
       role="group"
       aria-label="Suggested replies"
     >
@@ -84,7 +85,7 @@ export function TripQuote({ title = 'Your trip · sample prices', className, che
           {extras.map((l) => (
             <li key={l.id} className="flex items-baseline justify-between gap-3">
               <span>{l.label}</span>
-              <span className="type-text-sm-semibold">{l.id === 'magiquest' ? 'from $—' : money(l.amount)}</span>
+              <span className="type-text-sm-semibold whitespace-nowrap">{l.price ?? money(l.amount)}</span>
             </li>
           ))}
         </ul>
@@ -92,6 +93,7 @@ export function TripQuote({ title = 'Your trip · sample prices', className, che
           <span className="type-text-sm-semibold">Total</span>
           <span className="type-text-lg-semibold">{money(q.total)}</span>
         </div>
+        {q.unpriced && <p className="mt-1 type-text-xs-normal text-muted-foreground">Plus items the lodge prices at booking</p>}
       </Card>
     )
   }
@@ -106,7 +108,7 @@ export function TripQuote({ title = 'Your trip · sample prices', className, che
               {l.detail && l.detail !== 'Just added' && ` · ${l.detail}`}
               {l.detail === 'Just added' && <span className="ms-2 rounded-sm bg-success-soft px-1.5 py-0.5 type-text-xs-medium whitespace-nowrap text-success-strong">Just added</span>}
             </span>
-            <span className="type-text-sm-semibold whitespace-nowrap">{l.id === 'passes' ? 'Included' : l.id === 'magiquest' ? 'from $—' : money(l.amount)}</span>
+            <span className="type-text-sm-semibold whitespace-nowrap">{l.id === 'passes' ? 'Included' : (l.price ?? money(l.amount))}</span>
           </li>
         ))}
       </ul>
@@ -114,53 +116,44 @@ export function TripQuote({ title = 'Your trip · sample prices', className, che
         <span className="type-text-sm-semibold">Total</span>
         <span className="type-text-lg-semibold">{money(q.total)}</span>
       </div>
+      {q.unpriced && <p className="mt-1 type-text-xs-normal text-muted-foreground">Plus items the lodge prices at booking</p>}
     </Card>
   )
 }
 
-const WEEKENDS = ['Mar 5 – 7', 'Mar 12 – 14', 'Cheapest one']
-const PRIORITIES = [
-  { label: 'Bunk beds for the kids', value: 'bunks' },
-  { label: 'Balcony & view', value: 'view' },
-  { label: 'Lowest price', value: 'price' },
-] as const
+const QUESTIONS = [
+  {
+    id: 'weekend',
+    title: 'Which March weekend?',
+    options: [
+      { value: 'Mar 5 – 7', label: 'Mar 5 – 7' },
+      { value: 'Mar 12 – 14', label: 'Mar 12 – 14' },
+      { value: 'Cheapest one', label: 'Cheapest one' },
+    ],
+  },
+  {
+    id: 'priority',
+    title: 'What matters most?',
+    options: [
+      { value: 'bunks', label: 'Bunk beds for the kids' },
+      { value: 'view', label: 'Balcony & view' },
+      { value: 'price', label: 'Lowest price' },
+    ],
+  },
+]
 
-/** Two quick questions. Desktop shows both; mobile asks the second once the first is answered. */
+/** Two quick questions, one at a time: Anvil's Clarifying Question, in Great Wolf's styling (see app.css). */
 export function QuestionsCard({ done, answer: given, onDone }: { done?: boolean; answer?: { weekend: string; priority: string }; onDone: (p: { weekend: string; priority: string }) => void }) {
   const { desktop } = useDemo()
-  const [picked, setWeekend] = useState<string | null>(null)
-  const [chosen, setPriority] = useState<string | null>(null)
-  const weekend = given?.weekend ?? picked
-  const priority = given?.priority ?? chosen
-  const answer = (w: string | null, p: string | null) => {
-    if (w && p && !done) onDone({ weekend: w, priority: p })
-  }
   return (
-    <Card className="w-full gap-4 p-4">
-      <p className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">Quick questions</p>
-      <fieldset className="flex flex-col gap-2" disabled={done}>
-        <legend className="mb-2 type-text-sm-semibold">Which March weekend?</legend>
-        <div className="flex flex-wrap gap-2">
-          {WEEKENDS.map((w) => (
-            <AnswerChip key={w} pressed={weekend === w} onClick={() => (setWeekend(w), answer(w, priority))}>
-              {w}
-            </AnswerChip>
-          ))}
-        </div>
-      </fieldset>
-      {(desktop || weekend) && (
-        <fieldset className="gwl-in flex flex-col gap-2" disabled={done}>
-          <legend className="mb-2 type-text-sm-semibold">What matters most?</legend>
-          <div className="flex flex-wrap gap-2">
-            {PRIORITIES.map((p) => (
-              <AnswerChip key={p.value} pressed={priority === p.value} onClick={() => (setPriority(p.value), answer(weekend, p.value))}>
-                {p.label}
-              </AnswerChip>
-            ))}
-          </div>
-        </fieldset>
-      )}
-    </Card>
+    <ClarifyingQuestion
+      className="gwl-question w-full"
+      questions={QUESTIONS}
+      answers={given ? { weekend: given.weekend, priority: given.priority } : undefined}
+      submitted={Boolean(done)}
+      hint={desktop ? undefined : ''}
+      onSubmit={(a) => onDone({ weekend: a.weekend ?? 'Mar 5 – 7', priority: a.priority ?? 'bunks' })}
+    />
   )
 }
 

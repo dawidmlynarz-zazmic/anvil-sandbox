@@ -108,10 +108,6 @@ export function ratesFor(suiteId: string): Rate[] {
 
 export const rateOf = (suiteId: string, key: RateKey) => ratesFor(suiteId).find((r) => r.key === key)!
 
-export const addons = {
-  party: { id: 'party', label: 'Birthday party package', amount: 249 },
-  magiquest: { id: 'magiquest', label: 'MagiQuest', amount: 0 },
-}
 
 export type Fit = 'great' | 'free' | 'ok' | 'older' | 'no'
 
@@ -178,4 +174,4 @@ export const dates = {
   j2b: { label: 'Mar 12 – 14, 2027', short: 'Mar 12 – 14', long: 'Fri Mar 12 – Sun Mar 14, 2027', nights: 2 },
 }
 
-export const money = (n: number) => `$${n.toLocaleString('en-US')}`
+export const money = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })}`

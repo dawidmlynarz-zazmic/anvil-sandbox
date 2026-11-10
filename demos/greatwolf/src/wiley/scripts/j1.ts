@@ -1,4 +1,5 @@
 import { suiteById, type RateKey } from '~/data/fixtures'
+import { onExtra, suggestNext, tripRules } from './trip'
 import type { Action, Beat, Option, StepScript } from '../types'
 
 // Journey 1: the Martinez family, signed in as Voyagers Club members, plans Mia's 7th birthday weekend.
@@ -25,6 +26,7 @@ const moreRoom: Option = {
     {
       type: 'effect',
       actions: [
+        { do: 'loadSuites', ms: 900 },
         { do: 'rank', order: ['kidcabin', 'pup-den-jr', 'deluxe-queen'], tag: { id: 'kidcabin', label: 'More room · sleeps 6' } },
         { do: 'highlight', id: 'kidcabin' },
         { do: 'scrollTo', id: 'suite-kidcabin' },
@@ -44,6 +46,7 @@ const cheaper: Option = {
     {
       type: 'effect',
       actions: [
+        { do: 'loadSuites', ms: 900 },
         { do: 'rank', order: ['deluxe-queen', 'pup-den-jr'], tag: { id: 'deluxe-queen', label: 'Lowest rate · from $109' } },
         { do: 'highlight', id: 'deluxe-queen' },
         { do: 'scrollTo', id: 'suite-deluxe-queen' },
@@ -59,45 +62,16 @@ const cheaper: Option = {
 
 // ── J1·3: rate and add-ons ──────────────────────────────────────────────────────────────────────────────────────
 
-const nextStep = (text: string): Beat[] => [
-  say(text),
-  chips({ label: 'Plan our weekend', then: [goTo('j1/4')] }, { label: 'Go to checkout', then: [goTo('j1/5')] }),
-]
-
-const addParty: Beat[] = [
-  { type: 'effect', actions: [{ do: 'addToCart', item: 'party' }] },
-  ...nextStep('Party’s in! Want me to plan the rest of the weekend around it?'),
-]
-const addMagiQuest: Beat[] = [
-  { type: 'effect', actions: [{ do: 'addToCart', item: 'magiquest' }] },
-  ...nextStep('MagiQuest is in, like last time. Its price is still to be confirmed. Want me to plan the weekend around it?'),
-]
-
-/** A rate chosen in the chat or with a card's Select: select it, confirm it, then offer what comes next. */
+/** A rate chosen in the chat or with a card's Select: select it, and the page becomes the trip. Wiley takes it from there. */
 const rateChosen = (key: RateKey): Beat[] => [
-  { type: 'effect', actions: [{ do: 'selectRate', suite: '@current', rate: key }, { do: 'scrollTo', id: `rate-${key}` }] },
-  {
-    type: 'agent',
-    text: (s) => {
-      const lead = key.startsWith('flex')
-        ? 'Done: Flexible at your Voyagers rate, so you can cancel for free until closer to the trip.'
-        : 'Done: Standard at your Voyagers rate, $6 a night less, with free changes and cancellation until [date].'
-      return s.cart.some((c) => c.id === 'party') ? `${lead} Your party package is still in.` : `${lead} Mia’s birthday is Saturday. Add the party package?`
-    },
-  },
-  { type: 'card', component: 'quote' },
-  {
-    type: 'chips',
-    style: 'ai',
-    options: (s) =>
-      s.cart.some((c) => c.id === 'party')
-        ? [{ label: 'Plan our weekend', then: [goTo('j1/4')] }, { label: 'Go to checkout', then: [goTo('j1/5')] }]
-        : [
-            { label: 'Add birthday party package', then: addParty },
-            { label: 'Add MagiQuest', then: addMagiQuest },
-            { label: 'Not now', then: nextStep('No problem. Want me to plan the rest of the weekend?') },
-          ],
-  },
+  { type: 'effect', actions: [{ do: 'selectRate', suite: '@current', rate: key }, { do: 'scrollTo', id: 'trip-suite' }] },
+  say(
+    key.startsWith('flex')
+      ? 'Done: Flexible at your Voyagers rate, so you can cancel for free until closer to the trip. Your suite is the start of your trip now; let’s build the rest around Mia’s birthday.'
+      : 'Done: Standard at your Voyagers rate, $6 a night less, with free changes and cancellation until [date]. Your suite is the start of your trip now; let’s build the rest around Mia’s birthday.',
+    { textMobile: key.startsWith('flex') ? 'Done: Flexible at your Voyagers rate. Now let’s build the rest of the trip.' : 'Done: Standard at your Voyagers rate. Now let’s build the rest of the trip.' },
+  ),
+  ...suggestNext(1),
 ]
 
 const flexible: Option = { label: 'Flexible', say: 'Flexible, please', then: rateChosen('flex-voy') }
@@ -113,32 +87,53 @@ const rateDifference: Option = {
 
 // ── J1·4: the weekend plan ──────────────────────────────────────────────────────────────────────────────────────
 
+const lateCheckout: Option = {
+  label: 'Add late check-out',
+  then: [
+    { type: 'effect', actions: [{ do: 'addToCart', item: 'late-checkout' }, { do: 'toast', text: 'Late check-out added' }, { do: 'patch', fn: () => ({ planDay: 'sun' }) }, { do: 'scrollTo', id: 'plan-checkout' }] },
+    say('Done: check-out moves to 2pm, so after Sunday morning you still have the suite for a swim and a change. The lodge doesn’t list its price, so it shows as [price].'),
+    chips({ label: 'Go to checkout', then: [goTo('j1/5')] }),
+  ],
+}
+
 const ready: Beat[] = [
-  say('Your weekend’s set. Ready to book?'),
-  chips(
-    { label: 'Go to checkout', then: [goTo('j1/5')] },
-    {
-      label: 'Move MagiQuest to Friday',
-      then: [
-        {
-          type: 'effect',
-          actions: [
-            { do: 'patch', fn: (s) => ({ planDay: 'fri', plan: s.plan.map((p) => (p.id === 'magiquest' ? { ...p, day: 'fri', time: '7:30 pm' } : p)) }) },
-            { do: 'toast', text: 'MagiQuest moved to Friday' },
-            { do: 'scrollTo', id: 'plan-magiquest' },
-          ],
-        },
-        {
-          type: 'agent',
-          text: (s) =>
-            s.cart.some((c) => c.id === 'party')
-              ? 'Moved: MagiQuest is Friday at 7:30 pm, so Saturday morning is free before the party.'
-              : 'Moved: MagiQuest is Friday at 7:30 pm, so Saturday morning is free.',
-        },
-        chips({ label: 'Go to checkout', then: [goTo('j1/5')] }),
-      ],
-    },
-  ),
+  {
+    type: 'agent',
+    text: (s) =>
+      s.cart.some((c) => c.id === 'late-checkout')
+        ? 'Your weekend’s set. Ready to book?'
+        : 'Your weekend’s set. One thing: check-out is 11am, and your water park passes last until closing on Sunday. Want late check-out to 2pm?',
+    textMobile: (s) => (s.cart.some((c) => c.id === 'late-checkout') ? 'Your weekend’s set. Ready to book?' : 'Your weekend’s set. Check-out is 11am Sunday; want late check-out to 2pm?'),
+  },
+  {
+    type: 'chips',
+    style: 'ai',
+    options: (s) => [
+      { label: 'Go to checkout', then: [goTo('j1/5')] },
+      ...(s.cart.some((c) => c.id === 'late-checkout') ? [] : [lateCheckout]),
+      {
+        label: 'Move MagiQuest to Friday',
+        then: [
+          {
+            type: 'effect',
+            actions: [
+              { do: 'patch', fn: (x) => ({ planDay: 'fri', plan: x.plan.map((p) => (p.id === 'magiquest' ? { ...p, day: 'fri', time: '7:30 pm' } : p)) }) },
+              { do: 'toast', text: 'MagiQuest moved to Friday' },
+              { do: 'scrollTo', id: 'plan-magiquest' },
+            ],
+          },
+          {
+            type: 'agent',
+            text: (x) =>
+              x.cart.some((c) => c.kind === 'birthday')
+                ? 'Moved: MagiQuest is Friday at 7:30 pm, so Saturday morning is free before the party.'
+                : 'Moved: MagiQuest is Friday at 7:30 pm, so Saturday morning is free.',
+          },
+          chips({ label: 'Go to checkout', then: [goTo('j1/5')] }),
+        ],
+      },
+    ],
+  },
 ]
 
 const addZoo: Beat[] = [
@@ -167,13 +162,14 @@ export const j1: Record<number, StepScript> = {
     fallback: [{ label: 'Plan Mia’s birthday weekend', then: [goTo('j1/2')] }],
   },
   2: {
-    enter: [{ do: 'openSheet', snap: 'half' }],
+    enter: [{ do: 'loadSuites', ms: 1300 }, { do: 'openSheet', snap: 'half' }],
     beats: [
       say('Hey Martinez crew! What are we planning?', { desktopOnly: true, delayMs: 700 }),
       { type: 'user', text: 'Mia’s birthday weekend in March. Same suite as last time?', voice: true, reaction: 'thumbs up' },
       {
         type: 'effect',
         actions: [
+          { do: 'loadSuites', ms: 1500 },
           { do: 'setFilters', chips: ['Mar 12 – 14, 2027', '2 adults · 2 kids (7, 4)'] },
           { do: 'rank', order: ['pup-den-jr', 'deluxe-queen'], tag: { id: 'pup-den-jr', label: 'Your favorite' } },
           { do: 'highlight', id: 'pup-den-jr' },
@@ -206,21 +202,33 @@ export const j1: Record<number, StepScript> = {
       chips(flexible, standard, rateDifference),
     ],
     onRate: rateChosen,
-    path: ['Flexible', 'Add birthday party package', 'Plan our weekend'],
+    onExtra: onExtra(1),
+    path: ['Flexible', 'Add the Birthday Bash', 'Add the Paw Pass', 'Add the Gold Dining Credit', 'Not needed', 'Plan our weekend'],
     voiceLine: 'Flexible please, and can we make it a party?',
     rules: [
       [/flex/i, rateChosen('flex-voy')],
       [/standard|cheaper/i, rateChosen('std-voy')],
-      [/party|birthday/i, addParty],
-      [/magi/i, addMagiQuest],
       [/difference|cancel/i, rateDifference.then],
       [/checkout|pay|book/i, [goTo('j1/5')]],
+      ...tripRules(1),
     ],
     fallback: [flexible, standard, rateDifference],
   },
   4: {
     enter: [{ do: 'openSheet', snap: 'half' }],
     beats: [
+      {
+        type: 'agent',
+        text: (s) => {
+          const pass = s.cart.find((c) => c.kind === 'pass')
+          const bday = s.cart.find((c) => c.kind === 'birthday')
+          const parts = ['I built the weekend from your trip.']
+          if (bday) parts.push(`Mia’s ${bday.label} is Saturday at 1pm.`)
+          parts.push(pass && pass.id !== 'pup-pass' ? `MagiQuest is Saturday morning, covered by your ${pass.label}.` : 'MagiQuest is Saturday morning, but not in your trip yet.')
+          return parts.join(' ')
+        },
+        textMobile: 'I built the weekend from your trip. Saturday is the big day.',
+      },
       { type: 'user', text: 'Anything for Sunday morning before we head home?', voice: 'mobile' },
       { type: 'effect', actions: [{ do: 'patch', fn: () => ({ planDay: 'sun' }) }, { do: 'scrollTo', id: 'plan-zoo' }] },
       say(
@@ -257,3 +265,13 @@ export const j1: Record<number, StepScript> = {
     fallback: [{ label: 'Open in the Great Wolf app', then: [{ type: 'effect', actions: [{ do: 'end', card: 'companion' }] }] }],
   },
 }
+
+// What Wiley shows it is doing while it thinks, per step (the first reply of a turn shows up to three).
+const THINKING: Record<number, string[]> = {
+  2: ['Checking your favorite suite', 'Looking at Mar 12 – 14', 'Ranking suites for 2 adults and 2 kids'],
+  3: ['Pulling your Voyagers Club rates', 'Checking birthday packages at this lodge', 'Updating your trip'],
+  4: ['Reading your trip', 'Fitting it into the weekend', 'Checking the GWL Things To Do guide'],
+  5: ['Checking your booking'],
+  6: ['Getting your plan ready for the app'],
+}
+for (const [step, phrases] of Object.entries(THINKING)) j1[Number(step)].thinking = phrases

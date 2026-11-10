@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { addons, rateOf, suiteById, type RateKey } from '~/data/fixtures'
+import { rateOf, suiteById, type RateKey } from '~/data/fixtures'
+import { extraById } from '~/data/extras'
 import { reveal } from '~/lib/reveal'
 import { afterJoinPickRate, afterJoinWithRate, scripts } from '~/wiley/scripts'
 import type { Action, Beat, DemoState, DeviceMode, Journey, Msg, Option, Snap } from '~/wiley/types'
@@ -17,8 +18,12 @@ interface Demo {
   journey: Journey
   msgs: Msg[]
   typing: boolean
+  /** The phrase Wiley shows while it thinks, or null. */
+  thinking: string | null
+  /** The words appearing in the composer while a voice request transcribes. */
+  draft: string
   playing: boolean
-  composer: 'idle' | 'live'
+  composer: 'idle' | 'live' | 'transcribing'
   desktop: boolean
   framed: boolean
   /** The window has room for the full desktop nav. */
@@ -34,6 +39,8 @@ interface Demo {
   play: (beats: Beat[]) => Promise<void>
   joinVoyagers: () => void
   chooseRate: (suite: string, key: RateKey) => void
+  /** Add or remove a Trip Builder extra from the page; the chat shows it and Wiley answers. */
+  toggleExtra: (id: string) => void
   payApple: () => void
   listen: () => void
   pick: (msgId: number, opt: Option) => void
@@ -78,7 +85,9 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [typing, setTyping] = useState(false)
   const [playing, setPlaying] = useState(false)
-  const [composer, setComposer] = useState<'idle' | 'live'>('idle')
+  const [composer, setComposer] = useState<'idle' | 'live' | 'transcribing'>('idle')
+  const [thinking, setThinking] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
   const [endCard, setEndCard] = useState<Demo['endCard']>(null)
   const [barHidden, setBarHidden] = useState(false)
   const [deviceMode, setDeviceModeState] = useState<DeviceMode>(() => {
@@ -97,6 +106,8 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
   const sRef = useRef(s)
   const playingRef = useRef(false)
   const deskRef = useRef(false)
+  const stepRef = useRef(step)
+  stepRef.current = step
   // Next while Wiley is mid-script fast-forwards: pending pauses end at once and the rest play without delays.
   const skip = useRef(false)
   const wake = useRef<(() => void) | null>(null)
@@ -111,6 +122,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
     [],
   )
   const toastTimer = useRef<number | undefined>(undefined)
+  const loadTimer = useRef<number | undefined>(undefined)
   msgsRef.current = msgs
   sRef.current = s
 
@@ -155,8 +167,24 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
           case 'spotlight':
             setS((x) => ({ ...x, spotlight: a.id }))
             break
-          case 'scrollTo':
-            window.setTimeout(() => reveal(a.id), 420)
+          case 'scrollTo': {
+            // Wait for the target to exist (e.g. suites still loading), then let the layout settle before scrolling.
+            // '@highlight' is whatever Wiley just highlighted (read when it scrolls, after the patch that set it).
+            let tries = 0
+            const attempt = () => {
+              const id = a.id === '@highlight' ? sRef.current.highlight : a.id
+              if (!id) return
+              if (document.getElementById(id) || tries > 25) return window.setTimeout(() => reveal(id), 220)
+              tries++
+              window.setTimeout(attempt, 120)
+            }
+            window.setTimeout(attempt, 300)
+            break
+          }
+          case 'loadSuites':
+            setS((x) => ({ ...x, loadingSuites: true }))
+            window.clearTimeout(loadTimer.current)
+            loadTimer.current = window.setTimeout(() => setS((x) => ({ ...x, loadingSuites: false })), a.ms)
             break
           case 'expandRates':
             setS((x) => ({ ...x, expanded: a.suite }))
@@ -171,10 +199,16 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
             break
           case 'addToCart':
             setS((x) => {
-              const item = addons[a.item as keyof typeof addons]
-              if (!item || x.cart.some((c) => c.id === item.id)) return x
-              return { ...x, cart: [...x.cart.map((c) => ({ ...c, fresh: false })), { ...item, fresh: true }] }
+              const e = extraById(a.item)
+              if (!e || x.cart.some((c) => c.id === e.id)) return x
+              // One birthday package and one dining credit per trip: a new one replaces the old.
+              const others = x.cart.filter((c) => !(e.group && extraById(c.id)?.group === e.group))
+              const line = { id: e.id, label: e.name, amount: e.amount ?? 0, price: e.amount === null ? e.price : undefined, kind: e.kind, fresh: true }
+              return { ...x, cart: [...others.map((c) => ({ ...c, fresh: false })), line] }
             })
+            break
+          case 'removeFromCart':
+            setS((x) => ({ ...x, cart: x.cart.filter((c) => c.id !== a.item) }))
             break
           case 'addToPlan':
             setS((x) => {
@@ -232,6 +266,46 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
     return id
   }, [])
 
+  const update = useCallback((id: number, patch: Partial<Msg>) => setMsgs((all) => all.map((m) => (m.id === id ? { ...m, ...patch } : m))), [])
+
+  /** Voice: the composer listens (waveform), then the words land in it one by one before the message sends. */
+  const speak = useCallback(
+    async (text: string, alive: () => boolean) => {
+      // A beat first, so the page settles before the mic opens.
+      await sleep(600)
+      if (!alive()) return false
+      setComposer('live')
+      await sleep(2400)
+      if (!alive()) return false
+      setComposer('transcribing')
+      const words = text.split(' ')
+      for (let i = 1; i <= words.length; i++) {
+        setDraft(words.slice(0, i).join(' '))
+        await sleep(95)
+        if (!alive()) return false
+      }
+      await sleep(450)
+      setDraft('')
+      setComposer('idle')
+      return alive()
+    },
+    [sleep],
+  )
+
+  /** Thinking: what Wiley is doing, a phrase at a time. The first reply of a turn shows more than a follow-up. */
+  const think = useCallback(
+    async (phrases: string[], first: boolean, alive: () => boolean) => {
+      const list = (phrases.length ? phrases : ['Thinking']).slice(0, first ? 3 : 1)
+      for (let i = 0; i < list.length; i++) {
+        setThinking(list[i])
+        await sleep(i === 0 ? (first ? 1100 : 750) : 900)
+        if (!alive()) return false
+      }
+      return true
+    },
+    [sleep],
+  )
+
   const play = useCallback(
     async (beats: Beat[]) => {
       const my = ++token.current
@@ -240,52 +314,68 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       playingRef.current = true
       setPlaying(true)
       const alive = () => token.current === my
+      const stepThinking = scripts[`${sRef.current.journey}.${stepRef.current}`]?.thinking ?? []
+      let firstReply = true
       for (const b of beats) {
         if (!alive()) return
         if (b.type === 'agent' && b.desktopOnly && !deskRef.current) continue
+        // A beat with `when` plays only if the trip is in that state when Wiley reaches it.
+        if ('when' in b && b.when && !b.when(sRef.current)) continue
         if (b.type === 'user') {
           const text = typeof b.text === 'function' ? b.text(sRef.current) : b.text
           const last = msgsRef.current[msgsRef.current.length - 1]
           if (last?.role === 'user' && last.text === text) continue
           const voice = b.voice === 'mobile' ? !deskRef.current : b.voice
           if (voice) {
-            setComposer('live')
-            await sleep(1500)
-            if (!alive()) return
-            setComposer('idle')
+            if (!(await speak(text, alive))) return
           } else {
-            await sleep(450)
+            await sleep(700)
             if (!alive()) return
           }
-          push({ role: 'user', text, voice, reaction: b.reaction })
-          await sleep(350)
+          push({ role: 'user', text, voice: voice || b.voiceTag?.(sRef.current), reaction: b.reaction })
+          await sleep(500)
+          firstReply = true
         } else if (b.type === 'agent') {
-          setTyping(true)
-          await sleep(b.delayMs ?? (typeof b.text === 'string' ? Math.min(600 + 15 * b.text.length, 1800) : 1300))
-          if (!alive()) return
-          // State-aware lines are read after the pause, so they see what the effects before them changed.
+          if (!(await think(b.thinking ?? stepThinking, firstReply, alive))) return
+          // State-aware lines are read after thinking, so they see what the effects before them changed.
           const text = typeof b.text === 'function' ? b.text(sRef.current) : b.text
-          setTyping(false)
-          push({ role: 'agent', text, textMobile: b.textMobile, source: b.source })
+          const textMobile = typeof b.textMobile === 'function' ? b.textMobile(sRef.current) : b.textMobile
+          setThinking(null)
+          const id = push({ role: 'agent', text, textMobile, source: b.source, reveal: 0 })
+          // The reply streams in, a few words at a time, at an easy reading pace.
+          const words = (deskRef.current ? text : (textMobile ?? text)).split(' ').length
+          const steps = Math.max(4, Math.min(28, Math.ceil(words / 2)))
+          for (let i = 1; i <= steps; i++) {
+            await sleep(Math.min(1700, words * 34) / steps)
+            if (!alive()) return update(id, { reveal: undefined })
+            update(id, { reveal: i === steps ? undefined : i / steps })
+          }
+          firstReply = false
+          await sleep(250)
         } else if (b.type === 'chips') {
-          await sleep(30)
+          await sleep(300)
           const options = typeof b.options === 'function' ? b.options(sRef.current) : b.options
           if (options.length) push({ role: 'agent', chips: { style: b.style, options } })
         } else if (b.type === 'card') {
+          await sleep(300)
           push({ role: 'agent', card: { component: b.component, props: b.props, then: b.then } })
+          await sleep(400)
         } else {
           run(b.actions)
+          firstReply = true
         }
       }
       if (alive()) {
         skip.current = false
         setComposer('idle')
+        setDraft('')
+        setThinking(null)
         playingRef.current = false
         setPlaying(false)
         setTyping(false)
       }
     },
-    [push, run, sleep],
+    [push, run, sleep, speak, think, update],
   )
 
   const pick = useCallback(
@@ -323,12 +413,10 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
   )
 
   const listen = useCallback(() => {
-    setComposer('live')
-    window.setTimeout(() => {
-      setComposer('idle')
-      say(scripts[`${journey}.${step}`]?.voiceLine ?? 'Show me what you can do', true)
-    }, 1500)
-  }, [journey, step, say])
+    const line = scripts[`${journey}.${step}`]?.voiceLine ?? 'Show me what you can do'
+    const my = token.current
+    void speak(line, () => token.current === my).then((ok) => ok && say(line, true))
+  }, [journey, step, say, speak])
 
   const setSnap = useCallback((snap: Snap) => setS((x) => ({ ...x, snap })), [])
   const openWiley = useCallback((snap: Snap = 'half') => setS((x) => ({ ...x, open: true, snap })), [])
@@ -340,6 +428,8 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
     setPlaying(false)
     playingRef.current = false
     setComposer('idle')
+    setThinking(null)
+    setDraft('')
   }, [])
   const toggleWiley = useCallback(() => setS((x) => ({ ...x, open: !x.open, snap: x.open ? x.snap : 'half' })), [])
 
@@ -355,6 +445,8 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
     setPlaying(false)
     playingRef.current = false
     setComposer('idle')
+    setThinking(null)
+    setDraft('')
     setEndCard(null)
     setS(seed(journey))
     if (step === 1) {
@@ -391,6 +483,21 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       void play(sc.onRate(key))
     },
     [journey, step, patch, push, play],
+  )
+
+  const toggleExtra = useCallback(
+    (id: string) => {
+      const e = extraById(id)
+      if (!e) return
+      const added = !sRef.current.cart.some((c) => c.id === id)
+      run([{ do: added ? 'addToCart' : 'removeFromCart', item: id }])
+      const sc = scripts[`${journey}.${step}`]
+      if (!sc?.onExtra) return
+      setS((x) => ({ ...x, open: true, snap: x.snap === 'peek' ? 'half' : x.snap }))
+      push({ role: 'user', text: added ? `Add ${e.short ?? e.name}` : `Remove ${e.short ?? e.name}` })
+      void play(sc.onExtra(id, added))
+    },
+    [journey, step, run, push, play],
   )
 
   const payApple = useCallback(() => {
@@ -482,6 +589,8 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       journey,
       msgs,
       typing,
+      thinking,
+      draft,
       playing,
       composer,
       desktop: framed ? false : desktop,
@@ -498,6 +607,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       play,
       joinVoyagers,
       chooseRate,
+      toggleExtra,
       payApple,
       listen,
       pick,
@@ -514,7 +624,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       reset,
       go,
     }),
-    [s, step, journey, msgs, typing, playing, composer, desktop, framed, w, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, chooseRate, payApple, listen, pick, submitCard, setSnap, toggleWiley, clearChat, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
+    [s, step, journey, msgs, typing, thinking, draft, playing, composer, desktop, framed, w, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, chooseRate, toggleExtra, payApple, listen, pick, submitCard, setSnap, toggleWiley, clearChat, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
@@ -527,10 +637,12 @@ export function quoteOf(s: DemoState, nights = 2) {
   const rate = rateOf(s.selected.suite, s.selected.rate)
   const base = rate.price * nights
   const lines = [
-    { id: 'suite', label: `${suite.name.replace(/ Suite$/, '')}, ${nights} nights`, detail: rate.plan, amount: base },
-    { id: 'passes', label: 'Water park passes', detail: '', amount: 0 },
-    ...s.cart.map((c) => ({ id: c.id, label: c.label, detail: c.fresh ? 'Just added' : '', amount: c.amount })),
+    { id: 'suite', label: `${suite.name.replace(/ Suite$/, '')}, ${nights} nights`, detail: rate.plan, amount: base, price: undefined as string | undefined },
+    { id: 'passes', label: 'Water park passes', detail: '', amount: 0, price: undefined as string | undefined },
+    ...s.cart.map((c) => ({ id: c.id, label: c.label, detail: c.fresh ? 'Just added' : '', amount: c.amount, price: c.price })),
   ]
-  const total = base + s.cart.reduce((n, c) => n + c.amount, 0)
-  return { lines, total, rate, suite }
+  const total = Math.round((base + s.cart.reduce((n, c) => n + c.amount, 0)) * 100) / 100
+  /** Some lines have no listed price yet, so the total leaves them out. */
+  const unpriced = s.cart.some((c) => c.price)
+  return { lines, total, rate, suite, unpriced }
 }

@@ -34,7 +34,7 @@
   70% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--ring) 0%, transparent); }
   100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ring) 0%, transparent); }
 }
-.gwl-pulse { animation: gwl-pulse 1.6s ease-out 3; }
+.gwl-pulse { animation: gwl-pulse 1.8s ease-out 1; }
 
 @keyframes gwl-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -115,10 +115,10 @@
 
 /* A step's page eases in, so moving between steps reads as navigation, not a jump cut. */
 @keyframes gwl-page {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-.gwl-page { animation: gwl-page 280ms ease-out both; }
+.gwl-page { animation: gwl-page 320ms ease-out both; }
 
 @keyframes gwl-fade { from { opacity: 0; } to { opacity: 1; } }
 .gwl-fade { animation: gwl-fade 180ms ease-out both; }
@@ -153,3 +153,53 @@
   /* Last and doubled up, so it beats the layout resets above (which match the presenter bar too). */
   :root .gwl-noprint.gwl-noprint { display: none !important; }
 }
+
+/* Wiley's name sits right beside the paw on every surface (Anvil centres it on mobile). */
+.gwl-chat [data-slot='chat-shell-header'] [data-slot='shell-header-text'] { align-items: flex-start; text-align: start; }
+
+/* Thinking: Great Wolf's pale blue, not Anvil's agent tint. */
+.gwl-chat [data-slot='thinking-panel'] { background: var(--gwl-bubble); border-color: var(--gwl-hairline); border-radius: 14px 14px 14px 4px; }
+
+/* J2 hero: Anvil's extended Prompt Input in the site's booking-bar styling, at one fixed height in every state
+   (typing samples, listening, transcribing), so nothing moves as text appears. */
+.gwl-hero-input {
+  max-width: none;
+  border-radius: 6px;
+  --tw-inset-ring-color: var(--border-action);
+  box-shadow: inset 0 0 0 1.5px var(--border-action);
+  padding: 14px 14px 12px 16px;
+}
+.gwl-hero-input:focus-within { box-shadow: inset 0 0 0 2px var(--ring), 0 0 0 4px color-mix(in srgb, var(--ring) 22%, transparent); }
+.gwl-hero-input > :first-child { height: 3.5rem; min-height: 3.5rem; align-items: flex-start; }
+.gwl-hero-input textarea {
+  field-sizing: fixed;
+  height: 3.5rem !important;
+  max-height: 3.5rem !important;
+  overflow: hidden;
+  padding: 0 !important;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+.gwl-hero-input textarea::placeholder { color: var(--muted-foreground); }
+.gwl-hero-input [data-slot='voice-waveform'] { height: 2rem; }
+
+/* The two questions (Anvil Clarifying Question) in Great Wolf's language: hairline card, rounded options with the
+   site's blue outline and bold navy labels, navy progress and submit. */
+.gwl-question { max-width: 100%; border-radius: 14px; border-color: var(--gwl-hairline); box-shadow: none; }
+.gwl-question [data-slot='icon-tile'] { background: var(--gwl-sky); color: var(--gwl-navy); }
+.gwl-question [data-slot='progress-indicator'] { background: var(--gwl-navy); }
+.gwl-question ol button, .gwl-question ul button {
+  border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--border-action); font-weight: 700; min-height: 44px;
+}
+.gwl-question [data-slot='shell-footer'] button[data-slot='button'] { border-radius: 9999px; }
+
+/* Skeletons need to read on white cards: a cool grey a step darker than --muted. */
+.gwl-site [data-slot='skeleton'] { background-color: #e4ebf1; }
+.dark .gwl-site [data-slot='skeleton'] { background-color: #16324d; }
+
+/* The thread follows the newest message itself; Anvil's "scroll to end" button only flickers while replies stream. */
+.gwl-chat [data-slot='message-scroller-button'] { display: none; }
+
+/* On a phone the number-key hints in the questions mean nothing: hide them inside the sheet. */
+section[aria-label='Wiley'] .gwl-question kbd, section[aria-label='Wiley'] .gwl-question [data-slot='kbd'] { display: none; }

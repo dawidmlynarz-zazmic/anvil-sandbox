@@ -27,3 +27,12 @@ Build-script element → what renders it. "Local" is in `src/components/local/` 
 | Apple Pay, share, Voyagers join sheets | J1·5, J2·5, J2·6 | Local `Overlays` (mocks of native UI) |
 | Toast | J1·4, J2·4, J2·6 | Local `Toast` |
 | Presenter bar | all | `app/Shell.tsx` with Anvil `ToggleGroup`, `Button` |
+
+## Trip Builder (J1·3 and J2·5 once a rate is chosen)
+
+| Element | Anvil component | Notes |
+|---|---|---|
+| Trip progress (Suite, Birthday, Passes, Dining, Extras) | `ProgressSteps` (bars) | Done when the section has an item; current is the one Wiley suggests next. |
+| Passes, birthday, dining and extra cards | `OfferCard` (horizontal) | Media is an illustrated `Photo` tile; Add or Remove as the card's button. Added cards keep the selected border, but Remove stays outline so the page keeps one primary action. |
+| Your suite, trip so far, weekend plan | `Card`, `Badge`, `TripQuote` | The quote and plan preview read the same cart as Wiley. |
+| "Wiley suggests" | `WileyTag` + ring | Follows `highlight`, set by Wiley's next suggestion. |

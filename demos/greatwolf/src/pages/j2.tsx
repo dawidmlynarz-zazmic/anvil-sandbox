@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ElementSpotlight } from '@anvil/components/agent/element-spotlight'
+import { PromptInput } from '@anvil/components/agent/prompt-input'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
-import { ArrowLeftIcon, ArrowUpIcon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, EyeIcon, Icon, MicIcon, SparklesIcon, TagIcon, UsersIcon } from '@anvil/components/ui/icon'
+import { ArrowLeftIcon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, EyeIcon, Icon, SparklesIcon, TagIcon, UsersIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { lodge, nearby, waterPark } from '~/data/fixtures'
 import { art, photos } from '~/data/photos'
-import { Photo, WileyTag } from '~/components/local/Brand/Brand'
+import { Photo, WileyAvatar, WileyTag } from '~/components/local/Brand/Brand'
 import { AiChip } from '~/components/local/WileyCards/WileyCards'
 import { useDemo } from '~/state/demo'
 import { savedPlan } from '~/state/plan'
@@ -107,20 +108,42 @@ export function J2Landing() {
   const { go, openWiley, play, patch } = useDemo()
   const desktop = usePageWide()
   const [tab, setTab] = useState<'dates' | 'describe'>('describe')
-  // A real field: sample requests rotate inside it until the visitor focuses or types. Sending an empty field sends
-  // the request Wiley's script answers; their own words are carried into the chat.
-  const [sending, setSending] = useState(false)
+  // Anvil's extended Prompt Input, in Great Wolf's styling. Sample requests rotate in it (as its placeholder) until the
+  // visitor focuses or types. Sending an empty field sends the request Wiley's script answers; their own words are
+  // carried into the chat. Voice plays in place: listening, then the words transcribe, a pause, then Wiley opens.
+  const [phase, setPhase] = useState<'idle' | 'listening' | 'transcribing' | 'sending'>('idle')
   const [value, setValue] = useState('')
   const [focused, setFocused] = useState(false)
-  const idle = !sending && !focused && value === ''
+  const idle = phase === 'idle' && !focused && value === ''
   const sample = useTypewriter(SAMPLES, tab === 'describe' && idle)
-  const send = () => {
-    if (sending) return
+  const timers = useRef<number[]>([])
+  useEffect(() => () => timers.current.forEach((x) => window.clearTimeout(x)), [])
+  const later = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, ms))
+  const send = (voice = false) => {
+    if (phase === 'sending') return
     const text = value.trim()
     if (!text) setValue(PROMPT)
-    patch({ tripText: text || null })
-    setSending(true)
-    window.setTimeout(() => go('j2/2'), 500)
+    patch({ tripText: text || null, tripVoice: voice })
+    setPhase('sending')
+    later(() => go('j2/2'), voice ? 900 : 600)
+  }
+  const transcribe = () => {
+    setPhase('transcribing')
+    const words = PROMPT.split(' ')
+    words.forEach((_, i) => later(() => setValue(words.slice(0, i + 1).join(' ')), 110 * (i + 1)))
+    later(() => send(true), 110 * words.length + 700)
+  }
+  const voice = () => {
+    if (phase === 'listening') {
+      // Tapping the mic again ends listening early.
+      timers.current.forEach((x) => window.clearTimeout(x))
+      timers.current = []
+      return transcribe()
+    }
+    if (phase !== 'idle') return
+    setValue('')
+    setPhase('listening')
+    later(transcribe, 2600)
   }
   const bestDeal = () => {
     openWiley('half')
@@ -150,52 +173,34 @@ export function J2Landing() {
       </div>
       {tab === 'describe' ? (
         <div className="flex flex-col gap-4">
-          <form
-            className="flex flex-col gap-1.5"
-            onSubmit={(e) => {
-              e.preventDefault()
-              send()
-            }}
-          >
-            <label htmlFor="trip" className="type-text-md-medium">
+          <div className="flex flex-col gap-1.5">
+            <span id="trip-label" className="type-text-md-medium">
               Tell Wiley about your trip
-            </label>
-            <div
-              className={cn(
-                'flex items-center gap-3 rounded-[4px] border-[1.5px] border-[var(--border-action)] bg-background ps-4 pe-2 transition-shadow focus-within:border-[var(--ring)] focus-within:ring-4 focus-within:ring-[var(--ring)]/25',
-                desktop ? 'h-16' : 'min-h-16 py-2',
-              )}
-            >
-              <div className="relative flex min-w-0 flex-1 items-center self-stretch">
-                {/* The rotating sample sits under the input and sets the height on narrow screens. */}
-                <span aria-hidden className={cn('type-text-lg-medium text-muted-foreground', idle ? 'gwl-caret' : 'invisible')}>
-                  {idle ? sample : '\u00a0'}
+            </span>
+            <PromptInput
+              aria-labelledby="trip-label"
+              className="gwl-hero-input"
+              value={value}
+              onValueChange={(v) => phase === 'idle' && setValue(v)}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              placeholder={phase === 'listening' ? 'Listening…' : idle ? sample : 'Dates, who’s coming, what matters most…'}
+              listening={phase === 'listening'}
+              status={phase === 'sending' ? 'streaming' : 'idle'}
+              onVoice={voice}
+              canSendEmpty
+              onSubmit={() => send()}
+              leading={
+                <span className="flex items-center gap-2 ps-1 type-text-sm-semibold text-foreground" aria-hidden>
+                  <WileyAvatar size={26} />
+                  {phase === 'listening' ? 'Listening…' : phase === 'transcribing' ? 'Got it' : phase === 'sending' ? 'Opening Wiley…' : 'Wiley'}
                 </span>
-                <input
-                  id="trip"
-                  value={value}
-                  readOnly={sending}
-                  onChange={(e) => setValue(e.target.value)}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                  placeholder={focused ? 'Dates, who’s coming, what matters most…' : ''}
-                  aria-describedby="trip-hint"
-                  autoComplete="off"
-                  enterKeyHint="send"
-                  className="absolute inset-0 w-full bg-transparent type-text-lg-medium text-foreground outline-none placeholder:text-muted-foreground"
-                />
-              </div>
-              <Button type="button" shape="circle" size="icon" aria-label="Talk to Wiley" onClick={send}>
-                <Icon icon={MicIcon} />
-              </Button>
-              <Button type="submit" shape="circle" size="icon" variant="outline" intent="neutral" aria-label="Send to Wiley">
-                <Icon icon={ArrowUpIcon} />
-              </Button>
-            </div>
+              }
+            />
             <span id="trip-hint" className="sr-only">
               For example: {PROMPT}
             </span>
-          </form>
+          </div>
           <div className={cn('flex flex-wrap gap-2', desktop && 'justify-center')}>
             <AiChip onClick={bestDeal}>What’s the best deal for my stay?</AiChip>
             <AiChip onClick={() => go('j2/2')}>Suite for my family vacation</AiChip>
@@ -238,9 +243,12 @@ export function J2Landing() {
           <div className={cn('w-full', desktop ? 'mt-4 max-w-5xl' : 'mt-2')}>{panel}</div>
         </div>
       </section>
-      <Page>
-        <Popular />
-      </Page>
+      {/* On a phone the hero is the page; the tiles would only push the field around. */}
+      {desktop && (
+        <Page>
+          <Popular />
+        </Page>
+      )}
     </div>
   )
 }
@@ -367,6 +375,22 @@ export function J2SavedPlan() {
           </div>
         </div>
       </Card>
+      {p.extras.length > 0 && (
+        <section aria-labelledby="extras" className="flex flex-col gap-3">
+          <h2 id="extras" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
+            Added to your trip ({p.extras.length})
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {p.extras.map((x) => (
+              <li key={x.id} className="flex items-center gap-4 rounded-2xl border bg-background p-3">
+                <Photo icon={x.icon} label={x.name} tone={x.tone} className="h-16 w-20 shrink-0 rounded-lg" />
+                <span className="min-w-0 flex-1 type-text-sm-semibold">{x.name}</span>
+                <span className="type-text-sm-semibold whitespace-nowrap">{x.price}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <section aria-labelledby="things" className="flex flex-col gap-3">
         <h2 id="things" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
           Things to do ({p.things.length})

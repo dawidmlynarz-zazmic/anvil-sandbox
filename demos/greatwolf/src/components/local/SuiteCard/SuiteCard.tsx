@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
+import { Skeleton } from '@anvil/components/ui/skeleton'
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, CircleCheckIcon, Icon, InfoIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { money, ratesFor, type Rate, type RateKey, type Suite } from '~/data/fixtures'
@@ -150,7 +151,7 @@ export function SuiteCard(p: Props) {
         </button>
         <span className="type-text-sm-normal">Sleeps up to {suite.sleeps}</span>
       </div>
-      {suite.variant && (
+      {suite.variant && desktop && (
         <span className="inline-flex w-fit items-center gap-6 rounded-lg border px-3 py-2 type-text-sm-normal">
           {suite.variant}
           <Icon icon={ChevronDownIcon} size="xs" />
@@ -199,8 +200,8 @@ export function SuiteCard(p: Props) {
     <Card
       id={`suite-${suite.id}`}
       className={cn(
-        'scroll-mt-4 gap-0 overflow-hidden rounded-3xl p-0 shadow-md transition-opacity',
-        highlighted && 'gwl-pulse ring-2 ring-primary',
+        'scroll-mt-4 gap-0 overflow-hidden rounded-2xl p-0 shadow-md transition-opacity',
+        highlighted && cn('ring-2 ring-primary', desktop && 'gwl-pulse'),
         dimmed && 'opacity-50',
       )}
     >
@@ -227,7 +228,7 @@ export function SuiteCard(p: Props) {
 /** Mobile rates view: a compact suite header and the stacked rate cards. */
 export function CompactRates(p: Omit<Props, 'desktop' | 'tag' | 'highlighted' | 'dimmed' | 'expanded'>) {
   return (
-    <Card id={`suite-${p.suite.id}`} className="gap-0 overflow-hidden rounded-3xl p-0 shadow-md">
+    <Card id={`suite-${p.suite.id}`} className="gap-0 overflow-hidden rounded-2xl p-0 shadow-md">
       <div className="flex items-start justify-between gap-3 p-4">
         <div className="min-w-0">
           <h2 className="gwl-display text-lg leading-tight">{p.suite.name}</h2>
@@ -238,6 +239,46 @@ export function CompactRates(p: Omit<Props, 'desktop' | 'tag' | 'highlighted' | 
         </Button>
       </div>
       <Rates suite={p.suite} desktop={false} signedIn={p.signedIn} selected={p.selected} onSelectRate={p.onSelectRate} />
+    </Card>
+  )
+}
+
+/** The suite card while the list loads: the same shape (gallery, details, price), so nothing jumps when it fills in. */
+export function SuiteCardSkeleton({ desktop }: { desktop: boolean }) {
+  const details = (
+    <div className="flex flex-col gap-3">
+      <Skeleton className="h-5 w-28 rounded-sm" />
+      <Skeleton className="h-6 w-3/4" />
+      <Skeleton className="h-4 w-1/2" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-10 w-full rounded-lg" />
+    </div>
+  )
+  const price = (
+    <div className={cn('flex flex-col gap-2', desktop ? 'items-end' : 'items-start')}>
+      <Skeleton className="h-5 w-28" />
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-9 w-24" />
+      <Skeleton className={cn('mt-2 h-12 rounded-full', desktop ? 'w-56' : 'w-full')} />
+    </div>
+  )
+  return (
+    <Card aria-hidden className="gap-0 overflow-hidden rounded-2xl p-0 shadow-md">
+      {desktop ? (
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_auto]">
+          <Skeleton className="min-h-72 rounded-none" />
+          <div className="p-6">{details}</div>
+          <div className="my-6 flex items-center border-l p-6">{price}</div>
+        </div>
+      ) : (
+        <>
+          <Skeleton className="h-52 rounded-none" />
+          <div className="flex flex-col gap-4 p-4">
+            {details}
+            {price}
+          </div>
+        </>
+      )}
     </Card>
   )
 }

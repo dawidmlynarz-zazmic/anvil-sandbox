@@ -5,11 +5,13 @@ import { CalendarIcon, Icon, UsersIcon, type LucideIcon } from '@anvil/component
 import { cn } from '@anvil/lib/utils'
 import { suiteById, suites } from '~/data/fixtures'
 import { art, photos } from '~/data/photos'
-import { CompactRates, SuiteCard } from '~/components/local/SuiteCard/SuiteCard'
+import { CompactRates, SuiteCard, SuiteCardSkeleton } from '~/components/local/SuiteCard/SuiteCard'
+import { TextShimmer } from '@anvil/components/agent/text-shimmer'
 import { Photo, WileyTag } from '~/components/local/Brand/Brand'
 import { useDemo } from '~/state/demo'
 import { usePageWide } from '~/state/layout'
 import type { PlanItem } from '~/wiley/types'
+import { TripBuilder } from './trip'
 
 /** The page column: full width on mobile, a shared max width on desktop. */
 export function Page({ children, className, wide }: { children: ReactNode; className?: string; wide?: boolean }) {
@@ -97,7 +99,15 @@ export function SuitesPage() {
           </>
         )}
       </div>
-      <div className="flex flex-col gap-5">
+      {s.loadingSuites ? (
+        <div role="status" aria-label="Finding suites" className="flex flex-col gap-5">
+          <TextShimmer className="type-text-sm-medium">{s.setByWiley ? 'Updating suites for your family…' : 'Finding suites for your dates…'}</TextShimmer>
+          {Array.from({ length: Math.max(2, Math.min(3, shown.length)) }, (_, i) => (
+            <SuiteCardSkeleton key={i} desktop={desktop} />
+          ))}
+        </div>
+      ) : (
+      <div className="gwl-fade flex flex-col gap-5">
         {shown.map((id) => {
           const suite = suiteById(id)
           return (
@@ -120,6 +130,7 @@ export function SuitesPage() {
           )
         })}
       </div>
+      )}
     </Page>
   )
 }
@@ -137,6 +148,8 @@ export function RatesPage() {
   }
   // Select answers in the chat: the choice shows as the family's message and Wiley replies.
   const select = (rate: Parameters<typeof SuiteCard>[0]['selected']) => rate && chooseRate(id, rate)
+  // Choosing a rate is the start of the trip, not the end: the page becomes the Trip Builder.
+  if (s.selected?.suite === id) return <TripBuilder />
   return (
     <Page>
       {desktop ? (

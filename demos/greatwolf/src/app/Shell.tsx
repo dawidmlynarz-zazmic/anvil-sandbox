@@ -75,18 +75,18 @@ function DemoBar() {
   )
 }
 
-/** Mobile 390 on a laptop: the app inside a 390 × 844 phone, scaled down to fit short windows. */
+/** Mobile 390 on a laptop: the app in a clean 390 × 844 viewport (no device bezel), scaled down to fit short windows. */
 function PhoneFrame({ children }: { children: ReactNode }) {
   const [zoom, setZoom] = useState(1)
   useEffect(() => {
-    const fit = () => setZoom(Math.min(1, (window.innerHeight - 80) / 864))
+    const fit = () => setZoom(Math.min(1, (window.innerHeight - 72) / 852))
     fit()
     window.addEventListener('resize', fit)
     return () => window.removeEventListener('resize', fit)
   }, [])
   return (
     <div className="grid h-full place-items-center overflow-auto bg-[var(--gwl-canvas)] p-4">
-      <div style={{ zoom }} className="gwl-phone relative h-[844px] w-[390px] shrink-0 overflow-hidden rounded-[48px] border-[10px] border-[#0b1520] bg-background shadow-2xl [transform:translateZ(0)]">
+      <div style={{ zoom }} className="gwl-phone relative h-[844px] w-[390px] shrink-0 overflow-hidden rounded-[10px] bg-background shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_24px_60px_rgb(7_39_69/0.25)] [transform:translateZ(0)]">
         {children}
       </div>
     </div>
