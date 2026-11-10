@@ -17,15 +17,18 @@ export function Page({ children, className, wide }: { children: ReactNode; class
   return <div className={cn('gwl-page mx-auto flex w-full flex-col gap-5', desktop ? cn('px-8 py-8', wide ? 'max-w-7xl' : 'max-w-6xl') : 'px-4 py-5', className)}>{children}</div>
 }
 
-export function Title({ children, tag, sub }: { children: ReactNode; tag?: ReactNode; sub?: ReactNode }) {
+export function Title({ children, tag, sub, actions }: { children: ReactNode; tag?: ReactNode; sub?: ReactNode; actions?: ReactNode }) {
   const desktop = usePageWide()
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h1 className={cn('gwl-display leading-tight text-foreground', desktop ? 'text-3xl' : 'text-2xl')}>{children}</h1>
-        {tag}
+    <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h1 className={cn('gwl-display leading-tight text-foreground', desktop ? 'text-3xl' : 'text-2xl')}>{children}</h1>
+          {tag}
+        </div>
+        {sub && <p className="type-text-sm-normal text-muted-foreground">{sub}</p>}
       </div>
-      {sub && <p className="type-text-sm-normal text-muted-foreground">{sub}</p>}
+      {actions && <div className="flex flex-wrap gap-2 print:hidden">{actions}</div>}
     </div>
   )
 }
@@ -58,7 +61,7 @@ export function PlanRow({ item }: { item: PlanItem }) {
 
 /** J1·2 and J2·2: the suites page. Wiley sets the filter chips, ranks and highlights; removing a chip shows all again. */
 export function SuitesPage() {
-  const { s, journey, patch, go } = useDemo()
+  const { s, journey, patch, go, chooseRate } = useDemo()
   const desktop = usePageWide()
   const ranked = s.ranked.length > 0 && s.filters.length > 0
   const narrowed = ranked && !s.widened
@@ -107,12 +110,12 @@ export function SuitesPage() {
               highlighted={s.highlight === id}
               expanded={s.expanded === id}
               selected={s.selected?.suite === id ? s.selected.rate : null}
+              // Any suite's rates open on the rates step, where Wiley follows the choice.
               onToggleRates={() => {
-                if (s.expanded === id) return patch({ expanded: null })
                 patch({ expanded: id })
-                if (id === 'pup-den-jr') go(ratesStep)
+                go(ratesStep)
               }}
-              onSelectRate={(rate) => patch({ selected: { suite: id, rate } })}
+              onSelectRate={(rate) => chooseRate(id, rate)}
             />
           )
         })}
@@ -123,7 +126,7 @@ export function SuitesPage() {
 
 /** J1·3 and J2·5: one suite with its rates open. Signed-in members see their two Voyagers rates only. */
 export function RatesPage() {
-  const { s, journey, patch, go } = useDemo()
+  const { s, journey, patch, go, chooseRate } = useDemo()
   const desktop = usePageWide()
   const id = s.expanded ?? 'pup-den-jr'
   const suite = suiteById(id)
@@ -132,7 +135,8 @@ export function RatesPage() {
     patch({ expanded: null })
     go(journey === 1 ? 'j1/2' : 'j2/2')
   }
-  const select = (rate: Parameters<typeof SuiteCard>[0]['selected']) => rate && patch({ selected: { suite: id, rate } })
+  // Select answers in the chat: the choice shows as the family's message and Wiley replies.
+  const select = (rate: Parameters<typeof SuiteCard>[0]['selected']) => rate && chooseRate(id, rate)
   return (
     <Page>
       {desktop ? (

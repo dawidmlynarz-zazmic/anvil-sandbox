@@ -1,4 +1,5 @@
-import type { Beat, Option, StepScript } from '../types'
+import { money, rateOf, suiteById, type RateKey } from '~/data/fixtures'
+import type { Beat, DemoState, Option, StepScript } from '../types'
 
 // Journey 2: a first-time family, signed out, with kids aged 3 and 6. The lodge is the context; Wiley never asks where.
 // Every choice gets its own answer and its own change on the page; Next follows the `path` (the happy path).
@@ -80,7 +81,7 @@ const sixYearOld: Option = {
 
 // ── J2·4: things to do ──────────────────────────────────────────────────────────────────────────────────────────
 
-const lockIn: Beat[] = [say('Want to lock in the suite?'), chips({ label: 'See rates for Junior Wolf Pup Den', then: [goTo('j2/5')] })]
+const lockIn: Beat[] = [say('Want to lock in the suite?'), chips({ label: 'See rates for Junior Wolf Pup Den', then: [{ type: 'effect', actions: [{ do: 'expandRates', suite: 'pup-den-jr' }] }, goTo('j2/5')] })]
 
 const addZoo: Beat[] = [
   { type: 'effect', actions: [{ do: 'addToPlan', item: 'zoo' }, { do: 'toast', text: 'Added to your plan' }, { do: 'scrollTo', id: 'act-zoo' }] },
@@ -102,25 +103,56 @@ const whyNotBarr: Option = {
 
 // ── J2·5: rates ─────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** After a rate is chosen, as a guest or a new member. Also played by the Voyagers join sheet. */
-export const afterRate: Beat[] = [
-  say('All set to check out. Or save it for later?'),
-  chips({ label: 'Go to checkout', then: [{ type: 'effect', actions: [{ do: 'end', card: 'checkout' }] }] }, { label: 'Not ready yet', then: [goTo('j2/6')] }),
+const ratedSuite = (s: DemoState) => s.expanded ?? 'pup-den-jr'
+
+/** After a rate is chosen, as a guest or a new member. */
+const afterRateOptions: Option[] = [
+  { label: 'Go to checkout', then: [{ type: 'effect', actions: [{ do: 'end', card: 'checkout' }] }] },
+  { label: 'Not ready yet', then: [goTo('j2/6')] },
 ]
 
 const join: Option = { label: 'Join free and save', then: [{ type: 'effect', actions: [{ do: 'sheet', which: 'join' }] }] }
-const asGuest: Option = {
-  label: 'Book as guest',
-  then: [{ type: 'effect', actions: [{ do: 'selectRate', suite: 'pup-den-jr', rate: 'std-non' }, { do: 'scrollTo', id: 'rate-std-non' }] }, ...afterRate],
+
+/** A rate chosen in the chat or with a card's Select. A member rate picked while signed out opens the join sheet. */
+const rateChosen = (key: RateKey): Beat[] => {
+  const member = key.endsWith('voy')
+  const needsJoin = (s: DemoState) => member && !s.signedIn
+  return [
+    {
+      type: 'effect',
+      actions: [
+        { do: 'selectRate', suite: '@current', rate: key },
+        { do: 'scrollTo', id: `rate-${key}` },
+        { do: 'patch', fn: (s) => (needsJoin(s) ? { sheet: 'join' } : {}) },
+      ],
+    },
+    {
+      type: 'agent',
+      text: (s) => {
+        if (needsJoin(s)) return 'That’s the Voyagers Club rate. Join for free and I’ll keep it for you.'
+        const r = rateOf(ratedSuite(s), key)
+        const terms = r.plan === 'Flexible' ? 'You can cancel for free until [date].' : 'Free changes and cancellation until [date].'
+        return `${r.plan} ${member ? 'at your Voyagers Club rate' : 'as a guest'}: ${money(r.price)} a night. ${terms}`
+      },
+    },
+    {
+      type: 'chips',
+      style: 'ai',
+      options: (s) => (needsJoin(s) ? [] : s.signedIn ? afterRateOptions : [...afterRateOptions, { ...join, label: 'Join free and save $4 a night' }]),
+    },
+  ]
 }
-const flexible: Option = {
-  label: 'Flexible instead',
-  then: [
-    { type: 'effect', actions: [{ do: 'selectRate', suite: 'pup-den-jr', rate: 'Flexible' }, { do: 'scrollTo', id: 'rate-flex-non' }] },
-    say('Flexible is $128 a night as a guest, or $125 if you join Voyagers Club for free. You can cancel for free until [date].'),
-    chips(join, { label: 'Keep it as a guest', then: afterRate }),
-  ],
-}
+
+const standardMember: Option = { label: 'Standard', say: 'Standard, please', then: rateChosen('std-voy') }
+const flexibleMember: Option = { label: 'Flexible', say: 'Flexible, please', then: rateChosen('flex-voy') }
+const standardGuest: Option = { label: 'Standard as a guest', say: 'Standard as a guest, please', then: rateChosen('std-non') }
+const flexibleGuest: Option = { label: 'Flexible as a guest', say: 'Flexible as a guest, please', then: rateChosen('flex-non') }
+
+/** Played by the join sheet when the family had already picked a rate: it is kept, at the member price. */
+export const afterJoinWithRate: Beat[] = [say('Welcome to Voyagers Club! I kept your choice, now at the member rate.'), chips(...afterRateOptions)]
+
+/** Played by the join sheet when no rate was picked yet: Wiley asks instead of choosing for them. */
+export const afterJoinPickRate: Beat[] = [say('Welcome to Voyagers Club! Your member rates are showing. Which one would you like?'), chips(standardMember, flexibleMember)]
 
 // ── J2·6: save the plan ─────────────────────────────────────────────────────────────────────────────────────────
 
@@ -128,8 +160,12 @@ const share: Beat[] = [{ type: 'effect', actions: [{ do: 'sheet', which: 'share'
 
 const planSent: Beat[] = [
   { type: 'effect', actions: [{ do: 'toast', text: 'Plan sent' }, { do: 'patch', fn: () => ({ planSaved: true }) }] },
-  say('Sent! The link brings back this page and our chat.'),
-  chips({ label: 'Share with my partner too', then: share }, { label: 'Book it now', then: [{ type: 'effect', actions: [{ do: 'end', card: 'checkout' }] }] }),
+  say('Sent! The link brings back this plan and our chat. Want to see what it shows?'),
+  chips(
+    { label: 'Preview the plan', then: [{ type: 'effect', actions: [{ do: 'sheet', which: 'plan' }] }] },
+    { label: 'Share with my partner too', then: share },
+    { label: 'Book it now', then: [{ type: 'effect', actions: [{ do: 'end', card: 'checkout' }] }] },
+  ),
 ]
 
 export const j2: Record<number, StepScript> = {
@@ -217,23 +253,25 @@ export const j2: Record<number, StepScript> = {
     ],
   },
   5: {
-    enter: [{ do: 'expandRates', suite: 'pup-den-jr' }, { do: 'openSheet', snap: 'half' }],
+    // Rates for the suite chosen on the suites page. Nothing is selected for the family.
+    enter: [{ do: 'patch', fn: (s) => (s.expanded ? {} : { expanded: 'pup-den-jr' }) }, { do: 'openSheet', snap: 'half' }],
     beats: [
-      // Says the weekend the family picked in J2·2.
-      { type: 'user', text: (s) => `Book the Wolf Pup Den for ${s.weekend.replace(' – ', ' to ')}` },
-      say('Good pick! Joining Voyagers Club is free, saves $4 a night, and I’ll remember your plan. Or book as a guest, no account needed. Flexible costs a bit more and lets you cancel later.', {
-        textMobile: 'Good pick! Joining Voyagers Club is free and saves $4 a night. Or book as a guest.',
+      // Names the suite and the weekend the family picked.
+      { type: 'user', text: (s) => `Book the ${suiteById(ratedSuite(s)).name.replace(/ Suite$/, '')} for ${s.weekend.replace(' – ', ' to ')}` },
+      say('Good pick! Choose a rate on the page or here. Joining Voyagers Club is free and saves $4 a night; Flexible costs a bit more and lets you cancel later.', {
+        textMobile: 'Good pick! Choose a rate, or join Voyagers Club free to save $4 a night.',
       }),
-      chips(join, asGuest, flexible),
+      chips(join, standardGuest, flexibleGuest),
     ],
-    path: ['Join free and save', 'Not ready yet'],
-    voiceLine: 'Book as a guest',
+    onRate: rateChosen,
+    path: ['Join free and save', 'Standard', 'Not ready yet'],
+    voiceLine: 'Standard as a guest',
     rules: [
       [/join|member|voyager|save/i, join.then],
-      [/flex|cancel/i, flexible.then],
-      [/guest/i, asGuest.then],
+      [/flex|cancel/i, rateChosen('flex-non')],
+      [/guest|standard/i, rateChosen('std-non')],
     ],
-    fallback: [join, asGuest, flexible],
+    fallback: [join, standardGuest, flexibleGuest],
   },
   6: {
     enter: [{ do: 'openSheet', snap: 'half' }],
@@ -243,7 +281,11 @@ export const j2: Record<number, StepScript> = {
       { type: 'card', component: 'capture', then: () => planSent },
     ],
     voiceLine: 'Send it to my phone',
-    rules: [[/share|partner/i, share]],
-    fallback: [{ label: 'Share with my partner', then: share }],
+    path: ['Preview the plan'],
+    rules: [
+      [/preview|see|show/i, [{ type: 'effect', actions: [{ do: 'sheet', which: 'plan' }] }]],
+      [/share|partner/i, share],
+    ],
+    fallback: [{ label: 'Preview the plan', then: [{ type: 'effect', actions: [{ do: 'sheet', which: 'plan' }] }] }, { label: 'Share with my partner', then: share }],
   },
 }

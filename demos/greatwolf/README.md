@@ -30,13 +30,13 @@ Every chip leads somewhere different, on the page and in the chat. **Next** alwa
 | Step | Choices |
 | --- | --- |
 | J1·2 | See the rates · More room for the kids (KidCabin to the top) · Something cheaper (Deluxe Queen to the top) |
-| J1·3 | Add the party · Add MagiQuest · What’s the difference? (then Keep Flexible or Switch to Standard) · Not now. The rates follow the suite picked in J1·2 |
-| J1·4 | Zoo on Sunday · Garden of the Gods instead · Keep Sunday free; then Go to checkout or Move MagiQuest to Friday |
+| J1·3 | Nothing is preselected: pick Flexible or Standard with a rate card's **Select** or in the chat (both answer in the chat), What’s the difference?; then the party, MagiQuest or Not now. The rates follow the suite picked in J1·2 |
+| J1·4 | Opens on Friday; the day tabs follow Wiley. Zoo on Sunday · Garden of the Gods instead · Keep Sunday free; then Go to checkout or Move MagiQuest to Friday. **Add to calendar** downloads an .ics file; **Print** prints the whole weekend |
 | J2·2 | The two questions re-rank and re-tag; then the water park · Compare the top two · See rates |
 | J2·3 | What else is nearby? · And for our 6-year-old? (spotlight moves to Fort Mackenzie) · Back to suites |
 | J2·4 | Add the zoo · Add Garden of the Gods · Plan our Sunday · Why skip Barr Trail? |
-| J2·5 | Join free and save · Book as guest · Flexible instead (joining keeps Flexible at the member rate). The request names the weekend picked in J2·2 |
-| J2·6 | Send the plan, then Share with my partner too or Book it now |
+| J2·5 | Nothing is preselected. Join free and save · Standard or Flexible as a guest, or a card’s **Select**. A Voyagers Club rate picked while signed out opens the join sheet; joining keeps a picked rate or asks which one |
+| J2·6 | Send the plan, then Preview the plan (the full plan: suite, dates, rate and total, things to do), Share with my partner too or Book it now. The page has Preview plan too |
 
 ## How it is built
 

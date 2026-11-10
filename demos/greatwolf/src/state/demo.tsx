@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useNavigate } from 'react-router-dom'
 import { addons, rateOf, suiteById, type RateKey } from '~/data/fixtures'
 import { reveal } from '~/lib/reveal'
-import { afterRate, scripts } from '~/wiley/scripts'
+import { afterJoinPickRate, afterJoinWithRate, scripts } from '~/wiley/scripts'
 import type { Action, Beat, DemoState, DeviceMode, Journey, Msg, Option, Snap } from '~/wiley/types'
 import { seed } from './seed'
 
@@ -33,6 +33,7 @@ interface Demo {
   say: (text: string, voice?: boolean) => void
   play: (beats: Beat[]) => Promise<void>
   joinVoyagers: () => void
+  chooseRate: (suite: string, key: RateKey) => void
   payApple: () => void
   listen: () => void
   pick: (msgId: number, opt: Option) => void
@@ -259,14 +260,17 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
           push({ role: 'user', text, voice, reaction: b.reaction })
           await sleep(350)
         } else if (b.type === 'agent') {
-          const text = typeof b.text === 'function' ? b.text(sRef.current) : b.text
           setTyping(true)
-          await sleep(b.delayMs ?? Math.min(600 + 15 * text.length, 1800))
+          await sleep(b.delayMs ?? (typeof b.text === 'string' ? Math.min(600 + 15 * b.text.length, 1800) : 1300))
           if (!alive()) return
+          // State-aware lines are read after the pause, so they see what the effects before them changed.
+          const text = typeof b.text === 'function' ? b.text(sRef.current) : b.text
           setTyping(false)
           push({ role: 'agent', text, textMobile: b.textMobile, source: b.source })
         } else if (b.type === 'chips') {
-          push({ role: 'agent', chips: { style: b.style, options: b.options } })
+          await sleep(30)
+          const options = typeof b.options === 'function' ? b.options(sRef.current) : b.options
+          if (options.length) push({ role: 'agent', chips: { style: b.style, options } })
         } else if (b.type === 'card') {
           push({ role: 'agent', card: { component: b.component, props: b.props, then: b.then } })
         } else {
@@ -367,11 +371,27 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
   }, [journey, step, go, run, play])
 
   const joinVoyagers = useCallback(() => {
-    // Keep the family's choice of Standard or Flexible; joining only swaps in the member price.
-    const flex = sRef.current.selected?.rate.startsWith('flex')
-    run([{ do: 'sheet', which: null }, { do: 'signIn' }, { do: 'selectRate', suite: 'pup-den-jr', rate: flex ? 'flex-voy' : 'std-voy' }, { do: 'toast', text: 'Welcome to Voyagers Club' }])
-    void play(afterRate)
+    // Joining keeps a rate the family already picked (at the member price); it never picks one for them.
+    const had = sRef.current.selected
+    const actions: Action[] = [{ do: 'sheet', which: null }, { do: 'signIn' }, { do: 'toast', text: 'Welcome to Voyagers Club' }]
+    if (had) actions.push({ do: 'selectRate', suite: had.suite, rate: had.rate.startsWith('flex') ? 'flex-voy' : 'std-voy' })
+    run(actions)
+    void play(had ? afterJoinWithRate : afterJoinPickRate)
   }, [run, play])
+
+  /** A rate card's Select: the choice shows in the chat as the family's message, and Wiley answers it. */
+  const chooseRate = useCallback(
+    (suite: string, key: RateKey) => {
+      const sc = scripts[`${journey}.${step}`]
+      if (!sc?.onRate) return patch({ selected: { suite, rate: key } })
+      const r = rateOf(suite, key)
+      const who = r.member ? (sRef.current.signedIn ? 'at our Voyagers Club rate' : 'at the Voyagers Club rate') : 'as a guest'
+      setS((x) => ({ ...x, open: true, snap: x.snap === 'peek' ? 'half' : x.snap }))
+      push({ role: 'user', text: `${r.plan} ${who}, please` })
+      void play(sc.onRate(key))
+    },
+    [journey, step, patch, push, play],
+  )
 
   const payApple = useCallback(() => {
     run([{ do: 'sheet', which: null }])
@@ -381,7 +401,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
   const next = useCallback(() => {
     if (sRef.current.sheet === 'join') return joinVoyagers()
     if (sRef.current.sheet === 'apple') return payApple()
-    if (sRef.current.sheet === 'share') return run([{ do: 'sheet', which: null }])
+    if (sRef.current.sheet === 'share' || sRef.current.sheet === 'plan') return run([{ do: 'sheet', which: null }])
     if (playingRef.current) {
       skip.current = true
       wake.current?.()
@@ -477,6 +497,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       say,
       play,
       joinVoyagers,
+      chooseRate,
       payApple,
       listen,
       pick,
@@ -493,7 +514,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       reset,
       go,
     }),
-    [s, step, journey, msgs, typing, playing, composer, desktop, framed, w, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, payApple, listen, pick, submitCard, setSnap, toggleWiley, clearChat, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
+    [s, step, journey, msgs, typing, playing, composer, desktop, framed, w, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, chooseRate, payApple, listen, pick, submitCard, setSnap, toggleWiley, clearChat, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

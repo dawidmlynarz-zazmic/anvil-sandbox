@@ -47,8 +47,10 @@ export interface DemoState {
   open: boolean
   snap: Snap
   /** Journey 2: the Voyagers join sheet, the share sheet; Journey 1: the Apple Pay sheet. */
-  sheet: null | 'join' | 'share' | 'apple'
+  sheet: null | 'join' | 'share' | 'apple' | 'plan'
   planSaved: boolean
+  /** Journey 1: the weekend-plan day Wiley last pointed at; the mobile day tabs follow it. */
+  planDay: 'fri' | 'sat' | 'sun' | null
   /** Journey 2: what the visitor typed in the hero's trip field, if they wrote their own request. */
   tripText: string | null
   /** The plan counter on the Ask Wiley pill. */
@@ -88,7 +90,8 @@ export type Beat =
   /** `text` can read the demo state, e.g. to say the weekend the family picked. */
   | { type: 'user'; text: string | ((s: DemoState) => string); voice?: boolean | 'mobile'; reaction?: string }
   | { type: 'agent'; text: string | ((s: DemoState) => string); textMobile?: string; source?: string; delayMs?: number; desktopOnly?: boolean }
-  | { type: 'chips'; style: 'answer' | 'ai'; options: Option[] }
+  /** `options` can read the demo state, e.g. not to offer the party once it is booked. An empty list shows nothing. */
+  | { type: 'chips'; style: 'answer' | 'ai'; options: Option[] | ((s: DemoState) => Option[]) }
   | { type: 'card'; component: CardKind; props?: Record<string, unknown>; then?: (payload: unknown) => Beat[] }
   | { type: 'effect'; actions: Action[] }
 
@@ -116,4 +119,6 @@ export interface StepScript {
   rules?: [RegExp, Beat[]][]
   /** Offered when nothing matches. */
   fallback: Option[]
+  /** A rate picked on the page (a rate card's Select). The chat answers it like the matching chip. */
+  onRate?: (key: RateKey) => Beat[]
 }

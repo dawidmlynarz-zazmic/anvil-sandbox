@@ -2,7 +2,7 @@ import type { StepScript } from '../types'
 import { j1 } from './j1'
 import { j2 } from './j2'
 
-export { afterRate } from './j2'
+export { afterJoinPickRate, afterJoinWithRate } from './j2'
 
 /** Scripts keyed "journey.step", e.g. "1.3". */
 export const scripts: Record<string, StepScript> = Object.fromEntries([
