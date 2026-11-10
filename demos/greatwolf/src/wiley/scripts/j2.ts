@@ -278,7 +278,15 @@ export const j2: Record<number, StepScript> = {
     enter: [{ do: 'openSheet', snap: 'half' }],
     beats: [
       { type: 'user', text: 'Let me check with my partner first' },
-      say('Of course! Want me to text this plan to you? No account needed.'),
+      {
+        type: 'agent',
+        text: (s) => {
+          const sat = s.cart.some((c) => c.id === 'pup-pass') ? 'Build-A-Bear on Saturday morning, ' : s.cart.some((c) => c.kind === 'pass') ? 'MagiQuest on Saturday morning, ' : ''
+          const sun = s.ideas.includes('zoo') ? 'the zoo on Sunday at 9:30' : 'the zoo as a suggestion for Sunday morning'
+          return `Of course! I laid your weekend out by day so it’s easy to show them: Cub Paw Pool when you arrive, ${sat}${sun}. Want me to text it to you? No account needed.`
+        },
+        textMobile: 'Of course! I laid your weekend out by day. Want me to text it to you? No account needed.',
+      },
       { type: 'card', component: 'capture', then: () => planSent },
     ],
     voiceLine: 'Send it to my phone',
@@ -286,6 +294,13 @@ export const j2: Record<number, StepScript> = {
     rules: [
       [/preview|see|show/i, [{ type: 'effect', actions: [{ do: 'sheet', which: 'plan' }] }]],
       [/share|partner/i, share],
+      [
+        /zoo|sunday/i,
+        [
+          { type: 'effect', actions: [{ do: 'addToPlan', item: 'zoo' }, { do: 'patch', fn: () => ({ planDay: 'sun' }) }, { do: 'toast', text: 'Added to Sunday' }, { do: 'scrollTo', id: 'plan-zoo' }] },
+          say('Done: Cheyenne Mountain Zoo is Sunday at 9:30, before check-out.', { source: GUIDE }),
+        ],
+      ],
     ],
     fallback: [{ label: 'Preview the plan', then: [{ type: 'effect', actions: [{ do: 'sheet', which: 'plan' }] }] }, { label: 'Share with my partner', then: share }],
   },
@@ -298,6 +313,6 @@ const THINKING: Record<number, string[]> = {
   3: ['Opening the lodge water park guide', 'Finding spots for little ones'],
   4: ['Checking the GWL Things To Do guide', 'Filtering for kids aged 3 and 6', 'Adding it to your plan'],
   5: ['Pulling rates for your weekend', 'Checking passes for a 3 and 6 year old', 'Updating your trip'],
-  6: ['Saving your plan', 'Preparing the link'],
+  6: ['Laying out your weekend by day', 'Saving your plan'],
 }
 for (const [step, phrases] of Object.entries(THINKING)) j2[Number(step)].thinking = phrases

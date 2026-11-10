@@ -129,6 +129,8 @@
 /* A suite card's rates opening inside the card. */
 @keyframes gwl-accordion { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .gwl-accordion { animation: gwl-accordion 220ms ease-out both; }
+/* A plan card being dragged: lifted and slightly turned. */
+.gwl-lift { transform: rotate(-1.5deg) scale(1.02); }
 .gwl-fade { animation: gwl-fade 180ms ease-out both; }
 
 /* Wiley is typing: three dots in an agent bubble. */

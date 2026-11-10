@@ -41,5 +41,6 @@ export function seed(journey: Journey): DemoState {
     loadingSuites: false,
     planDay: null,
     skipped: [],
+    planEdits: {},
   }
 }

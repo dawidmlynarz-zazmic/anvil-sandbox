@@ -11,6 +11,8 @@ export interface PlanItem {
   title: string
   sub?: string
   status?: 'Added' | 'Booked' | 'Included' | 'Suggested' | 'Free'
+  /** The family moved it themselves. */
+  moved?: boolean
 }
 
 export interface CartLine {
@@ -61,6 +63,8 @@ export interface DemoState {
   tripVoice: boolean
   /** The suites list is loading (skeletons show). */
   loadingSuites: boolean
+  /** Plan items the family moved themselves (drag and drop or the Move menu): their new day and time. */
+  planEdits: Record<string, { day: 'fri' | 'sat' | 'sun'; time: string }>
   /** Trip Builder sections the family said no to; Wiley stops suggesting them. */
   skipped: ('pass' | 'dining' | 'birthday' | 'experience')[]
   /** The plan counter on the Ask Wiley pill. */

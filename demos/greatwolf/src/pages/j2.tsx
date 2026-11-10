@@ -6,15 +6,16 @@ import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
 import { ArrowLeftIcon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, EyeIcon, Icon, SparklesIcon, TagIcon, UsersIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
-import { lodge, nearby, waterPark } from '~/data/fixtures'
+import { dates, lodge, money, nearby, waterPark } from '~/data/fixtures'
 import { art, photos } from '~/data/photos'
 import { Photo, WileyAvatar, WileyTag } from '~/components/local/Brand/Brand'
 import { AiChip } from '~/components/local/WileyCards/WileyCards'
-import { useDemo } from '~/state/demo'
-import { savedPlan } from '~/state/plan'
+import { j2Plan, savedPlan } from '~/state/plan'
+import { quoteOf, useDemo } from '~/state/demo'
 import { usePageWide } from '~/state/layout'
 import type { Beat } from '~/wiley/types'
 import { Page, Popular, Title } from './shared'
+import { WeekendPlan } from './weekend'
 
 const PROMPT = 'A weekend in March with a 3 and 6 year old'
 
@@ -341,77 +342,69 @@ export function J2ThingsToDo() {
   )
 }
 
-/** J2·6: the plan Wiley saved, with booking, a full preview and sharing on the page itself. */
+/** J2·6: the weekend Wiley saved, by day, built from the trip. Not booked yet: book, preview the link or share it. */
 export function J2SavedPlan() {
   const { s, run } = useDemo()
   const desktop = usePageWide()
   const p = savedPlan(s)
-  return (
-    <Page>
-      <Title tag={<WileyTag>Saved by Wiley</WileyTag>}>Your plan</Title>
-      <Card className={cn('gap-0 overflow-hidden rounded-3xl p-0', desktop && 'flex-row')}>
-        <Photo src={p.photo} label={p.suite.name} className={cn('shrink-0', desktop ? 'w-72' : 'h-44')} />
-        <div className="flex min-w-0 flex-1 flex-col gap-3 p-5">
-          <p className="gwl-display text-lg leading-tight">
-            {p.suite.name} · {p.weekend.short}
-          </p>
-          <p className="type-text-sm-normal text-muted-foreground">
-            {p.guests} · water park passes included · {p.nights} nights
-          </p>
-          <p className="type-text-sm-semibold">
-            {p.rateLine}
-            {p.total && <span className="type-text-sm-normal text-muted-foreground"> · {p.total} total</span>}
-          </p>
-          <div className={cn('mt-1 flex gap-2', desktop ? 'flex-row flex-wrap' : 'flex-col')}>
-            <Button shape="pill" size="lg" onClick={() => run([{ do: 'end', card: 'checkout' }])}>
-              Book now
-            </Button>
-            <Button shape="pill" size="lg" variant="outline" intent="neutral" onClick={() => run([{ do: 'sheet', which: 'plan' }])}>
-              <Icon icon={EyeIcon} /> Preview plan
-            </Button>
-            <Button shape="pill" size="lg" variant="outline" intent="neutral" onClick={() => run([{ do: 'sheet', which: 'share' }])}>
-              Share with my partner
-            </Button>
-          </div>
-        </div>
-      </Card>
-      {p.extras.length > 0 && (
-        <section aria-labelledby="extras" className="flex flex-col gap-3">
-          <h2 id="extras" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
-            Added to your trip ({p.extras.length})
-          </h2>
-          <ul className="flex flex-col gap-3">
+  const q = quoteOf(s)
+  const trip = (
+    <Card className={cn('gap-0 overflow-hidden rounded-2xl p-0', desktop && 'flex-row')}>
+      <Photo src={p.photo} label={p.suite.name} className={cn('shrink-0', desktop ? 'w-56' : 'h-36')} />
+      <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
+        <p className="gwl-display text-lg leading-tight">{p.suite.name}</p>
+        <p className="type-text-sm-normal text-muted-foreground">
+          {p.weekend.long} · {p.guests}
+        </p>
+        <p className="type-text-sm-semibold">{p.rateLine}</p>
+        {p.extras.length > 0 && (
+          <ul className="flex flex-wrap gap-1.5" aria-label="Added to your trip">
             {p.extras.map((x) => (
-              <li key={x.id} className="flex items-center gap-4 rounded-2xl border bg-background p-3">
-                <Photo icon={x.icon} label={x.name} tone={x.tone} className="h-16 w-20 shrink-0 rounded-lg" />
-                <span className="min-w-0 flex-1 type-text-sm-semibold">{x.name}</span>
-                <span className="type-text-sm-semibold whitespace-nowrap">{x.price}</span>
+              <li key={x.id}>
+                <Badge variant="subtle" size="sm">
+                  {x.name}
+                </Badge>
               </li>
             ))}
           </ul>
-        </section>
-      )}
-      <section aria-labelledby="things" className="flex flex-col gap-3">
-        <h2 id="things" className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
-          Things to do ({p.things.length})
-        </h2>
-        <ul className="flex flex-col gap-3">
-          {p.things.map((t) => (
-            <li key={t.id} className="flex items-center gap-4 rounded-2xl border bg-background p-3">
-              <Photo icon={t.icon} label={t.name} tone={t.id === 'cub-paw' ? 'lake' : t.id === 'garden' ? 'dusk' : 'forest'} className="h-16 w-20 shrink-0 rounded-lg" />
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="type-text-sm-semibold">{t.name}</span>
-                <span className="type-text-xs-normal text-muted-foreground">
-                  {t.when} · {t.where}
-                </span>
-              </span>
-              <Badge variant="subtle" size="sm">
-                {t.tag}
-              </Badge>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </Page>
+        )}
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+          {q ? (
+            <p className="type-text-sm-normal">
+              Trip total <span className="type-text-md-semibold">{money(q.total)}</span>
+              {q.sample && <span className="text-muted-foreground"> · includes sample prices</span>}
+            </p>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2">
+            <Button shape="pill" size="sm" variant="outline" intent="neutral" onClick={() => run([{ do: 'sheet', which: 'plan' }])}>
+              <Icon icon={EyeIcon} /> Preview link
+            </Button>
+            <Button shape="pill" size="sm" variant="outline" intent="neutral" onClick={() => run([{ do: 'sheet', which: 'share' }])}>
+              Share
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+  const iso = p.weekend === dates.j2b ? { fri: '2027-03-12', sat: '2027-03-13', sun: '2027-03-14' } : { fri: '2027-03-05', sat: '2027-03-06', sun: '2027-03-07' }
+  return (
+    <WeekendPlan
+      plan={j2Plan(s)}
+      title={`Your weekend · ${p.weekend.short}`}
+      tag={<WileyTag>Saved by Wiley</WileyTag>}
+      primary={
+        <Button shape="pill" onClick={() => run([{ do: 'end', card: 'checkout' }])}>
+          Book now
+        </Button>
+      }
+      lead={trip}
+      iso={iso}
+      printWhen={p.weekend.long}
+      printWho={`${p.guests} · ${p.suite.name}`}
+      file="great-wolf-weekend.ics"
+    />
   )
 }

@@ -7,14 +7,14 @@ import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
 import { CheckIcon, ChevronDownIcon, CircleCheckIcon, Icon, InfoIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
-import { activityById, money, suiteById } from '~/data/fixtures'
+import { money, suiteById } from '~/data/fixtures'
 import { extras, SECTIONS, type Extra, type ExtraKind } from '~/data/extras'
 import { suitePhotos } from '~/data/photos'
 import { Photo, Sample, WileyTag } from '~/components/local/Brand/Brand'
 import { CompactRates, SuiteCard } from '~/components/local/SuiteCard/SuiteCard'
 import { TripQuote } from '~/components/local/WileyCards/WileyCards'
 import { quoteOf, useDemo } from '~/state/demo'
-import { j1Plan } from '~/state/plan'
+import { j1Plan, j2Plan } from '~/state/plan'
 import { usePageWide } from '~/state/layout'
 import { reveal } from '~/lib/reveal'
 import { Page, Title } from './shared'
@@ -102,10 +102,11 @@ function SuiteItem({ onChange, desktop }: { onChange: () => void; desktop: boole
 /** The trip so far, beside the builder on desktop and under it on a phone. */
 function PlanPreview() {
   const { s, journey, go } = useDemo()
-  const items =
-    journey === 1
-      ? j1Plan(s).filter((p) => p.status !== 'Suggested').slice(0, 6).map((p) => ({ id: p.id, title: p.title, when: `${p.day === 'fri' ? 'Fri' : p.day === 'sat' ? 'Sat' : 'Sun'} ${p.time}`, note: p.status === 'Included' ? p.sub : undefined }))
-      : ['cub-paw', ...s.ideas].map((id) => ({ id, title: id === 'cub-paw' ? 'Cub Paw Pool' : (activityById(id)?.name ?? id), when: '', note: undefined as string | undefined }))
+  // Both journeys preview the same day plan their weekend page shows (J1·4, J2·6), built from this trip.
+  const items = (journey === 1 ? j1Plan(s) : j2Plan(s))
+    .filter((p) => p.status !== 'Suggested' && p.id !== 'checkin')
+    .slice(0, 6)
+    .map((p) => ({ id: p.id, title: p.title, when: `${p.day === 'fri' ? 'Fri' : p.day === 'sat' ? 'Sat' : 'Sun'} ${p.time}`, note: p.status === 'Included' ? p.sub : undefined }))
   return (
     <Card className="gap-3 rounded-2xl p-4">
       <p className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">Your weekend plan</p>
@@ -120,11 +121,9 @@ function PlanPreview() {
           </li>
         ))}
       </ul>
-      {journey === 1 && (
-        <Button shape="pill" variant="outline" intent="neutral" className="w-fit" onClick={() => go('j1/4')}>
-          Open the weekend plan
-        </Button>
-      )}
+      <Button shape="pill" variant="outline" intent="neutral" className="w-fit" onClick={() => go(journey === 1 ? 'j1/4' : 'j2/6')}>
+        Open the weekend plan
+      </Button>
     </Card>
   )
 }
