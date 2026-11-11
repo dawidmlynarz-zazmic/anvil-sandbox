@@ -5,6 +5,7 @@ import { cn } from '@anvil/lib/utils'
 import { photos } from '~/data/photos'
 import { quoteOf, useDemo } from '~/state/demo'
 import { j2Plan, savedPlan } from '~/state/plan'
+import { stayDays } from '~/state/stay'
 import { lodge } from '~/data/fixtures'
 import { Photo, Sample, WileyAvatar } from '../Brand/Brand'
 
@@ -252,10 +253,10 @@ function PlanPreview() {
               </ul>
             </section>
           )}
-          {(['fri', 'sat', 'sun'] as const).map((d) => (
+          {stayDays(s.stay).map(({ key: d, long, date }) => (
             <section key={d} aria-labelledby={`plan-${d}`} className="flex flex-col gap-2">
               <h3 id={`plan-${d}`} className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">
-                {d === 'fri' ? 'Friday' : d === 'sat' ? 'Saturday' : 'Sunday'}
+                {long} {date}
               </h3>
               <ul className="flex flex-col gap-1.5">
                 {plan.filter((x) => x.day === d).map((x) => (

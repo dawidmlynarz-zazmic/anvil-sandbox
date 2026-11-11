@@ -10,6 +10,7 @@ import { Photo, WileyAvatar, WileyTag } from '~/components/local/Brand/Brand'
 import { TripQuote } from '~/components/local/WileyCards/WileyCards'
 import { quoteOf, useDemo } from '~/state/demo'
 import { j1Plan } from '~/state/plan'
+import { guestsLong, longDates, shortDates, toDate } from '~/state/stay'
 import { usePageWide } from '~/state/layout'
 import type { PlanItem } from '~/wiley/types'
 import { Page, Popular, Title } from './shared'
@@ -119,16 +120,15 @@ export function J1Plan() {
   return (
     <WeekendPlan
       plan={plan}
-      title={`Your weekend · ${dates.j1.short}`}
+      title={`Your weekend · ${shortDates(s.stay) ?? 'dates to pick'}`}
       tag={<WileyTag>Built with Wiley</WileyTag>}
       primary={
         <Button shape="pill" onClick={() => go('j1/5')}>
           Go to checkout
         </Button>
       }
-      iso={{ fri: '2027-03-12', sat: '2027-03-13', sun: '2027-03-14' }}
-      printWhen={dates.j1.long}
-      printWho={`${fam.name} family · 2 adults, 2 kids (Mia 7, Leo 4) · ${suite}`}
+      printWhen={longDates(s.stay)}
+      printWho={`${fam.name} family · ${guestsLong(s.stay)} · ${suite}`}
       file="great-wolf-weekend.ics"
     />
   )
@@ -160,7 +160,7 @@ export function J1Checkout() {
       <Progress value={100} aria-label="Checkout progress" />
     </div>
   )
-  const title = `Your trip · ${dates.j1.short} · sample prices`
+  const title = `Your trip · ${shortDates(s.stay) ?? 'dates to pick'} · sample prices`
   if (desktop) {
     return (
       <Page>
@@ -242,7 +242,7 @@ export function J1Booked() {
       <Badge variant="subtle" size="sm" className="w-fit">
         <Icon icon={CheckIcon} /> Confirmed
       </Badge>
-      <Title sub={`Confirmation GWL-48213 · ${q?.suite.name ?? 'Junior Wolf Pup Den Suite'} · ${dates.j1.long}`}>You’re booked! See you March 12.</Title>
+      <Title sub={`Confirmation GWL-48213 · ${q?.suite.name ?? 'Junior Wolf Pup Den Suite'} · ${longDates(s.stay)}`}>{`You’re booked! See you ${s.stay.start ? toDate(s.stay.start).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : 'soon'}.`}</Title>
       <Card className="gap-4 rounded-2xl border-2 border-foreground p-5">
         {desktop ? (
           <div className="flex items-start gap-8">

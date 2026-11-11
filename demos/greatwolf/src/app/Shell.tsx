@@ -9,6 +9,7 @@ import { EndCard, Launcher, NativeSheets, Toast } from '~/components/local/Overl
 import { WileyPanel } from '~/components/local/WileyPanel/WileyPanel'
 import { DemoProvider, useDemo } from '~/state/demo'
 import { PageWidthProvider } from '~/state/layout'
+import { StayBar } from '~/components/local/StayBar/StayBar'
 import type { DeviceMode, Journey } from '~/wiley/types'
 import { useTheme } from './useTheme'
 
@@ -112,6 +113,7 @@ function Frame() {
       <div className={cn('flex min-h-0 flex-1', !desktop && 'flex-col')}>
         <main id="page-scroll" ref={pageRef} className="min-h-0 min-w-0 flex-1 overflow-y-auto">
           <PageWidthProvider target={pageRef}>
+            <StayBar />
             <Outlet />
           </PageWidthProvider>
         </main>

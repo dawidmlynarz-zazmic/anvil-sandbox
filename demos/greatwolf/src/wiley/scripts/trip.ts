@@ -1,5 +1,6 @@
 import { extraById, hasExtra, type ExtraKind } from '~/data/extras'
 import { money } from '~/data/fixtures'
+import { kidsPhrase, partySize } from '~/state/stay'
 import type { Beat, DemoState, Option } from '../types'
 
 // Wiley in the Trip Builder: once the suite is chosen it suggests what comes next, one section at a time, in the
@@ -35,7 +36,7 @@ const PITCH: Record<J, Partial<Record<ExtraKind, (s: DemoState) => string>>> = {
     experience: () => 'Check-out is 11am on Sunday, and your water park passes last until closing that day. Late check-out keeps the suite until 2pm, for one more swim and a change before the drive.',
   },
   2: {
-    pass: () => 'Water park passes are already in your suite for all four of you. For a 3 and 6 year old, the Pup Pass is made for little ones: Build-A-Bear, treats, an arcade card and a souvenir. The Paw Pass has MagiQuest instead.',
+    pass: (s) => `Water park passes are already in your suite for all ${partySize(s.stay)} of you. For ${kidsPhrase(s.stay)}, the Pup Pass is made for little ones: Build-A-Bear, treats, an arcade card and a souvenir. The Paw Pass has MagiQuest instead.`,
     dining: () => 'With little ones, breakfast in the lodge saves a morning. The Wolf Wakeup Breakfast is all you can eat; I couldn’t find its price or where it’s served, so it’s flagged. Or the Gold Dining Credit: $100 to spend for $85.',
     experience: (s) =>
       `Check-out is 11am, and your water park passes last until closing that day.${s.ideas.includes('zoo') ? ' With the zoo on your plan,' : ''} Late check-out keeps the suite until 2pm, for one more swim and a change before the drive.`,
@@ -50,7 +51,7 @@ const PITCH_MOBILE: Record<J, Partial<Record<ExtraKind, string>>> = {
     experience: 'Check-out is 11am Sunday. Late check-out keeps the suite until 2pm.',
   },
   2: {
-    pass: 'Water park passes come with your suite. For a 3 and 6 year old, the Pup Pass is made for little ones.',
+    pass: 'Water park passes come with your suite. The Pup Pass is made for little ones.',
     dining: 'Breakfast in the lodge saves a morning: the Wolf Wakeup Breakfast is all you can eat.',
     experience: 'Check-out is 11am. Late check-out keeps the suite until 2pm.',
   },

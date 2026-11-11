@@ -67,10 +67,10 @@ recommendation is for Dawid to decide.
 - **A11y:** the Move menu is the keyboard and screen-reader path (another day, 30 minutes earlier or later); the grip is pointer and touch only. Moves are announced (dnd-kit live region) and confirmed in the chat. Locked items say why ("Set by the lodge").
 - **Recommendation:** worth adding if more demos plan days. Built here on `@dnd-kit/core` 6.3.1 (touch long-press, mouse distance threshold).
 
-## Pinned summary (TripBar) · `pages/trip.tsx`
+## Stay bar (StayBar) · `components/local/StayBar/StayBar.tsx`
 
-- **Type:** new pattern (sticky, collapsible summary).
-- **Closest Anvil option checked:** `Collapsible` (used inside it), `AnnouncementBar`.
-- **Proposed API:** `<PinnedSummary label total count lines={[{ id, label, value }]} flash="Just added: …" onLineSelect />`.
-- **A11y:** the trigger is a real button with Show/Hide; the summary line is a polite live region so additions are announced.
-- **Recommendation:** adopt for any mobile flow that builds a basket while scrolling.
+- **Type:** new pattern (sticky booking context, like greatwolf.com's booking bar).
+- **Closest Anvil option checked:** `DatePicker` (a single trigger, no clear button or stay range), `QuantitySelector` (priced rows, no per-child ages), `Collapsible`, `AnnouncementBar`. Built from `Popover`, `Calendar`, `Stepper`, `Select` and `Collapsible`.
+- **Proposed API:** `<StayBar dates={{ start, nights }} guests={{ adults, kids: ages[] }} onDatesChange onGuestsChange onClear summary={{ total, lines, flash }} />`. Desktop: labelled fields in a sticky row. Phone: compact chips plus the basket total, opening to its lines.
+- **A11y:** a named region ("Your stay"); triggers say the value and the action ("Dates: Mar 12 – 14. Change dates"); a separate Clear dates button; steppers and age selects are labelled; the total is a polite live region, so "Added" is announced.
+- **Recommendation:** adopt for any booking or ordering demo. It replaces the separate pinned trip summary, so a phone never shows two pinned bars.

@@ -28,6 +28,7 @@ import { downloadCalendar } from '~/lib/calendar'
 import { useDemo } from '~/state/demo'
 import { usePageWide } from '~/state/layout'
 import { isLocked, minutesOf, slotBetween, timeOf } from '~/state/plan'
+import { stayDays } from '~/state/stay'
 import type { PlanItem } from '~/wiley/types'
 import { Page, PlanRow, Title } from './shared'
 
@@ -41,12 +42,6 @@ import { Page, PlanRow, Title } from './shared'
 // items are set by the lodge and stay put. Wiley confirms each move and says if it clashes with check-out.
 
 export type Day = 'fri' | 'sat' | 'sun'
-
-export const DAYS = [
-  { key: 'fri', label: 'Fri', long: 'Friday' },
-  { key: 'sat', label: 'Sat', long: 'Saturday' },
-  { key: 'sun', label: 'Sun', long: 'Sunday' },
-] as const
 
 const MORE = [
   { id: 'garden', name: 'Garden of the Gods', sub: 'Free · red rock trails', tone: 'dusk' as const },
@@ -62,8 +57,6 @@ interface Props {
   primary?: ReactNode
   /** Before the days: e.g. the saved trip on J2·6. */
   lead?: ReactNode
-  /** ISO date of each day, for the calendar file. */
-  iso: Record<Day, string>
   /** Print header: when, who and which suite. */
   printWhen: string
   printWho: string
@@ -71,7 +64,7 @@ interface Props {
 }
 
 /** The full weekend for print: every day in order, whatever tab is open on screen. */
-function PrintablePlan({ plan, when, who }: { plan: PlanItem[]; when: string; who: string }) {
+function PrintablePlan({ plan, when, who, days }: { plan: PlanItem[]; when: string; who: string; days: { key: Day; long: string; date: string }[] }) {
   return (
     <div className="hidden flex-col gap-5 print:flex">
       <div className="flex flex-col gap-1 border-b pb-4">
@@ -81,9 +74,11 @@ function PrintablePlan({ plan, when, who }: { plan: PlanItem[]; when: string; wh
           {who} · {lodge.name}, {lodge.city}
         </p>
       </div>
-      {DAYS.map((d) => (
+      {days.map((d) => (
         <section key={d.key} className="flex flex-col gap-2 break-inside-avoid">
-          <h2 className="type-text-sm-semibold uppercase">{d.long}</h2>
+          <h2 className="type-text-sm-semibold uppercase">
+            {d.long} {d.date}
+          </h2>
           <table className="w-full type-text-sm-normal">
             <tbody>
               {plan.filter((p) => p.day === d.key).map((p) => (
@@ -105,7 +100,6 @@ function PrintablePlan({ plan, when, who }: { plan: PlanItem[]; when: string; wh
   )
 }
 
-const LONG: Record<Day, string> = { fri: 'Friday', sat: 'Saturday', sun: 'Sunday' }
 
 /** Where a dragged card would land: before or after a card, or at the end of a day. */
 type Target = { day: Day; row?: string; after?: boolean }
@@ -139,10 +133,10 @@ function placeAt(plan: PlanItem[], id: string, t: Target) {
 }
 
 /** What Wiley says about a move: where it went, and whether it clashes with check-out or another plan. */
-function replyFor(plan: PlanItem[], item: PlanItem, day: Day, time: string) {
-  const parts = [`Moved ${item.title} to ${LONG[day]} at ${time}.`]
+function replyFor(plan: PlanItem[], item: PlanItem, day: Day, time: string, names: Record<Day, string>) {
+  const parts = [`Moved ${item.title} to ${names[day]} at ${time}.`]
   const out = plan.find((p) => p.id === 'checkout')
-  if (day === 'sun' && out && minutesOf(time) > minutesOf(out.time)) parts.push(`That’s after check-out at ${out.time}; your water park passes still work until closing, but the suite won’t be yours.`)
+  if (day === 'sun' && out && minutesOf(time) > minutesOf(out.time)) parts.push(`That’s after check-out at ${out.time} on ${names.sun}; your water park passes still work until closing, but the suite won’t be yours.`)
   const clash = plan.find((p) => p.id !== item.id && p.day === day && Math.abs(minutesOf(p.time) - minutesOf(time)) < 30)
   if (clash) parts.push(`It’s close to ${clash.title} at ${clash.time}, so check you have time for both.`)
   return parts.join(' ')
@@ -173,7 +167,7 @@ function DayList({ d, children, active }: { d: Day; children: ReactNode; active:
   )
 }
 
-function MoveMenu({ item, onMove }: { item: PlanItem; onMove: (day: Day, time: string) => void }) {
+function MoveMenu({ item, onMove, names }: { item: PlanItem; onMove: (day: Day, time: string) => void; names: Record<Day, string> }) {
   const mins = minutesOf(item.time)
   return (
     <DropdownMenu>
@@ -188,7 +182,7 @@ function MoveMenu({ item, onMove }: { item: PlanItem; onMove: (day: Day, time: s
           .filter((d) => d !== item.day)
           .map((d) => (
             <DropdownMenuItem key={d} onSelect={() => onMove(d, item.time)}>
-              To {LONG[d]}, {item.time}
+              To {names[d]}, {item.time}
             </DropdownMenuItem>
           ))}
         <DropdownMenuSeparator />
@@ -204,7 +198,7 @@ function MoveMenu({ item, onMove }: { item: PlanItem; onMove: (day: Day, time: s
 }
 
 /** A plan card that can be dragged by its grip and dropped on; locked cards show why they don't move. */
-function MovableRow({ item, target, dragging, onMove }: { item: PlanItem; target: Target | null; dragging: boolean; onMove: (day: Day, time: string) => void }) {
+function MovableRow({ item, target, dragging, onMove, names }: { item: PlanItem; target: Target | null; dragging: boolean; onMove: (day: Day, time: string) => void; names: Record<Day, string> }) {
   const locked = isLocked(item)
   const drag = useDraggable({ id: `row:${item.id}`, disabled: locked })
   const drop = useDroppable({ id: `row:${item.id}` })
@@ -240,14 +234,18 @@ function MovableRow({ item, target, dragging, onMove }: { item: PlanItem; target
           </span>
         )
       }
-      menu={locked ? undefined : <MoveMenu item={item} onMove={onMove} />}
+      menu={locked ? undefined : <MoveMenu item={item} onMove={onMove} names={names} />}
     />
   )
 }
 
-export function WeekendPlan({ plan, title, tag, primary, lead, iso, printWhen, printWho, file }: Props) {
+export function WeekendPlan({ plan, title, tag, primary, lead, printWhen, printWho, file }: Props) {
   const { s, run, movePlanItem } = useDemo()
   const desktop = usePageWide()
+  // The three days of the stay, named by their real dates (a Sat–Mon stay shows Sat, Sun, Mon).
+  const days = stayDays(s.stay)
+  const names = Object.fromEntries(days.map((d) => [d.key, d.long])) as Record<Day, string>
+  const iso = Object.fromEntries(days.map((d) => [d.key, d.iso])) as Record<Day, string>
   const [day, setDay] = useState<Day>('fri')
   const [active, setActive] = useState<PlanItem | null>(null)
   const [target, setTarget] = useState<Target | null>(null)
@@ -256,8 +254,8 @@ export function WeekendPlan({ plan, title, tag, primary, lead, iso, printWhen, p
   const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 6 } }), useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }))
   const move = (item: PlanItem, to: { day: Day; time: string }) => {
     if (to.day === item.day && to.time === item.time) return
-    movePlanItem(item.id, to.day, to.time, replyFor(plan, item, to.day, to.time))
-    run([{ do: 'toast', text: `${item.title}: ${LONG[to.day]} ${to.time}` }])
+    movePlanItem(item.id, to.day, to.time, replyFor(plan, item, to.day, to.time, names))
+    run([{ do: 'toast', text: `${item.title}: ${names[to.day]} ${to.time}` }])
   }
   const onStart = (e: DragStartEvent) => setActive(plan.find((p) => `row:${p.id}` === e.active.id) ?? null)
   const onOver = (e: DragOverEvent) => setTarget(targetOf(e, plan))
@@ -268,7 +266,7 @@ export function WeekendPlan({ plan, title, tag, primary, lead, iso, printWhen, p
     setTarget(null)
   }
   const rows = (d: Day) =>
-    plan.filter((p) => p.day === d).map((p) => <MovableRow key={p.id} item={p} target={target} dragging={active?.id === p.id} onMove={(dd, tt) => move(p, { day: dd, time: tt })} />)
+    plan.filter((p) => p.day === d).map((p) => <MovableRow key={p.id} item={p} target={target} dragging={active?.id === p.id} names={names} onMove={(dd, tt) => move(p, { day: dd, time: tt })} />)
   // When Wiley points at a day (Sunday's suggestion, MagiQuest moved to Friday), the tabs follow.
   useEffect(() => {
     if (s.planDay) setDay(s.planDay)
@@ -334,7 +332,7 @@ export function WeekendPlan({ plan, title, tag, primary, lead, iso, printWhen, p
         {desktop ? (
           <>
             <div className="grid grid-cols-3 gap-4">
-              {DAYS.map((d) => (
+              {days.map((d) => (
                 <section key={d.key} aria-label={d.long} className="flex flex-col gap-3">
                   <h2 className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">{d.long}</h2>
                   <DayList d={d.key} active={Boolean(active)}>
@@ -362,7 +360,7 @@ export function WeekendPlan({ plan, title, tag, primary, lead, iso, printWhen, p
           <>
             <div className="flex flex-col gap-2">
               <ToggleGroup type="single" value={day} onValueChange={(v) => v && setDay(v as Day)} aria-label="Day" className="gap-2">
-                {DAYS.map((d) => (
+                {days.map((d) => (
                   <DayTab key={d.key} d={d.key} onHover={setDayRef.current}>
                     <ToggleGroupItem value={d.key} className="h-9 rounded-full border px-4">
                       {d.label}
@@ -383,7 +381,7 @@ export function WeekendPlan({ plan, title, tag, primary, lead, iso, printWhen, p
           {active ? <PlanRow item={active} id={`drag-${active.id}`} className="gwl-lift cursor-grabbing list-none shadow-xl" handle={<span className="grid size-8 shrink-0 place-items-center text-muted-foreground"><Icon icon={GripVerticalIcon} /></span>} /> : null}
         </DragOverlay>
       </DndContext>
-      <PrintablePlan plan={plan} when={printWhen} who={printWho} />
+      <PrintablePlan plan={plan} when={printWhen} who={printWho} days={days} />
     </Page>
   )
 }

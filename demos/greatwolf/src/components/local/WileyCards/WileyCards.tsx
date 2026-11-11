@@ -143,16 +143,19 @@ const QUESTIONS = [
 ]
 
 /** Two quick questions, one at a time: Anvil's Clarifying Question, in Great Wolf's styling (see app.css). */
-export function QuestionsCard({ done, answer: given, onDone }: { done?: boolean; answer?: { weekend: string; priority: string }; onDone: (p: { weekend: string; priority: string }) => void }) {
-  const { desktop } = useDemo()
+export function QuestionsCard({ done, answer: given, onDone }: { done?: boolean; answer?: { weekend?: string; priority: string }; onDone: (p: { weekend?: string; priority: string }) => void }) {
+  const { desktop, s } = useDemo()
+  // With dates already in the request, Wiley only asks what matters most.
+  const [skipWeekend] = useState(() => Boolean(s.stay.start))
+  const questions = skipWeekend ? QUESTIONS.filter((q) => q.id !== 'weekend') : QUESTIONS
   return (
     <ClarifyingQuestion
       className="gwl-question w-full"
-      questions={QUESTIONS}
-      answers={given ? { weekend: given.weekend, priority: given.priority } : undefined}
+      questions={questions}
+      answers={given ? { ...(given.weekend ? { weekend: given.weekend } : {}), priority: given.priority } : undefined}
       submitted={Boolean(done)}
       hint={desktop ? undefined : ''}
-      onSubmit={(a) => onDone({ weekend: a.weekend ?? 'Mar 5 – 7', priority: a.priority ?? 'bunks' })}
+      onSubmit={(a) => onDone({ weekend: skipWeekend ? undefined : (a.weekend ?? 'Mar 5 – 7'), priority: a.priority ?? 'bunks' })}
     />
   )
 }

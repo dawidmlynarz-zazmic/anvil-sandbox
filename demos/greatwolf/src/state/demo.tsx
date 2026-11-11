@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useNavigate } from 'react-router-dom'
 import { money, rateOf, suiteById, type RateKey } from '~/data/fixtures'
 import { extraById } from '~/data/extras'
+import { guestsLong, longDates, partySize, type Stay } from './stay'
+import { stayReply } from '~/wiley/scripts/stay'
 import { reveal } from '~/lib/reveal'
 import { afterJoinPickRate, afterJoinWithRate, scripts } from '~/wiley/scripts'
 import type { Action, Beat, DemoState, DeviceMode, Journey, Msg, Option, Snap } from '~/wiley/types'
@@ -39,6 +41,8 @@ interface Demo {
   play: (beats: Beat[]) => Promise<void>
   joinVoyagers: () => void
   chooseRate: (suite: string, key: RateKey) => void
+  /** The family changed the stay in the Your stay bar; the chat shows it and Wiley answers. */
+  changeStay: (next: Partial<Stay>, what: 'dates' | 'guests' | 'clear') => void
   /** The family moved a plan item themselves; Wiley confirms it (and says if it clashes with check-out). */
   movePlanItem: (id: string, day: 'fri' | 'sat' | 'sun', time: string, reply: string) => void
   /** Add or remove a Trip Builder extra from the page; the chat shows it and Wiley answers. */
@@ -183,6 +187,9 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
             window.setTimeout(attempt, 300)
             break
           }
+          case 'setStay':
+            setS((x) => ({ ...x, stay: { ...x.stay, ...a.stay, by: 'wiley' } }))
+            break
           case 'loadSuites':
             setS((x) => ({ ...x, loadingSuites: true }))
             window.clearTimeout(loadTimer.current)
@@ -502,6 +509,22 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
     [journey, step, run, push, play],
   )
 
+  const changeStay = useCallback(
+    (next: Partial<Stay>, what: 'dates' | 'guests' | 'clear') => {
+      const stay = { ...sRef.current.stay, ...next, by: 'you' as const }
+      const party = partySize(stay)
+      // The "Sleeps N+" filter chip follows the guests.
+      setS((x) => ({ ...x, stay, filters: x.filters.map((f) => (f.startsWith('Sleeps ') ? `Sleeps ${party}+` : f)), open: true, snap: x.snap === 'peek' ? 'half' : x.snap }))
+      // On the suites list (not once it's the Trip Builder), the list reloads for the new stay.
+      const onList = (journey === 1 ? [2, 3] : [2, 5]).includes(stepRef.current) && !sRef.current.selected
+      if (onList && what !== 'clear') run([{ do: 'loadSuites', ms: 900 }])
+      push({ role: 'user', text: what === 'dates' ? `Change our dates to ${longDates(stay)}` : what === 'clear' ? 'Clear our dates' : `We’re ${guestsLong(stay)}` })
+      // No chips after it: the step's suggestions may point at suites the change just hid.
+      void play(stayReply(what))
+    },
+    [journey, run, push, play],
+  )
+
   const movePlanItem = useCallback(
     (id: string, day: 'fri' | 'sat' | 'sun', time: string, reply: string) => {
       setS((x) => ({ ...x, planEdits: { ...x.planEdits, [id]: { day, time } }, planDay: day }))
@@ -528,12 +551,12 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
     const sc = scripts[`${journey}.${step}`]
     const last = [...msgsRef.current].reverse().find((m) => m.chips)
     if (last?.chips && sc?.path) {
-      const opt = last.chips.options.find((o) => sc.path!.includes(o.label))
+      const opt = last.chips.options.find((o) => sc.path!.includes(o.key ?? o.label))
       if (opt) return pick(last.id, opt)
     }
     const waiting = [...msgsRef.current].reverse().find((m) => m.card && !m.card.done)
     if (waiting?.card?.component === 'questions') {
-      return submitCard(waiting.id, { weekend: 'Mar 5 – 7', priority: 'bunks' })
+      return submitCard(waiting.id, { weekend: sRef.current.stay.start ? undefined : 'Mar 5 – 7', priority: 'bunks' })
     }
     if (waiting?.card?.component === 'capture') {
       return submitCard(waiting.id, { to: 'you@example.com' })
@@ -619,6 +642,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       joinVoyagers,
       chooseRate,
       toggleExtra,
+      changeStay,
       movePlanItem,
       payApple,
       listen,
@@ -636,7 +660,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       reset,
       go,
     }),
-    [s, step, journey, msgs, typing, thinking, draft, playing, composer, desktop, framed, w, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, chooseRate, toggleExtra, movePlanItem, payApple, listen, pick, submitCard, setSnap, toggleWiley, clearChat, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
+    [s, step, journey, msgs, typing, thinking, draft, playing, composer, desktop, framed, w, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, chooseRate, toggleExtra, changeStay, movePlanItem, payApple, listen, pick, submitCard, setSnap, toggleWiley, clearChat, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

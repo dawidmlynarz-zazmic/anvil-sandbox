@@ -1,8 +1,10 @@
 import { money, rateOf, suiteById, type RateKey } from '~/data/fixtures'
+import { guestsLong, oldest, partySize, shortDates, stayDays, youngest } from '~/state/stay'
 import type { Beat, DemoState, Option, StepScript } from '../types'
 import { onExtra, suggestNext, tripRules } from './trip'
 
-// Journey 2: a first-time family, signed out, with kids aged 3 and 6. The lodge is the context; Wiley never asks where.
+// Journey 2: a first-time family, signed out. By default 2 adults with kids aged 3 and 6; when the family types or
+// says their dates and guests in the hero, the stay follows them and Wiley's lines do too. Wiley never asks where.
 // Every choice gets its own answer and its own change on the page; Next follows the `path` (the happy path).
 
 const GUIDE = 'GWL Things To Do guide'
@@ -12,17 +14,24 @@ const WATER = 'Lodge water park guide'
 const sheetOnScreen = () => Boolean(document.querySelector('section[aria-label=Wiley]'))
 
 const goTo = (to: string): Beat => ({ type: 'effect', actions: [{ do: 'go', to }] })
-const say = (text: string, extra: Partial<Extract<Beat, { type: 'agent' }>> = {}): Beat => ({ ...extra, type: 'agent', text })
+const say = (text: string | ((s: DemoState) => string), extra: Partial<Extract<Beat, { type: 'agent' }>> = {}): Beat => ({ ...extra, type: 'agent', text })
 const chips = (...options: Option[]): Beat => ({ type: 'chips', style: 'ai', options })
 
 export interface Answers {
-  weekend: string
+  /** Missing when the family already gave dates (the question isn't asked). */
+  weekend?: string
   priority: 'bunks' | 'view' | 'price'
 }
 
 // ── J2·2: suites ────────────────────────────────────────────────────────────────────────────────────────────────
 
-const waterPark: Option = { label: 'Is the water park OK for a 3-year-old?', then: [goTo('j2/3')] }
+/** The water park question names the youngest child's age when we know it. `key` keeps Next on the path. */
+const waterParkFor = (s: DemoState): Option => {
+  const y = youngest(s.stay)
+  return { key: 'water', label: y !== null ? `Is the water park OK for a ${y}-year-old?` : 'What’s the water park like for kids?', then: [goTo('j2/3')] }
+}
+const waterPark: Option = { key: 'water', label: 'Is the water park OK for little ones?', then: [goTo('j2/3')] }
+const waterChips: Beat = { type: 'chips', style: 'ai', options: (s) => [waterParkFor(s), compare, seeRates] }
 const seeRates: Option = { label: 'See rates', then: [{ type: 'effect', actions: [{ do: 'expandRates', suite: 'pup-den-jr' }] }, goTo('j2/5')] }
 const compare: Option = {
   label: 'Compare the top two',
@@ -30,41 +39,73 @@ const compare: Option = {
     say('Junior Wolf Pup Den sleeps 4, with bunk beds in a Northwoods-themed den and a balcony, from $119 a night. Deluxe Queen Suite sleeps 5, with two queen beds and a balcony or patio, from $109. Both include water park passes.', {
       textMobile: 'Pup Den: sleeps 4, bunks in a themed den, from $119. Deluxe Queen: sleeps 5, two queens, from $109. Both include water park passes.',
     }),
-    chips(waterPark, seeRates),
+    { type: 'chips', style: 'ai', options: (s) => [waterParkFor(s), seeRates] },
   ],
 }
 
+const WEEKEND_START: Record<string, string> = { 'Mar 5 – 7': '2027-03-05', 'Mar 12 – 14': '2027-03-12', 'Cheapest one': '2027-03-05' }
+
+/** The suite Wiley puts first: it has to sleep the whole family, then follow what matters most. */
+function topFor(s: DemoState, priority: Answers['priority']) {
+  const party = partySize(s.stay)
+  const prefs = priority === 'price' ? ['deluxe-queen', 'pup-den-jr', 'kidcabin'] : ['pup-den-jr', 'kidcabin', 'deluxe-queen']
+  return prefs.find((id) => suiteById(id).sleeps >= party) ?? 'kidcabin'
+}
+
+/** Ranks, tags and highlights for the family, and narrows to suites that sleep everyone. */
+const rankFor =
+  (priority: Answers['priority']) =>
+  (s: DemoState): Partial<DemoState> => {
+    const party = partySize(s.stay)
+    const top = topFor(s, priority)
+    const fits = ['pup-den-jr', 'deluxe-queen', 'kidcabin'].filter((id) => suiteById(id).sleeps >= party)
+    const tag = priority === 'price' ? 'Lowest price' : top === 'kidcabin' ? `Wiley’s pick · sleeps all ${party}` : priority === 'view' ? 'Wiley’s pick · balcony for the family' : 'Wiley’s pick · bunks for the kids'
+    return {
+      ranked: [top, ...fits.filter((id) => id !== top)],
+      tags: { ...s.tags, [top]: tag },
+      highlight: top,
+      filters: [`Sleeps ${party}+`, ...(priority === 'bunks' ? ['Bunk beds'] : priority === 'view' ? ['Balcony'] : [])],
+      setByWiley: true,
+      widened: false,
+    }
+  }
+
 function ranked(a: Answers): Beat[] {
-  const cheap = a.priority === 'price'
-  const top = cheap ? 'deluxe-queen' : 'pup-den-jr'
-  const tag = cheap ? 'Lowest price' : a.priority === 'view' ? 'Wiley’s pick · balcony for the family' : 'Wiley’s pick · bunks for the kids'
-  const weekendChip = a.weekend === 'Cheapest one' ? 'Cheapest March weekend' : a.weekend
   return [
     {
       type: 'effect',
       actions: [
         { do: 'loadSuites', ms: 1100 },
-        { do: 'patch', fn: () => ({ weekend: a.weekend === 'Mar 12 – 14' ? 'Mar 12 – 14' : 'Mar 5 – 7', priority: a.priority }) },
-        { do: 'setFilters', chips: [weekendChip, '2 adults · 2 kids (3, 6)', 'Sleeps 4+'] },
-        { do: 'rank', order: cheap ? ['deluxe-queen', 'pup-den-jr'] : ['pup-den-jr', 'deluxe-queen'], tag: { id: top, label: tag } },
-        { do: 'highlight', id: top },
+        { do: 'patch', fn: (s) => ({ priority: a.priority, stay: { ...s.stay, start: a.weekend ? WEEKEND_START[a.weekend] : s.stay.start, by: 'wiley' } }) },
+        { do: 'patch', fn: rankFor(a.priority) },
         { do: 'openSheet', snap: 'half' },
-        { do: 'scrollTo', id: `suite-${top}` },
+        { do: 'scrollTo', id: '@highlight' },
       ],
     },
     say(
-      cheap
-        ? 'Deluxe Queen Suite has the lowest starting rate and sleeps 5. Junior Wolf Pup Den is next, with bunks in a themed den. Want to check the water park works for your 3-year-old?'
-        : a.priority === 'view'
-          ? 'Junior Wolf Pup Den has a balcony and a themed den with bunks, and sleeps 4. Want to check the water park works for your 3-year-old?'
-          : 'Junior Wolf Pup Den is the best fit: bunks in a themed den, sleeps 4. Want to check the water park works for your 3-year-old?',
+      (s) => {
+        const top = topFor(s, a.priority)
+        const y = youngest(s.stay)
+        const lead =
+          top === 'deluxe-queen'
+            ? 'Deluxe Queen Suite has the lowest starting rate and sleeps 5.'
+            : top === 'kidcabin'
+              ? `KidCabin Suite sleeps 6, with bunks in Wiley’s Clubhouse, so it fits all ${partySize(s.stay)} of you.`
+              : a.priority === 'view'
+                ? 'Junior Wolf Pup Den has a balcony and a themed den with bunks, and sleeps 4.'
+                : 'Junior Wolf Pup Den is the best fit: bunks in a themed den, sleeps 4.'
+        return `${lead} ${y !== null ? `Want to check the water park works for your ${y}-year-old?` : 'Want a look at the water park?'}`
+      },
       {
-        textMobile: cheap
-          ? 'Deluxe Queen has the lowest rate. Water park OK for your 3-year-old?'
-          : 'Junior Wolf Pup Den fits best: bunks in a themed den. Check the water park for your 3-year-old?',
+        textMobile: (s) => {
+          const top = topFor(s, a.priority)
+          const y = youngest(s.stay)
+          const name = top === 'deluxe-queen' ? 'Deluxe Queen has the lowest rate.' : top === 'kidcabin' ? 'KidCabin sleeps all of you.' : 'Junior Wolf Pup Den fits best: bunks in a themed den.'
+          return `${name} ${y !== null ? `Water park OK for your ${y}-year-old?` : 'Look at the water park?'}`
+        },
       },
     ),
-    chips(waterPark, compare, seeRates),
+    waterChips,
   ]
 }
 
@@ -72,8 +113,9 @@ function ranked(a: Answers): Beat[] {
 
 const nearby: Option = { label: 'What else is nearby?', then: [goTo('j2/4')] }
 const backToSuites: Option = { label: 'Back to suites', then: [goTo('j2/2')] }
-const sixYearOld: Option = {
-  label: 'And for our 6-year-old?',
+const olderKid: Option = {
+  key: 'older',
+  label: 'And for our older one?',
   then: [
     { type: 'effect', actions: [{ do: 'spotlight', id: 'fort-mackenzie' }, { do: 'dim', ids: ['howlin-tornado'] }, { do: 'scrollTo', id: 'att-fort-mackenzie' }] },
     say('Fort Mackenzie, the water playground, is the next step up, and I moved the spotlight to it. Bigger slides like Howlin’ Tornado have height minimums, so check them on the day.', {
@@ -82,6 +124,10 @@ const sixYearOld: Option = {
     }),
     chips(nearby, backToSuites),
   ],
+}
+const olderFor = (s: DemoState): Option[] => {
+  const o = oldest(s.stay)
+  return o !== null && o !== youngest(s.stay) ? [{ ...olderKid, label: `And for our ${o}-year-old?` }] : []
 }
 
 // ── J2·4: things to do ──────────────────────────────────────────────────────────────────────────────────────────
@@ -101,7 +147,7 @@ const whyNotBarr: Option = {
   label: 'Why skip Barr Trail?',
   then: [
     { type: 'effect', actions: [{ do: 'scrollTo', id: 'act-barr' }] },
-    say('Barr Trail is the Pikes Peak summit hike, for advanced hikers only. Not one for a 3-year-old.', { source: GUIDE }),
+    say((s) => `Barr Trail is the Pikes Peak summit hike, for advanced hikers only. Not one for ${youngest(s.stay) !== null ? `a ${youngest(s.stay)}-year-old` : 'little kids'}.`, { source: GUIDE }),
     chips({ label: 'Add the zoo to our plan', then: addZoo }, { label: 'Add Garden of the Gods', then: addGarden }),
   ],
 }
@@ -179,17 +225,20 @@ export const j2: Record<number, StepScript> = {
         type: 'effect',
         actions: [
           { do: 'loadSuites', ms: 1500 },
-          { do: 'setFilters', chips: ['March weekends', '2 adults · 2 kids (3, 6)', 'Sleeps 4+'] },
-          { do: 'rank', order: ['pup-den-jr', 'deluxe-queen'], tag: { id: 'pup-den-jr', label: 'Wiley’s pick · bunks for the kids' } },
-          { do: 'highlight', id: 'pup-den-jr' },
+          { do: 'setStay', stay: {} },
+          { do: 'patch', fn: rankFor('bunks') },
         ],
       },
-      say('Fun! Two quick questions so I can narrow it down:', { textMobile: 'Fun! Two quick questions:' }),
+      say(
+        (s) =>
+          `${s.stayNote ? `${s.stayNote} ` : ''}Fun! ${s.stay.start ? `I set ${shortDates(s.stay)} for ${guestsLong(s.stay)} in the bar at the top. One quick question so I can narrow it down:` : 'Two quick questions so I can narrow it down:'}`,
+        { textMobile: (s) => `${s.stayNote ? `${s.stayNote} ` : ''}Fun! ${s.stay.start ? `${shortDates(s.stay)} is set. One quick question:` : 'Two quick questions:'}` },
+      ),
       // On a phone the sheet opens fully while Wiley asks; it settles back to half when the suites re-rank.
       { type: 'effect', actions: [{ do: 'patch', fn: (s) => (s.snap === 'half' && sheetOnScreen() ? { snap: 'full' } : {}) }] },
       { type: 'card', component: 'questions', then: (p) => ranked(p as Answers) },
     ],
-    path: ['Is the water park OK for a 3-year-old?'],
+    path: ['water'],
     voiceLine: 'Bunk beds for the kids',
     rules: [
       [/compare|differ/i, compare.then],
@@ -201,22 +250,26 @@ export const j2: Record<number, StepScript> = {
   3: {
     enter: [{ do: 'openSheet', snap: 'half' }],
     beats: [
-      { type: 'user', text: 'Is the water park OK for a 3-year-old?', voice: true },
+      { type: 'user', text: (s) => waterParkFor(s).label, voice: true },
       { type: 'effect', actions: [{ do: 'spotlight', id: 'cub-paw' }, { do: 'dim', ids: ['howlin-tornado'] }, { do: 'scrollTo', id: 'att-cub-paw' }] },
-      say('Yes! Cub Paw Pool is a kiddie splash pad made for little ones, and I scrolled you to it. Bigger slides have height minimums, so your 6-year-old gets more rides.', {
+      say((s) => {
+        const o = oldest(s.stay)
+        const more = o !== null && o !== youngest(s.stay) ? ` Bigger slides have height minimums, so your ${o}-year-old gets more rides.` : ' Bigger slides have height minimums, so check them on the day.'
+        return `Yes! Cub Paw Pool is a kiddie splash pad made for little ones, and I scrolled you to it.${more}`
+      }, {
         textMobile: 'Yes! Cub Paw Pool is a splash pad made for little ones. I scrolled you to it.',
         source: WATER,
       }),
-      chips(nearby, sixYearOld, backToSuites),
+      { type: 'chips', style: 'ai', options: (s) => [nearby, ...olderFor(s), backToSuites] },
     ],
     path: ['What else is nearby?'],
     voiceLine: 'What else is nearby?',
     rules: [
-      [/6|six|older|big/i, sixYearOld.then],
+      [/\d|six|older|big/i, olderKid.then],
       [/nearby|around|zoo|do/i, [goTo('j2/4')]],
       [/suite|room/i, [goTo('j2/2')]],
     ],
-    fallback: [nearby, sixYearOld, backToSuites],
+    fallback: [nearby, olderKid, backToSuites],
   },
   4: {
     enter: [{ do: 'openSheet', snap: 'half' }],
@@ -231,8 +284,8 @@ export const j2: Record<number, StepScript> = {
         { label: 'Add the zoo to our plan', then: addZoo },
         { label: 'Add Garden of the Gods', then: addGarden },
         {
-          label: 'Plan our Sunday',
-          then: [say('Zoo in the morning, check out at noon. Want it in your plan?'), chips({ label: 'Add the zoo to our plan', then: addZoo }, { label: 'Garden of the Gods instead', then: addGarden })],
+          label: 'Plan our last morning',
+          then: [say((s) => `Zoo on ${stayDays(s.stay)[2].long} morning, then check-out at 11. Want it in your plan?`), chips({ label: 'Add the zoo to our plan', then: addZoo }, { label: 'Garden of the Gods instead', then: addGarden })],
         },
         whyNotBarr,
       ),
@@ -256,7 +309,7 @@ export const j2: Record<number, StepScript> = {
     enter: [{ do: 'patch', fn: (s) => (s.expanded ? {} : { expanded: 'pup-den-jr' }) }, { do: 'openSheet', snap: 'half' }],
     beats: [
       // Names the suite and the weekend the family picked.
-      { type: 'user', text: (s) => `Book the ${suiteById(ratedSuite(s)).name.replace(/ Suite$/, '')} for ${s.weekend.replace(' – ', ' to ')}` },
+      { type: 'user', text: (s) => `Book the ${suiteById(ratedSuite(s)).name.replace(/ Suite$/, '')} for ${(shortDates(s.stay) ?? 'our dates').replace(' – ', ' to ')}` },
       say('Good pick! Choose a rate on the page or here. Joining Voyagers Club is free and saves $4 a night; Flexible costs a bit more and lets you cancel later.', {
         textMobile: 'Good pick! Choose a rate, or join Voyagers Club free to save $4 a night.',
       }),
@@ -281,8 +334,9 @@ export const j2: Record<number, StepScript> = {
       {
         type: 'agent',
         text: (s) => {
-          const sat = s.cart.some((c) => c.id === 'pup-pass') ? 'Build-A-Bear on Saturday morning, ' : s.cart.some((c) => c.kind === 'pass') ? 'MagiQuest on Saturday morning, ' : ''
-          const sun = s.ideas.includes('zoo') ? 'the zoo on Sunday at 9:30' : 'the zoo as a suggestion for Sunday morning'
+          const [, d2, d3] = stayDays(s.stay)
+          const sat = s.cart.some((c) => c.id === 'pup-pass') ? `Build-A-Bear on ${d2.long} morning, ` : s.cart.some((c) => c.kind === 'pass') ? `MagiQuest on ${d2.long} morning, ` : ''
+          const sun = s.ideas.includes('zoo') ? `the zoo on ${d3.long} at 9:30` : `the zoo as a suggestion for ${d3.long} morning`
           return `Of course! I laid your weekend out by day so it’s easy to show them: Cub Paw Pool when you arrive, ${sat}${sun}. Want me to text it to you? No account needed.`
         },
         textMobile: 'Of course! I laid your weekend out by day. Want me to text it to you? No account needed.',
@@ -309,10 +363,10 @@ export const j2: Record<number, StepScript> = {
 // What Wiley shows it is doing while it thinks, per step (the first reply of a turn shows up to three).
 const THINKING: Record<number, string[]> = {
   1: ['Looking at Voyagers Club rates'],
-  2: ['Reading your request', 'Checking March weekends', 'Matching suites for a 3 and 6 year old'],
+  2: ['Reading your request', 'Checking dates at the lodge', 'Matching suites to your family'],
   3: ['Opening the lodge water park guide', 'Finding spots for little ones'],
-  4: ['Checking the GWL Things To Do guide', 'Filtering for kids aged 3 and 6', 'Adding it to your plan'],
-  5: ['Pulling rates for your weekend', 'Checking passes for a 3 and 6 year old', 'Updating your trip'],
+  4: ['Checking the GWL Things To Do guide', 'Filtering for your kids’ ages', 'Adding it to your plan'],
+  5: ['Pulling rates for your dates', 'Checking passes for your kids', 'Updating your trip'],
   6: ['Laying out your weekend by day', 'Saving your plan'],
 }
 for (const [step, phrases] of Object.entries(THINKING)) j2[Number(step)].thinking = phrases
