@@ -28,7 +28,9 @@ export function seed(journey: Journey): DemoState {
     cart: [],
     plan: journey === 1 ? J1_PLAN : [],
     ideas: [],
-    weekend: 'Mar 5 – 7',
+    // J1: the Martinez family's favorite weekend. J2: no dates until the family gives them.
+    stay: journey === 1 ? { start: '2027-03-12', adults: 2, kids: [7, 4], by: null } : { start: null, adults: 2, kids: [3, 6], by: null },
+    stayNote: null,
     priority: null,
     toast: null,
     open: false,

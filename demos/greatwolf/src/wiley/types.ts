@@ -1,4 +1,5 @@
 import type { RateKey } from '~/data/fixtures'
+import type { Stay } from '~/state/stay'
 
 export type Snap = 'peek' | 'half' | 'full'
 export type DeviceMode = 'auto' | 'mobile' | 'desktop'
@@ -47,7 +48,10 @@ export interface DemoState {
   plan: PlanItem[]
   /** Journey 2: activity ids saved to the plan. */
   ideas: string[]
-  weekend: string
+  /** Dates and guests: the Your stay bar, the plan days and Wiley all read it. */
+  stay: Stay
+  /** Something Wiley should mention about the stay it read from the request (e.g. it plans two nights). */
+  stayNote: string | null
   priority: 'bunks' | 'view' | 'price' | null
   toast: string | null
   open: boolean
@@ -91,11 +95,15 @@ export type Action =
   | { do: 'sheet'; which: DemoState['sheet'] }
   | { do: 'patch'; fn: (s: DemoState) => Partial<DemoState> }
   | { do: 'end'; card: 'checkout' | 'companion' | 'plan' }
+  /** Wiley sets or changes the stay (dates, guests). */
+  | { do: 'setStay'; stay: Partial<Stay> }
   /** Show the suites' loading skeletons for `ms`, as if the list were being fetched. */
   | { do: 'loadSuites'; ms: number }
 
 export interface Option {
   label: string
+  /** What the presenter's `path` matches when the label changes with the state ("…for a 3-year-old?"). */
+  key?: string
   /** What shows as the person's bubble. Defaults to the label. */
   say?: string
   then: Beat[]

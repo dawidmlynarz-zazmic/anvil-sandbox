@@ -170,7 +170,8 @@ export const j1: Record<number, StepScript> = {
         type: 'effect',
         actions: [
           { do: 'loadSuites', ms: 1500 },
-          { do: 'setFilters', chips: ['Mar 12 – 14, 2027', '2 adults · 2 kids (7, 4)'] },
+          { do: 'setStay', stay: {} },
+          { do: 'patch', fn: (s) => ({ filters: [`Sleeps ${s.stay.adults + s.stay.kids.length}+`], setByWiley: true, widened: false }) },
           { do: 'rank', order: ['pup-den-jr', 'deluxe-queen'], tag: { id: 'pup-den-jr', label: 'Your favorite' } },
           { do: 'highlight', id: 'pup-den-jr' },
           { do: 'openSheet', snap: 'half' },

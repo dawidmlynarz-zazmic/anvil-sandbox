@@ -1,4 +1,5 @@
-import { activityById, dates, money, rateOf, suiteById } from '~/data/fixtures'
+import { activityById, money, rateOf, suiteById } from '~/data/fixtures'
+import { guestsLong, longDates, NIGHTS, shortDates } from './stay'
 import { art, suitePhotos } from '~/data/photos'
 import { coveredBy, extraById, hasExtra } from '~/data/extras'
 import type { DemoState, PlanItem } from '~/wiley/types'
@@ -16,8 +17,8 @@ const WHEN: Record<string, { where: string; when: string; tag: string }> = {
 export function savedPlan(s: DemoState) {
   const suiteId = s.selected?.suite ?? s.expanded ?? 'pup-den-jr'
   const suite = suiteById(suiteId)
-  const weekend = s.weekend === 'Mar 12 – 14' ? dates.j2b : dates.j2a
-  const nights = weekend.nights
+  const weekend = { short: shortDates(s.stay) ?? 'Dates to pick', long: longDates(s.stay), nights: NIGHTS }
+  const nights = NIGHTS
   const rate = s.selected ? rateOf(s.selected.suite, s.selected.rate) : null
   const things = ['cub-paw', ...s.ideas].map((id) => {
     const name = id === 'cub-paw' ? 'Cub Paw Pool' : (activityById(id)?.name ?? id)
@@ -29,7 +30,7 @@ export function savedPlan(s: DemoState) {
     photo: suitePhotos[suiteId]?.[0]?.src,
     weekend,
     nights,
-    guests: '2 adults, 2 kids (3, 6)',
+    guests: guestsLong(s.stay),
     rate,
     rateLine: rate
       ? `${rate.plan} · ${rate.member ? 'Voyagers Club rate' : 'Non-member rate'} · ${money(rate.price)} a night`

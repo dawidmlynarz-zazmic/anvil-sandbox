@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@anvil/components/ui/collapsible'
+import { useState } from 'react'
 import { OfferCard } from '@anvil/components/agent/offer-card'
 import { ProgressStep, ProgressSteps } from '@anvil/components/anvil/progress-steps'
 import { Badge } from '@anvil/components/ui/badge'
 import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
-import { CheckIcon, ChevronDownIcon, CircleCheckIcon, Icon, InfoIcon } from '@anvil/components/ui/icon'
+import { CheckIcon, CircleCheckIcon, Icon, InfoIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { money, suiteById } from '~/data/fixtures'
 import { extras, SECTIONS, type Extra, type ExtraKind } from '~/data/extras'
@@ -15,8 +14,8 @@ import { CompactRates, SuiteCard } from '~/components/local/SuiteCard/SuiteCard'
 import { TripQuote } from '~/components/local/WileyCards/WileyCards'
 import { quoteOf, useDemo } from '~/state/demo'
 import { j1Plan, j2Plan } from '~/state/plan'
+import { guestsLong, shortDates } from '~/state/stay'
 import { usePageWide } from '~/state/layout'
-import { reveal } from '~/lib/reveal'
 import { Page, Title } from './shared'
 
 // The Trip Builder: once a rate is chosen, the rates page becomes the trip. The suite is the first item; passes,
@@ -128,85 +127,6 @@ function PlanPreview() {
   )
 }
 
-/**
- * ANVIL-CANDIDATE (PinnedSummary): on a phone, the trip so far stays pinned under the header. Collapsed it is one
- * line (items and total); tapping opens every line, and a line takes you to its card. When something is added, from
- * the page or by Wiley, the bar says so for a moment, so a change in the chat is visible on the page too.
- */
-function TripBar() {
-  const { s } = useDemo()
-  const q = quoteOf(s)
-  const [open, setOpen] = useState(false)
-  const [flash, setFlash] = useState<string | null>(null)
-  const count = s.cart.length
-  const prev = useRef(count)
-  useEffect(() => {
-    if (count > prev.current) {
-      const added = s.cart.find((c) => c.fresh)
-      if (added) {
-        setFlash(added.label)
-        const t = window.setTimeout(() => setFlash(null), 2600)
-        prev.current = count
-        return () => window.clearTimeout(t)
-      }
-    }
-    prev.current = count
-  }, [count, s.cart])
-  if (!q) return null
-  const items = 1 + count
-  const go = (id: string) => {
-    setOpen(false)
-    window.setTimeout(() => reveal(id === 'suite' ? 'trip-suite' : `extra-${id}`), 120)
-  }
-  return (
-    <Collapsible open={open} onOpenChange={setOpen} className="sticky top-0 z-20 -mx-4 -mt-5 border-b bg-background shadow-[0_6px_16px_rgb(7_39_69/0.08)]">
-      <CollapsibleTrigger className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-start outline-none focus-visible:focus-ring">
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">Your trip so far</span>
-          <span aria-live="polite" className="truncate type-text-sm-semibold">
-            {flash ? (
-              <span key={flash} className="gwl-fade inline-flex items-center gap-1.5 text-success-strong">
-                <Icon icon={CheckIcon} size="xs" /> Just added: {flash}
-              </span>
-            ) : (
-              `${items} ${items === 1 ? 'item' : 'items'} · ${money(q.total)}`
-            )}
-          </span>
-        </span>
-        <span className="flex shrink-0 items-center gap-1 type-text-sm-semibold">
-          {open ? 'Hide' : 'Show'}
-          <Icon icon={ChevronDownIcon} size="xs" className={cn('transition-transform duration-200', open && 'rotate-180')} />
-        </span>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="gwl-collapse overflow-hidden">
-        <ul className="flex max-h-[50vh] flex-col overflow-y-auto border-t px-4 py-2">
-          {q.lines.map((l) => (
-            <li key={l.id}>
-              <button
-                type="button"
-                disabled={l.id === 'passes'}
-                onClick={() => go(l.id)}
-                className="flex min-h-11 w-full items-center justify-between gap-3 text-start type-text-sm-normal outline-none focus-visible:focus-ring disabled:cursor-default"
-              >
-                <span className="min-w-0">
-                  {l.label}
-                  {l.id === 'suite' && <span className="text-muted-foreground"> · {l.detail}</span>}
-                </span>
-                <span className="shrink-0 type-text-sm-semibold whitespace-nowrap">{l.id === 'passes' ? 'Included' : (l.price ?? money(l.amount))}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="flex items-baseline justify-between border-t px-4 pt-3 pb-1">
-          <span className="type-text-sm-semibold">Total</span>
-          <span className="type-text-lg-semibold">{money(q.total)}</span>
-        </div>
-        {q.sample && <p className="px-4 pb-3 type-text-xs-normal text-muted-foreground">* Sample price: the lodge doesn’t list one</p>}
-      </CollapsibleContent>
-    </Collapsible>
-  )
-}
-
 /** J1·3 and J2·5 after a rate is chosen. */
 export function TripBuilder() {
   const { s, journey, go, toggleExtra, chooseRate } = useDemo()
@@ -263,8 +183,7 @@ export function TripBuilder() {
   )
   return (
     <Page wide>
-      {!desktop && <TripBar />}
-      <Title tag={<WileyTag>Built with Wiley</WileyTag>} sub={`${journey === 1 ? 'Mar 12 – 14' : s.weekend} · 2 adults, 2 kids${desktop ? ' · Wiley suggests, you decide' : ''}`} actions={primary}>
+      <Title tag={<WileyTag>Built with Wiley</WileyTag>} sub={`${shortDates(s.stay) ?? 'Dates to pick'} · ${guestsLong(s.stay)}${desktop ? ' · Wiley suggests, you decide' : ''}`} actions={primary}>
         Your trip
       </Title>
       {steps}
@@ -275,7 +194,7 @@ export function TripBuilder() {
             {rates}
             {sections}
           </div>
-          <div className="sticky top-4 flex flex-col gap-4">
+          <div className="sticky top-20 flex flex-col gap-4">
             <TripQuote title="Your trip so far" />
             <PlanPreview />
           </div>

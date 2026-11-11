@@ -1,7 +1,8 @@
 import { useEffect, useRef, type HTMLAttributes, type ReactNode, type Ref } from 'react'
+import { Card } from '@anvil/components/ui/card'
+import { partySize } from '~/state/stay'
 import { Chip } from '@anvil/components/anvil/chip'
-import { Badge } from '@anvil/components/ui/badge'
-import { CalendarIcon, Icon, UsersIcon, type LucideIcon } from '@anvil/components/ui/icon'
+import { type LucideIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
 import { suiteById, suites } from '~/data/fixtures'
 import { art, photos } from '~/data/photos'
@@ -89,15 +90,17 @@ export function SuitesPage() {
     if (s.expanded && s.expanded !== opened.current && !s.selected) window.setTimeout(() => reveal(`rates-${s.expanded}`), 260)
     opened.current = s.expanded
   }, [s.expanded, s.selected])
-  const ranked = s.ranked.length > 0 && s.filters.length > 0
+  const ranked = s.ranked.length > 0
   const narrowed = ranked && !s.widened
   const order = ranked ? [...s.ranked, ...suites.map((x) => x.id).filter((id) => !s.ranked.includes(id))] : suites.map((x) => x.id)
-  const shown = narrowed ? order.filter((id) => s.ranked.includes(id)) : order
+  // Suites that sleep fewer than the party never show; the Your stay bar's guests decide it.
+  const party = partySize(s.stay)
+  const shown = (narrowed ? order.filter((id) => s.ranked.includes(id)) : order).filter((id) => suiteById(id).sleeps >= party)
   if (onRates && s.selected) return <TripBuilder />
   return (
     <Page>
       <Title tag={s.setByWiley && s.filters.length > 0 ? <WileyTag>Set by Wiley</WileyTag> : undefined}>{journey === 1 ? 'Choose a suite' : 'Suites for your family'}</Title>
-      <div className="flex flex-wrap gap-2" aria-label="Filters">
+      {s.filters.length > 0 && <div className="flex flex-wrap gap-2" aria-label="Filters">
         {s.filters.length > 0 ? (
           s.filters.map((f) => (
             <Chip
@@ -112,17 +115,8 @@ export function SuitesPage() {
               {f}
             </Chip>
           ))
-        ) : (
-          <>
-            <Badge variant="outline" className="h-9 rounded-full px-3.5">
-              <Icon icon={CalendarIcon} /> Select dates
-            </Badge>
-            <Badge variant="outline" className="h-9 rounded-full px-3.5">
-              <Icon icon={UsersIcon} /> {journey === 1 ? '4 Guests' : '2 Guests'}
-            </Badge>
-          </>
-        )}
-      </div>
+        ) : null}
+      </div>}
       {s.loadingSuites ? (
         <div role="status" aria-label="Finding suites" className="flex flex-col gap-5">
           <TextShimmer className="type-text-sm-medium">{s.setByWiley ? 'Updating suites for your family…' : 'Finding suites for your dates…'}</TextShimmer>
@@ -132,6 +126,12 @@ export function SuitesPage() {
         </div>
       ) : (
       <div className="gwl-fade flex flex-col gap-5">
+        {shown.length === 0 && (
+          <Card className="gap-1 rounded-2xl p-5">
+            <p className="type-text-md-semibold">No suite here sleeps {party}</p>
+            <p className="type-text-sm-normal text-muted-foreground">The lodge’s largest suites sleep up to 8 (not in this demo). Change the guests in the bar above, or ask Wiley about two suites.</p>
+          </Card>
+        )}
         {shown.map((id) => {
           const suite = suiteById(id)
           return (

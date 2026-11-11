@@ -6,7 +6,8 @@ import { Button } from '@anvil/components/ui/button'
 import { Card } from '@anvil/components/ui/card'
 import { ArrowLeftIcon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, EyeIcon, Icon, SparklesIcon, TagIcon, UsersIcon } from '@anvil/components/ui/icon'
 import { cn } from '@anvil/lib/utils'
-import { dates, lodge, money, nearby, waterPark } from '~/data/fixtures'
+import { lodge, money, nearby, waterPark } from '~/data/fixtures'
+import { NIGHTS, parseStay } from '~/state/stay'
 import { art, photos } from '~/data/photos'
 import { Photo, WileyAvatar, WileyTag } from '~/components/local/Brand/Brand'
 import { AiChip } from '~/components/local/WileyCards/WileyCards'
@@ -106,7 +107,7 @@ function Field({ label, icon, value, className }: { label: string; icon: typeof 
 
 /** J2·1: the lodge home for a first-time visitor. The hero's centre is the trip field; dates & guests is the site's form. */
 export function J2Landing() {
-  const { go, openWiley, play, patch } = useDemo()
+  const { s, go, openWiley, play, patch } = useDemo()
   const desktop = usePageWide()
   const [tab, setTab] = useState<'dates' | 'describe'>('describe')
   // Anvil's extended Prompt Input, in Great Wolf's styling. Sample requests rotate in it (as its placeholder) until the
@@ -124,7 +125,14 @@ export function J2Landing() {
     if (phase === 'sending') return
     const text = value.trim()
     if (!text) setValue(PROMPT)
-    patch({ tripText: text || null, tripVoice: voice })
+    // Dates and guests in the request fill the Your stay bar; anything it can't read keeps the defaults.
+    const read = parseStay(text || PROMPT)
+    patch({
+      tripText: text || null,
+      tripVoice: voice,
+      stay: { ...s.stay, ...read.stay, by: 'you' },
+      stayNote: read.nightsAsked ? `The demo plans two-night stays, so I set ${read.nightsAsked > NIGHTS ? 'the first two nights' : 'two nights'}.` : null,
+    })
     setPhase('sending')
     later(() => go('j2/2'), voice ? 900 : 600)
   }
@@ -308,7 +316,7 @@ export function J2ThingsToDo() {
       {filtered && (
         <div className="gwl-in flex flex-wrap gap-2">
           <Badge variant="outline" className="h-9 rounded-full px-3.5">
-            Kids 3 and 6 <Icon icon={CheckIcon} />
+            {s.stay.kids.some((a) => a >= 0) ? `Kids ${s.stay.kids.filter((a) => a >= 0).join(' and ')}` : 'Little kids'} <Icon icon={CheckIcon} />
           </Badge>
           <Badge variant="outline" className="h-9 rounded-full px-3.5">
             Free
@@ -389,7 +397,6 @@ export function J2SavedPlan() {
       </div>
     </Card>
   )
-  const iso = p.weekend === dates.j2b ? { fri: '2027-03-12', sat: '2027-03-13', sun: '2027-03-14' } : { fri: '2027-03-05', sat: '2027-03-06', sun: '2027-03-07' }
   return (
     <WeekendPlan
       plan={j2Plan(s)}
@@ -401,7 +408,6 @@ export function J2SavedPlan() {
         </Button>
       }
       lead={trip}
-      iso={iso}
       printWhen={p.weekend.long}
       printWho={`${p.guests} · ${p.suite.name}`}
       file="great-wolf-weekend.ics"
