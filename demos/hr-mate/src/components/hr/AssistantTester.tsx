@@ -50,7 +50,7 @@ export function AssistantTester({ onAsked }: { onAsked?: () => void }) {
               ) : e.result.status === 'answered' ? (
                 <div className="bg-card border-border space-y-3 rounded-lg border p-3">
                   <p className="flex items-center gap-2 text-xs font-medium">
-                    <Sparkles className="text-primary size-3.5" aria-hidden /> HR Mate
+                    <Sparkles className="text-muted-foreground size-3.5" aria-hidden /> HR Mate
                   </p>
                   <p>{e.result.answer}</p>
                   <div>
@@ -69,7 +69,7 @@ export function AssistantTester({ onAsked }: { onAsked?: () => void }) {
               ) : (
                 <div className="bg-card border-border space-y-2 rounded-lg border p-3">
                   <p className="flex items-center gap-2 text-xs font-medium">
-                    <Sparkles className="text-primary size-3.5" aria-hidden /> HR Mate
+                    <Sparkles className="text-muted-foreground size-3.5" aria-hidden /> HR Mate
                   </p>
                   <p>I couldn't find that in your documents, so I won't guess. I'd send this person to HR.</p>
                   {e.result.missing && (
@@ -115,12 +115,12 @@ function FixHint() {
   return (
     <p className="text-muted-foreground border-t pt-2 text-xs">
       Not right? Fix it by{' '}
-      <Link to="/knowledge" className="text-primary inline-flex items-center gap-1 underline underline-offset-2">
+      <Link to="/knowledge" className="text-foreground inline-flex items-center gap-1 underline underline-offset-2">
         <BookOpen className="size-3" aria-hidden />
         updating the document
       </Link>{' '}
       or by{' '}
-      <Link to="/settings/assistant" className="text-primary inline-flex items-center gap-1 underline underline-offset-2">
+      <Link to="/settings/assistant" className="text-foreground inline-flex items-center gap-1 underline underline-offset-2">
         <Settings2 className="size-3" aria-hidden />
         changing assistant instructions
       </Link>

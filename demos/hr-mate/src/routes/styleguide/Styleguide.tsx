@@ -23,8 +23,8 @@ const PAIRS: [string, string, string, number][] = [
   ['Text on card', '#f3efe8', '#181229', 4.5],
   ['Secondary text on card', '#a9a2bc', '#181229', 4.5],
   ['Secondary text on muted', '#a9a2bc', '#211a34', 4.5],
-  ['Navy text on coral button', '#0f0920', '#e8483e', 4.5],
-  ['White text on coral (do not use)', '#ffffff', '#e8483e', 4.5],
+  ['White text on primary button', '#ffffff', '#d63c33', 4.5],
+  ['White text on the lighter coral (text use only)', '#ffffff', '#e8483e', 4.5],
   ['Coral text on background', '#e8483e', '#0f0920', 4.5],
   ['Coral text on card', '#e8483e', '#181229', 4.5],
   ['White on destructive button', '#ffffff', '#c81e5b', 4.5],
@@ -37,7 +37,7 @@ const PAIRS: [string, string, string, number][] = [
   ['Coral focus ring on background (UI, 3:1)', '#f0645b', '#0f0920', 3],
 ]
 
-const SWATCHES = ['background', 'card', 'muted', 'border', 'primary', 'destructive', 'success', 'warning', 'info', 'chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5']
+const SWATCHES = ['background', 'card', 'muted', 'border', 'primary', 'coral', 'destructive', 'success', 'warning', 'info', 'chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5']
 const SCALE: [string, string, string][] = [
   ['24 / 600', 'text-2xl font-semibold', 'Hero numbers only'],
   ['20 / 600', 'text-xl font-semibold', 'Page titles'],
@@ -63,7 +63,7 @@ export function Styleguide() {
 
         <section aria-labelledby="sg-contrast">
           <h2 id="sg-contrast" className="mb-1 text-base font-semibold">Contrast checks</h2>
-          <p className="text-muted-foreground mb-3">Calculated live from the hex values. Text needs 4.5:1, interface parts 3:1. The white-on-coral row fails on purpose: it is why primary buttons use navy text.</p>
+          <p className="text-muted-foreground mb-3">Calculated live from the hex values. Text needs 4.5:1, interface parts 3:1. The lighter coral fails with white on purpose: it is why primary buttons use a deeper red, and the lighter coral is kept for text.</p>
           <div className="border-border rounded-lg border">
             <Table>
               <TableHeader><TableRow><TableHead>Pair</TableHead><TableHead>Sample</TableHead><TableHead>Ratio</TableHead><TableHead>Needs</TableHead><TableHead>Result</TableHead></TableRow></TableHeader>

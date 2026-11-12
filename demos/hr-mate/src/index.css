@@ -8,7 +8,7 @@
 /*
  * HR Mate tokens. Dark mode only. Forward navy #0F0920 and coral #E8483E, Outfit for UI text.
  * Contrast (WCAG), measured on the surfaces below:
- *   navy text on coral fill        4.8:1   (white on coral is 3.9:1 and fails, so never use it)
+ *   white text on button red       4.6:1   (#D63C33; the lighter coral #E8483E is 3.9:1 with white and is only for text)
  *   coral text on background       4.8:1
  *   foreground on card            15:1
  *   muted-foreground on card       7:1
@@ -22,8 +22,9 @@
   --card-foreground: #f3efe8;
   --popover: #1c1530;
   --popover-foreground: #f3efe8;
-  --primary: #e8483e;
-  --primary-foreground: #0f0920;
+  --primary: #d63c33;
+  --primary-foreground: #ffffff;
+  --coral: #e8483e;
   --secondary: #261e3b;
   --secondary-foreground: #f3efe8;
   --muted: #211a34;
@@ -58,8 +59,8 @@
 
   --sidebar: #0a0615;
   --sidebar-foreground: #f3efe8;
-  --sidebar-primary: #e8483e;
-  --sidebar-primary-foreground: #0f0920;
+  --sidebar-primary: #d63c33;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #211a34;
   --sidebar-accent-foreground: #f3efe8;
   --sidebar-border: #261e3b;
@@ -80,6 +81,7 @@
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-coral: var(--coral);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);

@@ -85,11 +85,11 @@ export function DirectoryStep() {
           <legend className="mb-3 text-base font-semibold">Where do you keep your employee records?</legend>
           <div className="grid gap-4 md:grid-cols-2">
             {state.integrations.map((i) => (
-              <label key={i.id} className={cn('bg-card flex cursor-pointer flex-col gap-3 rounded-lg border p-5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring', choice === i.id ? 'border-primary ring-primary/40 ring-2' : 'border-border hover:bg-accent/40')}>
+              <label key={i.id} className={cn('bg-card flex cursor-pointer flex-col gap-3 rounded-lg border p-5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring', choice === i.id ? 'border-foreground/60 ring-foreground/20 ring-2' : 'border-border hover:bg-accent/40')}>
                 <input type="radio" name="directory" value={i.id} checked={choice === i.id} onChange={() => setChoice(i.id)} className="sr-only" />
                 <span className="flex items-center justify-between">
                   <span className="text-base font-semibold">{i.name}</span>
-                  {choice === i.id && <CheckCircle2 className="text-primary size-5" aria-label="Selected" />}
+                  {choice === i.id && <CheckCircle2 className="text-foreground size-5" aria-label="Selected" />}
                 </span>
                 <span className="text-muted-foreground">{i.blurb}</span>
                 <span className="text-xs font-medium">What HR Mate gets from it</span>
@@ -173,7 +173,7 @@ export function DirectoryStep() {
             {integ.status === 'attention' && <p className="text-warning text-[13px]">{integ.problem}</p>}
             <p className="text-muted-foreground text-[13px]">
               HR Mate keeps the directory in sync every few hours. See field mapping and sync history in{' '}
-              <Link to="/connections" className="text-primary underline underline-offset-2">
+              <Link to="/connections" className="text-foreground underline underline-offset-2">
                 Connections
               </Link>
               .
