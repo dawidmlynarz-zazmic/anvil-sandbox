@@ -22,7 +22,7 @@ import { FIRST_DAY, guestsShort, LAST_DAY, NIGHTS, shortDates, stayDays, toDate,
  * is added from the page or by Wiley.
  */
 
-const STEPS: Record<1 | 2, number[]> = { 1: [2, 3, 4], 2: [2, 3, 4, 5, 6] }
+const STEPS: Record<1 | 2 | 3, number[]> = { 1: [2, 3, 4], 2: [2, 3, 4, 5, 6], 3: [] }
 
 /** Pickers stay inside the page area, so they fit the framed phone preview too, not just the window. */
 const pageArea = () => document.getElementById('page-scroll')

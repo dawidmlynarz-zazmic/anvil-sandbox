@@ -74,3 +74,15 @@ recommendation is for Dawid to decide.
 - **Proposed API:** `<StayBar dates={{ start, nights }} guests={{ adults, kids: ages[] }} onDatesChange onGuestsChange onClear summary={{ total, lines, flash }} />`. Desktop: labelled fields in a sticky row. Phone: compact chips plus the basket total, opening to its lines.
 - **A11y:** a named region ("Your stay"); triggers say the value and the action ("Dates: Mar 12 – 14. Change dates"); a separate Clear dates button; steppers and age selects are labelled; the total is a polite live region, so "Added" is announced.
 - **Recommendation:** adopt for any booking or ordering demo. It replaces the separate pinned trip summary, so a phone never shows two pinned bars.
+
+## Concierge thread (AI and people in one chat) · `pages/j3/Concierge.tsx`
+
+- **Type:** new pattern (human handover inside an agent chat).
+- **Closest Anvil option checked:** `MessageRow` (roles user, assistant, system, tool: no human agent role), `ChatShell`, `ApprovalCard`. No component marks a message as written by a person or shows who is in the chat.
+- **Proposed API:** `MessageRow role="assistant" author={{ name, role, kind: 'ai' | 'person', avatar }}`, a `ChatParticipants` header (who's here, "Talk to a person"), and a `HandoverSummary` card (what was shared with the person).
+- **A11y:** authors are text, not only color ("Person", "AI" badges); joins and leaves are system lines read in order; the typing state names who is typing.
+- **Recommendation:** worth adding: any assistant with a service team behind it needs it.
+
+## Native app chrome (iOS) · `pages/j3/App.tsx`
+
+- **Type:** demo-only. Anvil is web-first; the status bar, tab bar, notification and sheet imitate the client's iOS app for the prototype.

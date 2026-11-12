@@ -313,6 +313,7 @@ export function EndCard() {
     companion: { title: 'Next: the in-venue companion', body: 'Angle B picks up here: the same Wiley in the Great Wolf app, with Saturday ready when the family arrives.' },
     checkout: { title: 'Checkout is the same flow as Journey 1', body: 'Review, prefilled details and native payment, as in step 5 of Journey 1.' },
     plan: { title: 'End of Journey 2', body: 'The saved plan and the chat come back from the link Wiley sent.' },
+    stay: { title: 'End of Journey 3', body: 'One Wiley from the first search to the next birthday: on the site, in the app, and with the lodge team when a person is needed.' },
   }[endCard]
   return (
     <div className="gwl-fade absolute inset-0 z-50 grid place-items-center bg-overlay p-4">
@@ -329,8 +330,8 @@ export function EndCard() {
           <Button shape="pill" variant="outline" intent="neutral" onClick={reset}>
             Restart Journey {journey}
           </Button>
-          <Button shape="pill" onClick={() => startJourney(journey === 1 ? 2 : 1)}>
-            Start Journey {journey === 1 ? 2 : 1}
+          <Button shape="pill" onClick={() => startJourney(journey === 3 ? 1 : ((journey + 1) as 2 | 3))}>
+            Start Journey {journey === 3 ? 1 : journey + 1}
           </Button>
         </div>
       </EndDialog>

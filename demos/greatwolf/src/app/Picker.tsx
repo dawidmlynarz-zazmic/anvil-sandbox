@@ -7,7 +7,7 @@ import { Logo, WileyAvatar } from '~/components/local/Brand/Brand'
 const resume = () => {
   try {
     const v = localStorage.getItem('gwl-v2:resume')
-    return v && /^\/j[12]\/[1-6]$/.test(v) ? v : null
+    return v && /^\/j[123]\/[1-6]$/.test(v) ? v : null
   } catch {
     return null
   }
@@ -24,6 +24,11 @@ const JOURNEYS = [
     title: 'Journey 2 · First-time visitor',
     body: 'A signed-out family with kids aged 3 and 6 describes their trip. Wiley re-ranks suites, tours the water park, finds things nearby and saves the plan.',
   },
+  {
+    to: '/j3/1',
+    title: 'Journey 3 · In the Great Wolf app',
+    body: 'The Martinez family’s weekend from Journey 1, in the lodge’s phone app. Wiley checks them in, suggests what fits each kid, hands over to the lodge team when a person is needed, and stays on after check-out.',
+  },
 ]
 
 /** The presenter's start screen. */
@@ -31,7 +36,7 @@ export function Picker() {
   const last = resume()
   return (
     <main className="min-h-dvh bg-[var(--gwl-page)] px-4 py-10 text-foreground">
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <div className="mx-auto flex max-w-5xl flex-col gap-6">
         <div className="flex items-center gap-3">
           <Logo className="h-7" />
           <span className="type-text-sm-medium text-muted-foreground">Colorado Springs, CO · Journeys v2 prototype</span>
@@ -41,11 +46,11 @@ export function Picker() {
           <div>
             <h1 className="gwl-display text-3xl leading-tight">Wiley, built into greatwolf.com</h1>
             <p className="mt-2 type-text-md-normal text-muted-foreground">
-              Two journeys through the current site, with the AI Planner upgraded to Anvil. Scripted and mocked: no live model, booking or payment.
+              Two journeys through the current site, with the AI Planner upgraded to Anvil, and one in the lodge’s phone app. Scripted and mocked: no live model, booking or payment.
             </p>
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {JOURNEYS.map((j) => (
             <Card key={j.to} className="gap-3 rounded-3xl p-5">
               <h2 className="gwl-display text-lg">{j.title}</h2>
@@ -66,7 +71,7 @@ export function Picker() {
           </Button>
         )}
         <p className="type-text-xs-normal text-muted-foreground">
-          Presenter keys: → / ← step · R reset · D device · 1 / 2 journey · H hides the demo bar. Fictional family; prices marked “sample” are placeholders.
+          Presenter keys: → / ← step · R reset · D device · 1 / 2 / 3 journey · H hides the demo bar. Fictional family; prices marked “sample” are placeholders.
         </p>
       </div>
     </main>

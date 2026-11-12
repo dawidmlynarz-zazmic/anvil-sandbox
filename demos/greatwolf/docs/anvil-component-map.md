@@ -36,3 +36,19 @@ Build-script element → what renders it. "Local" is in `src/components/local/` 
 | Passes, birthday, dining and extra cards | `OfferCard` (horizontal) | Media is an illustrated `Photo` tile; Add or Remove as the card's button. Added cards keep the selected border, but Remove stays outline so the page keeps one primary action. |
 | Your suite, trip so far, weekend plan | `Card`, `Badge`, `TripQuote` | The quote and plan preview read the same cart as Wiley. |
 | "Wiley suggests" | `WileyTag` + ring | Follows `highlight`, set by Wiley's next suggestion. |
+
+## Journey 3: the Great Wolf app during the stay (phone only)
+
+Drawn after the client's iOS screenshots (Home, Things To Do, Events, ride and event pages, Shopping, the locked
+Concierge chat, More).
+
+| Element | Anvil component | Notes |
+|---|---|---|
+| Status bar, logo header, tab bar, pushed-screen header | Local app chrome (`pages/j3/App.tsx`) | Status bar only in the framed phone; a real phone draws its own. |
+| iOS notification | Local `Banner` | Tapping it (or Next) opens the Chat tab and Wiley carries on. |
+| Concierge thread | `ChatShell`, `MessageRow` (assistant, user, system), `PromptInput`, `TextShimmer` | Wiley and the lodge team in one thread; the person is tagged "Person" with a warm bubble. |
+| Talk to a person | `Button` (outline) | In the participants row; starts the handover from any step. |
+| Check-in, today, handover summary, rides, bill cards | `Card`, `ToggleGroup`, `Badge`, `Button` | Rendered inside the thread; Next submits them with the scripted answer. |
+| Rating | `Rating` (stars) | After-stay feedback in the thread. |
+| Ask Wiley sheet | Local `WileySheet` | Same thread as the Chat tab, over any screen. |
+| Ride and event pages, lists, Home sections | `Photo` tiles, `Badge`, `Button`, `AiChip` | "Fits Mia and Leo" badges, Wiley's reasons in violet, reminders as bell toggles. |

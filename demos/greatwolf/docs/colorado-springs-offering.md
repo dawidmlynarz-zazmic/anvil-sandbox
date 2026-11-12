@@ -53,3 +53,20 @@ Royal Gorge Bridge & Park.
   script. The lodge's suites page names no rate types; it sells a Flex Trip add-on (from $34.99) and an Early Saver
   deposit. Worth checking with the client before the demo.
 - **Suites:** the lodge lists 12 suites; the demo shows three of them.
+
+## In the app during the stay (Journey 3), read 2026-11-12
+
+- **Water park rides (C, the lodge's water park page):** Howlin' Tornado and Wolf Tail 48" and up (high thrill);
+  Alberta Falls, Mountain Edge Raceway, Fort Mackenzie and Totem Towers 42" and up (moderate); Slap Tail Pond 48" and
+  up; Whooping Hollow and Cub Paw Pool 52" and under; Big Foot Pass and Chinook Cove no height listed. Kids need a
+  companion 14 or older; life jackets are recommended under 48".
+- **Park hours and event times: N.** The lodge's events page shows placeholder times. The demo uses sample times in the
+  pattern of the client's app screenshots (another lodge) and marks park hours "Sample".
+- **Wristbands (C):** RFID, they open the suite and pay for purchases; picked up at a self check-in kiosk or the Front
+  Desk; the guest checking in must be 21 or older with an ID.
+- **App (G, App Store and greatwolf.com/mobile-app):** mobile check-in and check-out, balance, messaging guest services,
+  food ordering, lodge map. A text when the room is ready (G, from the check-in vendor). Who staffs the chat and when: N.
+- **Ordering (C):** Hungry As A Wolf takes orders ahead in the app for pickup. Delivery to suites at this lodge: N.
+- **Lost and found (G):** a form per lodge, email updates, items kept 30 days. Shipping: N.
+- **Fictional in the demo:** Jordan (Guest Services), Suite 2214, the outcomes of the lodge team's replies (a new
+  wristband, the late check-out, the found wolf), and the sample prices on the bill. Parking ($20 a night) is listed.

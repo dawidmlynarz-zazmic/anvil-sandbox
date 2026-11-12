@@ -32,7 +32,7 @@ export interface Extra {
   covers?: string[]
   icon: LucideIcon
   tone: 'lake' | 'forest' | 'dusk' | 'den'
-  journeys?: (1 | 2)[]
+  journeys?: (1 | 2 | 3)[]
   /** Only one per trip from a group: a new birthday package or dining credit replaces the old one. */
   group?: 'birthday' | 'credit'
 }

@@ -108,6 +108,15 @@
   --gwl-navy-foreground: #ffffff;
   --gwl-bubble: #f5f9fe;
   --gwl-hairline: #dfe7ee;
+  /* Journey 3, the Great Wolf app (client screenshots): an off-white page, a pale band, the deep navy filter bar,
+     the lodge team's warm bubble, and Wiley's violet for its reasons. */
+  --gwl-app-bg: #ffffff;
+  --gwl-app-band: #f4f6f7;
+  --gwl-navy-deep: #1b3a52;
+  --gwl-staff: #fff6e5;
+  --gwl-staff-border: #f1dcae;
+  --gwl-staff-strong: #b26b00;
+  --gwl-agent-text: #5b3fc4;
 }
 
 .dark {
@@ -198,4 +207,11 @@
   --gwl-navy-foreground: #071828;
   --gwl-bubble: #0c2540;
   --gwl-hairline: #20486c;
+  --gwl-app-bg: #061524;
+  --gwl-app-band: #071c30;
+  --gwl-navy-deep: #0c2540;
+  --gwl-staff: #3a2a10;
+  --gwl-staff-border: #6b4e1d;
+  --gwl-staff-strong: #c98a1e;
+  --gwl-agent-text: #b9a6ff;
 }

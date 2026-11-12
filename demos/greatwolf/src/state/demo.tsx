@@ -33,8 +33,8 @@ interface Demo {
   deviceMode: DeviceMode
   setDeviceMode: (m: DeviceMode) => void
   barHidden: boolean
-  endCard: null | 'checkout' | 'companion' | 'plan'
-  setEndCard: (c: null | 'checkout' | 'companion' | 'plan') => void
+  endCard: null | 'checkout' | 'companion' | 'plan' | 'stay'
+  setEndCard: (c: null | 'checkout' | 'companion' | 'plan' | 'stay') => void
   patch: (p: Partial<DemoState>) => void
   run: (actions: Action[]) => void
   say: (text: string, voice?: boolean) => void
@@ -45,6 +45,10 @@ interface Demo {
   changeStay: (next: Partial<Stay>, what: 'dates' | 'guests' | 'clear') => void
   /** The family moved a plan item themselves; Wiley confirms it (and says if it clashes with check-out). */
   movePlanItem: (id: string, day: 'fri' | 'sat' | 'sun', time: string, reply: string) => void
+  /** Journey 3: open the notification on the phone's screen and let Wiley carry on there. */
+  tapBanner: () => void
+  /** Journey 3: ask Wiley from a screen; the chat opens as a sheet over it (or in the Chat tab). */
+  ask: (opt: Option) => void
   /** Add or remove a Trip Builder extra from the page; the chat shows it and Wiley answers. */
   toggleExtra: (id: string) => void
   payApple: () => void
@@ -132,8 +136,9 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
   msgsRef.current = msgs
   sRef.current = s
 
-  const framed = deviceMode === 'mobile' && w >= 480
-  const desktop = deviceMode === 'desktop' || (deviceMode === 'auto' && w >= 768)
+  // Journey 3 is the phone app: always a phone, framed whenever the window is wider than one.
+  const framed = journey === 3 ? w >= 480 : deviceMode === 'mobile' && w >= 480
+  const desktop = journey !== 3 && (deviceMode === 'desktop' || (deviceMode === 'auto' && w >= 768))
   deskRef.current = framed ? false : desktop
 
   const setDeviceMode = useCallback((m: DeviceMode) => {
@@ -262,6 +267,9 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
           case 'end':
             setEndCard(a.card)
             break
+          case 'app':
+            setS((x) => ({ ...x, app: { ...x.app, ...(typeof a.set === 'function' ? a.set(x.app) : a.set) } }))
+            break
         }
       }
     },
@@ -344,13 +352,22 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
           push({ role: 'user', text, voice: voice || b.voiceTag?.(sRef.current), reaction: b.reaction })
           await sleep(500)
           firstReply = true
+        } else if (b.type === 'wait') {
+          await sleep(b.ms)
+        } else if (b.type === 'note') {
+          await sleep(400)
+          if (!alive()) return
+          push({ role: 'note', text: b.text })
+          await sleep(500)
         } else if (b.type === 'agent') {
-          if (!(await think(b.thinking ?? stepThinking, firstReply, alive))) return
+          // A person types; Wiley thinks.
+          const phrases = b.from === 'staff' ? ['Jordan is typing'] : (b.thinking ?? stepThinking)
+          if (!(await think(phrases, b.from === 'staff' ? true : firstReply, alive))) return
           // State-aware lines are read after thinking, so they see what the effects before them changed.
           const text = typeof b.text === 'function' ? b.text(sRef.current) : b.text
           const textMobile = typeof b.textMobile === 'function' ? b.textMobile(sRef.current) : b.textMobile
           setThinking(null)
-          const id = push({ role: 'agent', text, textMobile, source: b.source, reveal: 0 })
+          const id = push({ role: 'agent', from: b.from, text, textMobile, source: b.source, reveal: 0 })
           // The reply streams in, a few words at a time, at an easy reading pace.
           const words = (deskRef.current ? text : (textMobile ?? text)).split(' ').length
           const steps = Math.max(4, Math.min(28, Math.ceil(words / 2)))
@@ -413,6 +430,10 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       const sc = scripts[`${journey}.${step}`]
       const hit = sc?.rules?.find(([re]) => re.test(text))
       if (hit) return void play(hit[1])
+      // Journey 3: while a person from the lodge team is in the chat, they answer.
+      if (journey === 3 && sRef.current.app.team === 'live') {
+        return void play([{ type: 'agent', from: 'staff', text: 'Thanks, give me a moment to check on that for you.' }])
+      }
       void play([
         { type: 'agent', text: 'I’m a demo version of Wiley. Try one of these:' },
         { type: 'chips', style: 'ai', options: sc?.fallback ?? [] },
@@ -534,6 +555,22 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
     [play],
   )
 
+  const tapBanner = useCallback(() => {
+    const b = sRef.current.app.banner
+    if (!b) return
+    run([{ do: 'app', set: { banner: null, tab: b.to.tab, screen: b.to.screen ?? null, sheet: false } }])
+    if (b.then) void play(b.then)
+  }, [run, play])
+
+  const ask = useCallback(
+    (opt: Option) => {
+      if (sRef.current.app.tab !== 'chat') run([{ do: 'app', set: { sheet: true } }])
+      push({ role: 'user', text: opt.say ?? opt.label })
+      void play(opt.then)
+    },
+    [run, push, play],
+  )
+
   const payApple = useCallback(() => {
     run([{ do: 'sheet', which: null }])
     go('j1/6')
@@ -543,6 +580,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
     if (sRef.current.sheet === 'join') return joinVoyagers()
     if (sRef.current.sheet === 'apple') return payApple()
     if (sRef.current.sheet === 'share' || sRef.current.sheet === 'plan') return run([{ do: 'sheet', which: null }])
+    if (sRef.current.app.banner && !playingRef.current) return tapBanner()
     if (playingRef.current) {
       skip.current = true
       wake.current?.()
@@ -561,9 +599,12 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
     if (waiting?.card?.component === 'capture') {
       return submitCard(waiting.id, { to: 'you@example.com' })
     }
-    if (step >= STEPS) return setEndCard(journey === 1 ? 'companion' : 'plan')
+    if (waiting?.card && sc?.cardDefaults && waiting.card.component in sc.cardDefaults) {
+      return submitCard(waiting.id, sc.cardDefaults[waiting.card.component])
+    }
+    if (step >= STEPS) return setEndCard(journey === 1 ? 'companion' : journey === 2 ? 'plan' : 'stay')
     goStep(step + 1)
-  }, [journey, step, pick, submitCard, goStep, joinVoyagers, payApple, run])
+  }, [journey, step, pick, submitCard, goStep, joinVoyagers, payApple, run, tapBanner])
 
   const back = useCallback(() => {
     if (step > 1) goStep(step - 1)
@@ -611,6 +652,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       else if (e.key === 'h' || e.key === 'H') setBarHidden((v) => !v)
       else if (e.key === '1') startJourney(1)
       else if (e.key === '2') startJourney(2)
+      else if (e.key === '3') startJourney(3)
     }
     window.addEventListener('keydown', on)
     return () => window.removeEventListener('keydown', on)
@@ -642,6 +684,8 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       joinVoyagers,
       chooseRate,
       toggleExtra,
+      tapBanner,
+      ask,
       changeStay,
       movePlanItem,
       payApple,
@@ -660,7 +704,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
       reset,
       go,
     }),
-    [s, step, journey, msgs, typing, thinking, draft, playing, composer, desktop, framed, w, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, chooseRate, toggleExtra, changeStay, movePlanItem, payApple, listen, pick, submitCard, setSnap, toggleWiley, clearChat, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
+    [s, step, journey, msgs, typing, thinking, draft, playing, composer, desktop, framed, w, deviceMode, setDeviceMode, barHidden, endCard, patch, run, say, play, joinVoyagers, chooseRate, toggleExtra, tapBanner, ask, changeStay, movePlanItem, payApple, listen, pick, submitCard, setSnap, toggleWiley, clearChat, closeWiley, openWiley, next, back, goStep, startJourney, reset, go],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
