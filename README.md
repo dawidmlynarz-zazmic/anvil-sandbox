@@ -23,6 +23,7 @@ commit it was built against in its own README.
 | [axs-ticketing-agent](demos/axs-ticketing-agent) | AXS "Ask AXS" ticketing agent, mobile-first (mocked, in progress) | `pnpm ask-axs` | [Open](https://dawidmlynarz-zazmic.github.io/anvil-sandbox/axs-ticketing-agent/) |
 | [travelpass-ai](demos/travelpass-ai) | TravelPass AI, a chat-driven travel assistant: the chat controls the page (mocked) | `pnpm travelpass-ai` | [Open](https://dawidmlynarz-zazmic.github.io/anvil-sandbox/travelpass-ai/) |
 | [greatwolf](demos/greatwolf) | Great Wolf Lodge Journeys v2: Wiley, the AI planner, built into greatwolf.com for a returning family and a first-time visitor, and into the lodge's phone app during the stay, mobile first (mocked) | `pnpm greatwolf` | [Open](https://dawidmlynarz-zazmic.github.io/anvil-sandbox/greatwolf/) |
+| [hr-mate](demos/hr-mate) | HR Mate admin panel redesign + Google Chat bot cards, built with **shadcn/ui, not Anvil**: first-run onboarding, then an established workspace (mocked) | `pnpm hr-mate` | [Open](https://dawidmlynarz-zazmic.github.io/anvil-sandbox/hr-mate/) |
 
 ## Hosted previews (GitHub Pages)
 
