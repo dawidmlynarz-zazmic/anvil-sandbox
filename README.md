@@ -22,7 +22,7 @@ commit it was built against in its own README.
 | [aeg-stage-studio](demos/aeg-stage-studio) | AEG generative stage design prototype (mocked) | `pnpm stage-studio` | [Open](https://dawidmlynarz-zazmic.github.io/anvil-sandbox/aeg-stage-studio/) |
 | [axs-ticketing-agent](demos/axs-ticketing-agent) | AXS "Ask AXS" ticketing agent, mobile-first (mocked, in progress) | `pnpm ask-axs` | [Open](https://dawidmlynarz-zazmic.github.io/anvil-sandbox/axs-ticketing-agent/) |
 | [travelpass-ai](demos/travelpass-ai) | TravelPass AI, a chat-driven travel assistant: the chat controls the page (mocked) | `pnpm travelpass-ai` | [Open](https://dawidmlynarz-zazmic.github.io/anvil-sandbox/travelpass-ai/) |
-| [greatwolf](demos/greatwolf) | Great Wolf Lodge Journeys v2: Wiley, the AI planner, built into greatwolf.com for a returning family and a first-time visitor, mobile first (mocked) | `pnpm greatwolf` | [Open](https://dawidmlynarz-zazmic.github.io/anvil-sandbox/greatwolf/) |
+| [greatwolf](demos/greatwolf) | Great Wolf Lodge Journeys v2: Wiley, the AI planner, built into greatwolf.com for a returning family and a first-time visitor, and into the lodge's phone app during the stay, mobile first (mocked) | `pnpm greatwolf` | [Open](https://dawidmlynarz-zazmic.github.io/anvil-sandbox/greatwolf/) |
 
 ## Hosted previews (GitHub Pages)
 

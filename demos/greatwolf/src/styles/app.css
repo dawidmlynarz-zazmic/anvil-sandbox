@@ -215,3 +215,17 @@
 
 /* On a phone the number-key hints in the questions mean nothing: hide them inside the sheet. */
 section[aria-label='Wiley'] .gwl-question kbd, section[aria-label='Wiley'] .gwl-question [data-slot='kbd'] { display: none; }
+
+/* ---------------------------------------------------------------------------------------------------------------
+ * Journey 3: the Great Wolf app. iOS notifications drop in from the top; the lodge team's messages are warm bubbles.
+ * ------------------------------------------------------------------------------------------------------------- */
+@keyframes gwl-drop { from { opacity: 0; transform: translateY(-24px) scale(0.98); } to { opacity: 1; transform: none; } }
+.gwl-drop { animation: gwl-drop 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.gwl-chat .gwl-staff [data-slot='message-row'][data-role='assistant'] [data-slot='message-bubble-content'] {
+  background: var(--gwl-staff);
+  border-color: var(--gwl-staff-border);
+}
+.gwl-concierge [data-slot='message-row'][data-role='system'] { font-size: 12px; color: var(--muted-foreground); }
+@media (prefers-reduced-motion: reduce) {
+  .gwl-drop { animation: none; }
+}

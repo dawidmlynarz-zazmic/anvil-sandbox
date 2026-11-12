@@ -23,7 +23,7 @@ import { Page, Title } from './shared'
 // plan sits beside it. Both sides read the same cart, so the page and the chat never disagree.
 
 /** Which sections each journey shows, in order (Journey 2 is not a birthday trip). */
-const KINDS: Record<1 | 2, ExtraKind[]> = { 1: ['birthday', 'pass', 'dining', 'experience'], 2: ['pass', 'dining', 'experience'] }
+const KINDS: Record<1 | 2 | 3, ExtraKind[]> = { 1: ['birthday', 'pass', 'dining', 'experience'], 2: ['pass', 'dining', 'experience'], 3: [] }
 
 function ExtraOffer({ e, added, suggested, onToggle, desktop }: { e: Extra; added: boolean; suggested: boolean; onToggle: () => void; desktop: boolean }) {
   return (

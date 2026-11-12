@@ -3,7 +3,46 @@ import type { Stay } from '~/state/stay'
 
 export type Snap = 'peek' | 'half' | 'full'
 export type DeviceMode = 'auto' | 'mobile' | 'desktop'
-export type Journey = 1 | 2
+export type Journey = 1 | 2 | 3
+
+/** Journey 3: the Great Wolf app during the stay. */
+export type AppTab = 'home' | 'dining' | 'todo' | 'chat' | 'more'
+export type AppPhase = 'before' | 'arrival' | 'stay' | 'checkout' | 'after'
+export interface AppBanner {
+  title: string
+  body: string
+  /** Where tapping the notification goes, and what Wiley says there. */
+  to: { tab: AppTab; screen?: string | null }
+  then?: Beat[]
+}
+export interface AppState {
+  phase: AppPhase
+  /** The time on the phone's status bar and in the story ("Wed 6:10 PM"). */
+  clock: string
+  tab: AppTab
+  /** A screen pushed over the tab: 'events', 'park', 'reminders', 'ride:<id>', 'event:<id>'. */
+  screen: string | null
+  /** Ask Wiley as a sheet over the current screen (the Chat tab shows the same thread full screen). */
+  sheet: boolean
+  banner: AppBanner | null
+  checkedIn: boolean
+  arrival: string | null
+  reminders: string[]
+  /** The lodge team in the chat: a person joins, talks, then leaves Wiley in charge again. */
+  team: 'off' | 'live' | 'left'
+  /** The kids' heights in inches, once the family says them (rides go by height). */
+  heights: { mia: number; leo: number } | null
+  /** Wiley's "For your pack" filter on Things To Do. */
+  forPack: boolean
+  cake: boolean
+  lateCheckout: boolean
+  checkedOut: boolean
+  lostReported: boolean
+  lostFound: boolean
+  rating: number | null
+  /** Mia's next birthday weekend, saved to Home. */
+  nextTrip: boolean
+}
 
 export interface PlanItem {
   id: string
@@ -73,6 +112,8 @@ export interface DemoState {
   skipped: ('pass' | 'dining' | 'birthday' | 'experience')[]
   /** The plan counter on the Ask Wiley pill. */
   planCount: number
+  /** Journey 3 only. */
+  app: AppState
 }
 
 export type Action =
@@ -94,11 +135,13 @@ export type Action =
   | { do: 'signIn' }
   | { do: 'sheet'; which: DemoState['sheet'] }
   | { do: 'patch'; fn: (s: DemoState) => Partial<DemoState> }
-  | { do: 'end'; card: 'checkout' | 'companion' | 'plan' }
+  | { do: 'end'; card: 'checkout' | 'companion' | 'plan' | 'stay' }
   /** Wiley sets or changes the stay (dates, guests). */
   | { do: 'setStay'; stay: Partial<Stay> }
   /** Show the suites' loading skeletons for `ms`, as if the list were being fetched. */
   | { do: 'loadSuites'; ms: number }
+  /** Journey 3: change the app (tab, screen, banner, phase…). */
+  | { do: 'app'; set: Partial<AppState> | ((a: AppState) => Partial<AppState>) }
 
 export interface Option {
   label: string
@@ -109,7 +152,7 @@ export interface Option {
   then: Beat[]
 }
 
-export type CardKind = 'quote' | 'questions' | 'capture'
+export type CardKind = 'quote' | 'questions' | 'capture' | 'checkin' | 'today' | 'handover' | 'bill' | 'rating' | 'rides'
 
 export type Beat =
   /** `text` can read the demo state, e.g. to say the weekend the family picked. */
@@ -131,15 +174,22 @@ export type Beat =
       /** What Wiley shows it is doing before it answers. Defaults to the step's `thinking`. */
       thinking?: string[]
       when?: (s: DemoState) => boolean
+      /** A person from the lodge team wrote it, not Wiley. */
+      from?: 'staff'
     }
   /** `options` can read the demo state, e.g. not to offer the party once it is booked. An empty list shows nothing. */
   | { type: 'chips'; style: 'answer' | 'ai'; options: Option[] | ((s: DemoState) => Option[]); when?: (s: DemoState) => boolean }
   | { type: 'card'; component: CardKind; props?: Record<string, unknown>; then?: (payload: unknown) => Beat[] }
   | { type: 'effect'; actions: Action[]; when?: (s: DemoState) => boolean }
+  /** A line in the thread that nobody says ("Jordan joined the chat"). */
+  | { type: 'note'; text: string; when?: (s: DemoState) => boolean }
+  /** A pause, e.g. before a notification arrives. */
+  | { type: 'wait'; ms: number }
 
 export interface Msg {
   id: number
-  role: 'user' | 'agent'
+  role: 'user' | 'agent' | 'note'
+  from?: 'staff'
   text?: string
   textMobile?: string
   voice?: boolean
@@ -167,6 +217,8 @@ export interface StepScript {
   thinking?: string[]
   /** A rate picked on the page (a rate card's Select). The chat answers it like the matching chip. */
   onRate?: (key: RateKey) => Beat[]
+  /** Journey 3: what the presenter's Next submits for a card that's waiting for an answer. */
+  cardDefaults?: Partial<Record<CardKind, unknown>>
   /** An extra added or removed on the Trip Builder page. The chat answers it like the matching chip. */
   onExtra?: (id: string, added: boolean) => Beat[]
 }
