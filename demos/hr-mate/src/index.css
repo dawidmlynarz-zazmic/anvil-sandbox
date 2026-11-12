@@ -1,0 +1,156 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@fontsource-variable/outfit';
+@import '@fontsource-variable/geist-mono';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * HR Mate tokens. Dark mode only. Forward navy #0F0920 and coral #E8483E, Outfit for UI text.
+ * Contrast (WCAG), measured on the surfaces below:
+ *   navy text on coral fill        4.8:1   (white on coral is 3.9:1 and fails, so never use it)
+ *   coral text on background       4.8:1
+ *   foreground on card            15:1
+ *   muted-foreground on card       7:1
+ *   white on destructive fill      5.5:1
+ */
+:root {
+  --radius: 0.5rem;
+  --background: #0f0920;
+  --foreground: #f3efe8;
+  --card: #181229;
+  --card-foreground: #f3efe8;
+  --popover: #1c1530;
+  --popover-foreground: #f3efe8;
+  --primary: #e8483e;
+  --primary-foreground: #0f0920;
+  --secondary: #261e3b;
+  --secondary-foreground: #f3efe8;
+  --muted: #211a34;
+  --muted-foreground: #a9a2bc;
+  --accent: #2b2342;
+  --accent-foreground: #f3efe8;
+  --destructive: #c81e5b;
+  --destructive-foreground: #ffffff;
+  --border: #322a47;
+  --input: #3b3253;
+  --ring: #f0645b;
+
+  --success: #3fb68b;
+  --success-foreground: #0f0920;
+  --success-muted: #12302b;
+  --warning: #e5a93d;
+  --warning-foreground: #0f0920;
+  --warning-muted: #352a16;
+  --info: #5aa9f0;
+  --info-foreground: #0f0920;
+  --info-muted: #14263d;
+  --destructive-soft: #ff7aa2;
+  --destructive-muted: #3a1228;
+  --primary-muted: #3a1620;
+  --primary-soft: #ff958c;
+
+  --chart-1: #e8483e;
+  --chart-2: #4da3ff;
+  --chart-3: #f2b134;
+  --chart-4: #2ec4b6;
+  --chart-5: #a78bfa;
+
+  --sidebar: #0a0615;
+  --sidebar-foreground: #f3efe8;
+  --sidebar-primary: #e8483e;
+  --sidebar-primary-foreground: #0f0920;
+  --sidebar-accent: #211a34;
+  --sidebar-accent-foreground: #f3efe8;
+  --sidebar-border: #261e3b;
+  --sidebar-ring: #f0645b;
+}
+
+@theme inline {
+  --font-sans: 'Outfit Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-muted: var(--info-muted);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-destructive-muted: var(--destructive-muted);
+  --color-primary-muted: var(--primary-muted);
+  --color-primary-soft: var(--primary-soft);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground font-sans text-sm antialiased;
+    line-height: 1.5;
+  }
+  h1, h2, h3 {
+    line-height: 1.2;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Numbers in tables and metrics. Outfit has no tabular figures, so numeric columns use a mono face. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.92em;
+}
