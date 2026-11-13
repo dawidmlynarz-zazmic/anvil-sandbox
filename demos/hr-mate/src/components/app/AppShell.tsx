@@ -9,6 +9,7 @@ import { useDemo } from '@/lib/demo-state'
 import { CommandMenu } from './CommandMenu'
 import { Notifications } from './Notifications'
 import { Sidebar } from './Sidebar'
+import { ThemeToggle } from './ThemeToggle'
 
 export function AppShell() {
   const [collapsed, setCollapsed] = useState(() => window.innerWidth < 1024)
@@ -47,6 +48,7 @@ export function AppShell() {
             <kbd className="bg-muted hidden rounded px-1.5 py-0.5 text-[11px] sm:block">⌘K</kbd>
           </Button>
           <div className="flex items-center gap-1">
+            <ThemeToggle />
             <Notifications />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

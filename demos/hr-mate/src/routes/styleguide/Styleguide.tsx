@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
+import { useTheme } from '@/lib/theme'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,23 +20,24 @@ const ratio = (a: string, b: string) => {
   return (x + 0.05) / (y + 0.05)
 }
 
-const PAIRS: [string, string, string, number][] = [
-  ['Text on background', '#f3efe8', '#0f0920', 4.5],
-  ['Text on card', '#f3efe8', '#181229', 4.5],
-  ['Secondary text on card', '#a9a2bc', '#181229', 4.5],
-  ['Secondary text on muted', '#a9a2bc', '#211a34', 4.5],
-  ['White text on primary button', '#ffffff', '#d63c33', 4.5],
-  ['White text on the lighter coral (text use only)', '#ffffff', '#e8483e', 4.5],
-  ['Coral text on background', '#e8483e', '#0f0920', 4.5],
-  ['Coral text on card', '#e8483e', '#181229', 4.5],
-  ['White on destructive button', '#ffffff', '#c81e5b', 4.5],
-  ['Destructive text on its muted fill', '#ff7aa2', '#3a1228', 4.5],
-  ['Success text on its muted fill', '#3fb68b', '#12302b', 4.5],
-  ['Warning text on its muted fill', '#e5a93d', '#352a16', 4.5],
-  ['Info text on its muted fill', '#5aa9f0', '#14263d', 4.5],
-  ['Highlighted variable', '#ff958c', '#3a1620', 4.5],
-  ['Input border on card (UI, 3:1)', '#3b3253', '#181229', 3],
-  ['Coral focus ring on background (UI, 3:1)', '#f0645b', '#0f0920', 3],
+type Pair = [string, string, string, number]
+const PAIRS: Pair[] = [
+  ['Text on background', 'foreground', 'background', 4.5],
+  ['Text on card', 'foreground', 'card', 4.5],
+  ['Secondary text on card', 'muted-foreground', 'card', 4.5],
+  ['Secondary text on muted', 'muted-foreground', 'muted', 4.5],
+  ['Text on primary button', 'primary-foreground', 'primary', 4.5],
+  ['Coral text on background', 'coral', 'background', 4.5],
+  ['Coral text on card', 'coral', 'card', 4.5],
+  ['Text on destructive button', 'destructive-foreground', 'destructive', 4.5],
+  ['Destructive text on its muted fill', 'destructive-soft', 'destructive-muted', 4.5],
+  ['Success text on its muted fill', 'success', 'success-muted', 4.5],
+  ['Warning text on its muted fill', 'warning', 'warning-muted', 4.5],
+  ['Info text on its muted fill', 'info', 'info-muted', 4.5],
+  ['Highlighted variable', 'primary-soft', 'primary-muted', 4.5],
+  ['Form field border on card (UI, 3:1)', 'input', 'card', 3],
+  ['Form field border on background (UI, 3:1)', 'input', 'background', 3],
+  ['Focus ring on background (UI, 3:1)', 'ring', 'background', 3],
 ]
 
 const SWATCHES = ['background', 'card', 'muted', 'border', 'primary', 'coral', 'destructive', 'success', 'warning', 'info', 'chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5']
@@ -48,9 +51,15 @@ const SCALE: [string, string, string][] = [
 ]
 
 export function Styleguide() {
+  const { resolved } = useTheme()
+  const [vals, setVals] = useState<Record<string, string>>({})
+  useEffect(() => {
+    const cs = getComputedStyle(document.documentElement)
+    setVals(Object.fromEntries(PAIRS.flatMap((p) => [p[1], p[2]]).map((k) => [k, cs.getPropertyValue(`--${k}`).trim()])))
+  }, [resolved])
   return (
     <>
-      <PageHeader title="Styleguide" description="Forward navy and coral, Outfit, scaled for a dense dashboard. Dark mode only." />
+      <PageHeader title="Styleguide" description="Forward navy and coral, Outfit, scaled for a dense dashboard. Light and dark." />
       <div className="space-y-10">
         <section aria-labelledby="sg-colors">
           <h2 id="sg-colors" className="mb-3 text-base font-semibold">Colors</h2>
@@ -63,12 +72,14 @@ export function Styleguide() {
 
         <section aria-labelledby="sg-contrast">
           <h2 id="sg-contrast" className="mb-1 text-base font-semibold">Contrast checks</h2>
-          <p className="text-muted-foreground mb-3">Calculated live from the hex values. Text needs 4.5:1, interface parts 3:1. The lighter coral fails with white on purpose: it is why primary buttons use a deeper red, and the lighter coral is kept for text.</p>
+          <p className="text-muted-foreground mb-3">Calculated live from the tokens of the theme you are viewing, so switch themes to check both. Text needs 4.5:1, interface parts 3:1. Primary buttons use a deeper red so white text passes; the lighter coral is kept for text.</p>
           <div className="border-border rounded-lg border">
             <Table>
               <TableHeader><TableRow><TableHead>Pair</TableHead><TableHead>Sample</TableHead><TableHead>Ratio</TableHead><TableHead>Needs</TableHead><TableHead>Result</TableHead></TableRow></TableHeader>
               <TableBody>
-                {PAIRS.map(([name, fg, bg, need]) => {
+                {PAIRS.filter(([, f, g]) => vals[f] && vals[g]).map(([name, fgKey, bgKey, need]) => {
+                  const fg = vals[fgKey]
+                  const bg = vals[bgKey]
                   const r = ratio(fg, bg)
                   const ok = r >= need
                   return (

@@ -25,7 +25,7 @@ Also: `⌘K` searches screens, workflows and people; `/styleguide` shows tokens 
 
 | Path | What |
 |---|---|
-| `src/index.css` | Brand tokens (Forward navy and coral, dark only) |
+| `src/index.css` | Brand tokens (Forward navy and coral), light by default and dark via the theme switcher |
 | `src/components/ui` | shadcn components (lightly adjusted: destructive contrast, `DialogBody`) |
 | `src/components/hr` | Shared pieces: status badges, schedule picker, audience builder, workflow wizard, assistant tester |
 | `src/mocks` | Typed seed data. "Today" is fixed to 12 Nov 2026 (`src/lib/dates.ts`) |
