@@ -17,7 +17,7 @@ export function DemoControls({ collapsed }: { collapsed: boolean }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className={cn('w-full justify-start border-dashed', collapsed && 'justify-center px-0')} aria-label="Demo controls">
+        <Button variant="outline" className={cn('border-dashed', collapsed ? 'size-10 justify-center px-0' : 'w-full justify-start')} aria-label="Demo controls">
           <FlaskConical aria-hidden />
           {!collapsed && 'Demo controls'}
         </Button>

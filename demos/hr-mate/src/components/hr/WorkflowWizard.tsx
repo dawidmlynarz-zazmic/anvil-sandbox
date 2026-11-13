@@ -103,7 +103,7 @@ export function WorkflowWizard({ title, description, back, initialTemplateId, on
               disabled={i > step}
               onClick={() => setStep(i)}
               aria-current={i === step ? 'step' : undefined}
-              className={cn('flex items-center gap-2 rounded-full border px-3 py-1 text-[13px] transition-colors disabled:cursor-default', i === step ? 'border-primary text-foreground bg-primary-muted' : i < step ? 'text-foreground hover:bg-accent' : 'text-muted-foreground')}
+              className={cn('flex items-center gap-2 rounded-full border px-3 py-1 text-[13px] transition-colors disabled:cursor-default', i === step ? 'border-foreground/50 text-foreground bg-accent' : i < step ? 'text-foreground hover:bg-accent' : 'text-muted-foreground')}
             >
               <span className={cn('flex size-5 items-center justify-center rounded-full text-xs', i < step ? 'bg-success text-success-foreground' : 'bg-muted')}>{i < step ? <Check className="size-3" aria-hidden /> : i + 1}</span>
               {s}
@@ -245,7 +245,7 @@ export function WorkflowWizard({ title, description, back, initialTemplateId, on
 
 function TemplateCard({ name, description, stage, schedule, channel, selected, onSelect, recommended }: { name: string; description: string; stage: string; schedule?: string; channel?: 'chat' | 'email'; selected: boolean; onSelect: () => void; recommended?: boolean }) {
   return (
-    <button type="button" onClick={onSelect} aria-pressed={selected} className={cn('bg-card hover:bg-accent/50 flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors', selected ? 'border-primary ring-primary/40 ring-2' : 'border-border')}>
+    <button type="button" onClick={onSelect} aria-pressed={selected} className={cn('bg-card hover:bg-accent/50 flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors', selected ? 'border-foreground/60 ring-foreground/20 ring-2' : 'border-border')}>
       <span className="flex items-center justify-between gap-2">
         <span className="text-muted-foreground text-xs">{stage}</span>
         {recommended && <span className="text-success text-xs font-medium">Good first workflow</span>}

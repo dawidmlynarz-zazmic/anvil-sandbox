@@ -41,10 +41,10 @@ export function AppShell() {
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="border-border flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4 lg:px-8">
-          <Button variant="outline" className="text-muted-foreground w-full max-w-sm justify-start font-normal" onClick={() => setCmd(true)} aria-label="Search screens, workflows and people">
+          <Button variant="outline" className="text-muted-foreground min-w-0 flex-1 max-w-sm justify-start font-normal" onClick={() => setCmd(true)} aria-label="Search screens, workflows and people">
             <Search aria-hidden />
-            <span className="flex-1 text-left">Search screens, workflows, people</span>
-            <kbd className="bg-muted rounded px-1.5 py-0.5 text-[11px]">⌘K</kbd>
+            <span className="min-w-0 flex-1 truncate text-left">Search screens, workflows, people</span>
+            <kbd className="bg-muted hidden rounded px-1.5 py-0.5 text-[11px] sm:block">⌘K</kbd>
           </Button>
           <div className="flex items-center gap-1">
             <Notifications />

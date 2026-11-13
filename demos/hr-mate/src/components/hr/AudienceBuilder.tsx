@@ -100,7 +100,7 @@ export function AudienceBuilder({ value, onChange }: { value: AudienceRule; onCh
       </div>
       <aside className="bg-muted/50 border-border rounded-lg border p-4" aria-live="polite">
         <p className="flex items-center gap-2 text-base font-semibold">
-          <Users className="text-primary size-4" aria-hidden />
+          <Users className="text-muted-foreground size-4" aria-hidden />
           Matches {matches.length} {matches.length === 1 ? 'person' : 'people'} today
         </p>
         <p className="text-muted-foreground mt-1 text-[13px]">{describeAudience(value)}</p>

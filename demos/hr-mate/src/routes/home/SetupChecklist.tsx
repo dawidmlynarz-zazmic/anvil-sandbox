@@ -28,7 +28,7 @@ export function SetupChecklist() {
       <div className="grid gap-4 md:grid-cols-3">
         {INTRO.map((i) => (
           <div key={i.title} className="bg-card border-border rounded-lg border p-4">
-            <i.icon className="text-primary mb-2 size-5" aria-hidden />
+            <i.icon className="text-foreground mb-2 size-5" aria-hidden />
             <p className="font-semibold">{i.title}</p>
             <p className="text-muted-foreground mt-1 text-[13px]">{i.body}</p>
           </div>
