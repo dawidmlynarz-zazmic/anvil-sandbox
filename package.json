@@ -7,7 +7,6 @@
     "stage-studio": "pnpm --filter aeg-stage-studio dev",
     "ask-axs": "pnpm --filter axs-ticketing-agent dev",
     "travelpass-ai": "pnpm --filter travelpass-ai dev",
-    "greatwolf": "pnpm --filter greatwolf dev",
-    "hr-mate": "pnpm --filter hr-mate dev"
+    "greatwolf": "pnpm --filter greatwolf dev"
   }
 }

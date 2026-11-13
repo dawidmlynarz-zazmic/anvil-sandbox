@@ -3,7 +3,6 @@
 #   https://<owner>.github.io/anvil-sandbox/aeg-stage-studio/
 #   https://<owner>.github.io/anvil-sandbox/axs-ticketing-agent/
 #   https://<owner>.github.io/anvil-sandbox/travelpass-ai/
-#   https://<owner>.github.io/anvil-sandbox/hr-mate/
 #
 # Optional password screen: add a repository secret DEMO_PASSWORD and re-run this workflow. Only its SHA-256 goes into
 # the build. It keeps casual visitors out; it is not access control (the site and the source are public).
@@ -103,16 +102,6 @@ jobs:
           fi
           pnpm --filter greatwolf build
 
-      - name: Build HR Mate
-        env:
-          BASE_PATH: /${{ github.event.repository.name }}/hr-mate/
-          DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
-        run: |
-          if [ -n "$DEMO_PASSWORD" ]; then
-            export VITE_DEMO_GATE="$(printf '%s' "$DEMO_PASSWORD" | sha256sum | cut -d' ' -f1)"
-          fi
-          pnpm --filter hr-mate build
-
       - name: Assemble the site
         run: |
           mkdir -p _site
@@ -121,7 +110,6 @@ jobs:
           cp -r demos/axs-ticketing-agent/dist _site/axs-ticketing-agent
           cp -r demos/travelpass-ai/dist _site/travelpass-ai
           cp -r demos/greatwolf/dist _site/greatwolf
-          cp -r demos/hr-mate/dist _site/hr-mate
           # Pages serves 404.html for any unknown path. With more than one single-page app, it sends deep links
           # (…/aeg-stage-studio/p/<id>/stills) to that demo's index.html, which restores the path (spa-github-pages).
           cp site/404.html _site/404.html
