@@ -6,7 +6,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * HR Mate tokens. Dark mode only. Forward navy #0F0920 and coral #E8483E, Outfit for UI text.
+ * HR Mate tokens. Light by default, dark via the .dark class on <html>. Forward navy #0F0920 and coral #E8483E, Outfit for UI text.
  * Contrast (WCAG), measured on the surfaces below:
  *   white text on button red       4.6:1   (#D63C33; the lighter coral #E8483E is 3.9:1 with white and is only for text)
  *   coral text on background       4.8:1
@@ -14,8 +14,61 @@
  *   muted-foreground on card       7:1
  *   white on destructive fill      5.5:1
  */
+/* Light mode: warm off-white surfaces, navy text. */
 :root {
   --radius: 0.5rem;
+  --background: #f8f6f2;
+  --foreground: #0f0920;
+  --card: #ffffff;
+  --card-foreground: #0f0920;
+  --popover: #ffffff;
+  --popover-foreground: #0f0920;
+  --primary: #d63c33;
+  --primary-foreground: #ffffff;
+  --coral: #c2352d;
+  --secondary: #ece8e0;
+  --secondary-foreground: #0f0920;
+  --muted: #f0ede7;
+  --muted-foreground: #5f5873;
+  --accent: #e9e5dc;
+  --accent-foreground: #0f0920;
+  --destructive: #c81e5b;
+  --destructive-foreground: #ffffff;
+  --border: #ddd8cf;
+  --input: #8a8398;
+  --ring: #d63c33;
+
+  --success: #17694a;
+  --success-foreground: #ffffff;
+  --success-muted: #dff3ea;
+  --warning: #8a5a00;
+  --warning-foreground: #ffffff;
+  --warning-muted: #fbefd0;
+  --info: #1f5fa8;
+  --info-foreground: #ffffff;
+  --info-muted: #dfeafa;
+  --destructive-soft: #b3174f;
+  --destructive-muted: #fde8ef;
+  --primary-muted: #fde7e4;
+  --primary-soft: #b8322a;
+
+  --chart-1: #d63c33;
+  --chart-2: #2f7fe0;
+  --chart-3: #d99a12;
+  --chart-4: #12a596;
+  --chart-5: #7c5ce0;
+
+  --sidebar: #f1eee8;
+  --sidebar-foreground: #0f0920;
+  --sidebar-primary: #d63c33;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e4dfd5;
+  --sidebar-accent-foreground: #0f0920;
+  --sidebar-border: #ddd8cf;
+  --sidebar-ring: #d63c33;
+}
+
+.dark {
   --background: #0f0920;
   --foreground: #f3efe8;
   --card: #181229;
@@ -34,7 +87,7 @@
   --destructive: #c81e5b;
   --destructive-foreground: #ffffff;
   --border: #322a47;
-  --input: #3b3253;
+  --input: #7b7392;
   --ring: #f0645b;
 
   --success: #3fb68b;
@@ -127,6 +180,9 @@
     @apply border-border outline-ring/50;
   }
   html {
+    color-scheme: light;
+  }
+  html.dark {
     color-scheme: dark;
   }
   body {
