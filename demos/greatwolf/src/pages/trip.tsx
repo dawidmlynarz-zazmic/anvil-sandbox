@@ -9,7 +9,7 @@ import { cn } from '@anvil/lib/utils'
 import { money, suiteById } from '~/data/fixtures'
 import { extras, SECTIONS, type Extra, type ExtraKind } from '~/data/extras'
 import { suitePhotos } from '~/data/photos'
-import { Photo, Sample, WileyTag } from '~/components/local/Brand/Brand'
+import { Photo, WileyTag } from '~/components/local/Brand/Brand'
 import { CompactRates, SuiteCard } from '~/components/local/SuiteCard/SuiteCard'
 import { TripQuote } from '~/components/local/WileyCards/WileyCards'
 import { quoteOf, useDemo } from '~/state/demo'
@@ -57,7 +57,6 @@ function ExtraOffer({ e, added, suggested, onToggle, desktop }: { e: Extra; adde
       price={
         <>
           {e.price}
-          {e.sample && <Sample className="ms-1.5 align-middle" />}
         </>
       }
       ctaLabel={added ? 'Remove' : 'Add'}

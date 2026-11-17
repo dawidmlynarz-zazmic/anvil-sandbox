@@ -7,7 +7,7 @@ import { quoteOf, useDemo } from '~/state/demo'
 import { j2Plan, savedPlan } from '~/state/plan'
 import { stayDays } from '~/state/stay'
 import { lodge } from '~/data/fixtures'
-import { Photo, Sample, WileyAvatar } from '../Brand/Brand'
+import { Photo, WileyAvatar } from '../Brand/Brand'
 
 // Demo-only overlays. The native sheets are mocks of the phone's own UI (Apple Pay, share) and of a sign-up sheet;
 // nothing is paid, shared or created.
@@ -220,7 +220,6 @@ function PlanPreview() {
             <dt className="text-muted-foreground">Rate</dt>
             <dd>
               {p.rateLine}
-              {p.sample && <Sample className="ms-1.5 align-middle" />}
             </dd>
             {p.total && (
               <>

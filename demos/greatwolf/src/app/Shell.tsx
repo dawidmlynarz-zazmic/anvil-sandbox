@@ -95,13 +95,13 @@ function PhoneFrame({ children, ios }: { children: ReactNode; ios?: boolean }) {
     return () => window.removeEventListener('resize', fit)
   }, [ios])
   return (
-    <div className={cn('grid h-full place-items-center overflow-auto bg-[var(--gwl-canvas)] p-4', ios && 'min-w-0 flex-1 lg:flex-none lg:px-12')}>
+    <div className={cn('grid h-full place-items-center overflow-auto bg-[var(--gwl-canvas)] p-4', ios && 'min-w-0 flex-1')}>
       {/* Journey 3 is a native app: an iPhone-shaped screen with a thin bezel. */}
       <div
         style={{ zoom }}
         className={cn(
           'gwl-phone relative h-[844px] w-[390px] shrink-0 overflow-hidden bg-background [transform:translateZ(0)]',
-          ios ? 'rounded-[54px] shadow-[0_0_0_10px_#11161c,0_0_0_11px_#3a434d,0_30px_70px_rgb(7_39_69/0.35)]' : 'rounded-[10px] shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_24px_60px_rgb(7_39_69/0.25)]',
+          ios ? 'rounded-[54px] shadow-[0_0_0_10px_#11161c,0_0_0_11px_#3a434d]' : 'rounded-[10px] shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_24px_60px_rgb(7_39_69/0.25)]',
         )}
       >
         {children}
@@ -120,11 +120,11 @@ const NOTES: Record<number, string> = {
   6: 'After check-out Wiley is still there: lost and found with the lodge team, feedback, and the next birthday.',
 }
 
-/** Journey 3: the Great Wolf app on a phone, with the step's note beside it on a wide window. */
+/** Journey 3: the Great Wolf app on a phone, with the step's note in the top left corner on a wide window. */
 function AppFrame() {
   const { framed, barHidden, step } = useDemo()
   const app = (
-    <div className="gwl-site gwl-app relative flex h-full w-full flex-col overflow-hidden bg-[var(--gwl-app-bg)] text-foreground">
+    <div className="gwl-site gwl-app gwl-touch relative flex h-full w-full flex-col overflow-hidden bg-[var(--gwl-app-bg)] text-foreground">
       <Outlet />
       <EndCard />
     </div>
@@ -132,10 +132,11 @@ function AppFrame() {
   return (
     <div className="flex h-dvh flex-col bg-[var(--gwl-canvas)]">
       {!barHidden && <DemoBar />}
-      <div className="flex min-h-0 flex-1 items-stretch justify-center">
+      <div className="relative flex min-h-0 flex-1 items-stretch justify-center">
         {framed ? <PhoneFrame ios>{app}</PhoneFrame> : app}
+        {/* The step's note sits in the top left corner, clear of the centered phone. */}
         {framed && (
-          <aside aria-label="About this step" className="hidden w-80 shrink-0 flex-col justify-center gap-2 pe-10 lg:flex">
+          <aside aria-label="About this step" className="absolute start-8 top-8 hidden w-64 flex-col gap-2 lg:flex xl:w-72">
             <span className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">Journey 3 · Step {step} of 6</span>
             <h2 className="gwl-display text-2xl leading-tight">{TITLES[`3.${step}`]}</h2>
             <p className="type-text-sm-normal text-muted-foreground">{NOTES[step]}</p>
@@ -165,7 +166,7 @@ function SiteFrame() {
     go('j1/2')
   }
   const app = (
-    <div className="gwl-site relative flex h-full w-full flex-col overflow-hidden bg-[var(--gwl-page)] text-foreground">
+    <div className={cn('gwl-site relative flex h-full w-full flex-col overflow-hidden bg-[var(--gwl-page)] text-foreground', !desktop && 'gwl-touch')}>
       <AppHeader />
       <div className={cn('flex min-h-0 flex-1', !desktop && 'flex-col')}>
         <main id="page-scroll" ref={pageRef} className="min-h-0 min-w-0 flex-1 overflow-y-auto">

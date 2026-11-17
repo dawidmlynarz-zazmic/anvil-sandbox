@@ -229,3 +229,8 @@ section[aria-label='Wiley'] .gwl-question kbd, section[aria-label='Wiley'] .gwl-
 @media (prefers-reduced-motion: reduce) {
   .gwl-drop { animation: none; }
 }
+
+/* The phone layout scrolls like a phone: no scrollbars (Mobile 390, Journey 3, narrow windows). Scrolling still works by
+   touch, trackpad, wheel and keyboard. The desktop layout keeps its scrollbars. */
+.gwl-touch, .gwl-touch * { scrollbar-width: none; scrollbar-gutter: auto; }
+.gwl-touch ::-webkit-scrollbar, .gwl-touch::-webkit-scrollbar { display: none; }
