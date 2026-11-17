@@ -58,15 +58,15 @@ const PITCH_MOBILE: Record<J, Partial<Record<ExtraKind, string>>> = {
 }
 
 const DONE: Record<J, string> = {
-  1: 'That’s your trip. Want me to fit it all into the weekend plan?',
+  1: 'That’s your trip. Ready to check out, or want to plan the weekend first?',
   2: 'Your trip’s ready. Save it for later, or book now?',
 }
 
 function doneChips(j: J): Option[] {
   return j === 1
     ? [
-        { label: 'Plan our weekend', then: [fx({ do: 'go', to: 'j1/4' })] },
         { label: 'Go to checkout', then: [fx({ do: 'go', to: 'j1/5' })] },
+        { label: 'Plan our weekend', then: [fx({ do: 'go', to: 'j1/4' })] },
       ]
     : [
         // Says what J2·6 opens with, so the chat shows it once.

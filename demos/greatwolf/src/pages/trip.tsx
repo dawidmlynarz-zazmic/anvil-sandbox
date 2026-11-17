@@ -138,9 +138,15 @@ export function TripBuilder() {
   const suiteId = s.selected!.suite
   const primary =
     journey === 1 ? (
-      <Button shape="pill" size="lg" onClick={() => go('j1/4')}>
-        Plan our weekend
-      </Button>
+      // Checkout is the one primary; planning the weekend is optional, so it sits under it as a secondary.
+      <div className={cn('flex flex-col gap-2', !desktop && 'w-full')}>
+        <Button shape="pill" size="lg" onClick={() => go('j1/5')}>
+          Go to checkout
+        </Button>
+        <Button shape="pill" variant="outline" intent="neutral" onClick={() => go('j1/4')}>
+          Plan our weekend
+        </Button>
+      </div>
     ) : (
       <Button shape="pill" size="lg" onClick={() => go('j2/6')}>
         Save my trip
