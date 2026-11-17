@@ -32,7 +32,7 @@ export function Title({ children, tag, sub, actions }: { children: ReactNode; ta
         </div>
         {sub && <p className="type-text-sm-normal text-muted-foreground">{sub}</p>}
       </div>
-      {actions && <div className={cn('flex flex-wrap gap-2 print:hidden', !desktop && 'w-full')}>{actions}</div>}
+      {actions && <div className="flex flex-wrap gap-2 print:hidden">{actions}</div>}
     </div>
   )
 }

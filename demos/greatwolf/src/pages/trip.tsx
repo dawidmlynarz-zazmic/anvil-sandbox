@@ -119,9 +119,11 @@ function PlanPreview() {
           </li>
         ))}
       </ul>
-      <Button shape="pill" variant="outline" intent="neutral" className="w-fit" onClick={() => go(journey === 1 ? 'j1/4' : 'j2/6')}>
-        Open the weekend plan
-      </Button>
+      {journey !== 1 && (
+        <Button shape="pill" variant="outline" intent="neutral" className="w-fit" onClick={() => go('j2/6')}>
+          Open the weekend plan
+        </Button>
+      )}
     </Card>
   )
 }
@@ -136,22 +138,24 @@ export function TripBuilder() {
   const filled = (k: ExtraKind) => s.cart.some((c) => c.kind === k)
   const firstOpen = kinds.find((k) => !filled(k))
   const suiteId = s.selected!.suite
+  // Journey 2 saves the trip from the header. Journey 1 finishes under the trip summary: checkout is the one primary,
+  // planning the weekend is optional, so it sits under it as a secondary.
   const primary =
-    journey === 1 ? (
-      // Checkout is the one primary; planning the weekend is optional, so it sits under it as a secondary.
-      <div className={cn('flex flex-col gap-2', !desktop && 'w-full')}>
-        <Button shape="pill" size="lg" onClick={() => go('j1/5')}>
-          Go to checkout
-        </Button>
-        <Button shape="pill" variant="outline" intent="neutral" onClick={() => go('j1/4')}>
-          Plan our weekend
-        </Button>
-      </div>
-    ) : (
+    journey === 2 ? (
       <Button shape="pill" size="lg" onClick={() => go('j2/6')}>
         Save my trip
       </Button>
-    )
+    ) : undefined
+  const finish = journey === 1 && (
+    <div className="flex flex-col gap-2">
+      <Button shape="pill" size="lg" className="w-full" onClick={() => go('j1/5')}>
+        Go to checkout
+      </Button>
+      <Button shape="pill" variant="outline" intent="neutral" className="w-full" onClick={() => go('j1/4')}>
+        Plan our weekend
+      </Button>
+    </div>
+  )
   const steps = (
     <ProgressSteps variant="bars" aria-label="Trip progress">
       <ProgressStep status="done" label="Suite" />
@@ -201,6 +205,7 @@ export function TripBuilder() {
           </div>
           <div className="sticky top-20 flex flex-col gap-4">
             <TripQuote title="Your trip so far" />
+            {finish}
             <PlanPreview />
           </div>
         </div>
@@ -210,6 +215,13 @@ export function TripBuilder() {
           {rates}
           {sections}
           <PlanPreview />
+          {finish && (
+            // The summary the stay bar folds away, in full at the end of the trip, with the way out under it.
+            <section aria-label="Your trip so far" className="flex flex-col gap-3">
+              <TripQuote title="Your trip so far" />
+              {finish}
+            </section>
+          )}
         </div>
       )}
     </Page>
