@@ -1,6 +1,6 @@
 import { money, rateOf, suiteById, type RateKey } from '~/data/fixtures'
 import { guestsLong, oldest, partySize, shortDates, stayDays, youngest } from '~/state/stay'
-import type { Beat, DemoState, Option, StepScript } from '../types'
+import type { Action, Beat, DemoState, Option, StepScript } from '../types'
 import { onExtra, suggestNext, tripRules } from './trip'
 
 // Journey 2: a first-time family, signed out. By default 2 adults with kids aged 3 and 6; when the family types or
@@ -196,19 +196,15 @@ export const afterJoinWithRate: Beat[] = [say('Welcome to Voyagers Club! I kept 
 /** Played by the join sheet when no rate was picked yet: Wiley asks instead of choosing for them. */
 export const afterJoinPickRate: Beat[] = [say('Welcome to Voyagers Club! Your member rates are showing. Which one would you like?'), chips(standardMember, flexibleMember)]
 
-// ── J2·6: save the plan ─────────────────────────────────────────────────────────────────────────────────────────
+// ── J2·6 to J2·8: checkout, booked, then the weekend plan ─────────────────────────────────────────────────────────────────────────────────────────
 
 const share: Beat[] = [{ type: 'effect', actions: [{ do: 'sheet', which: 'share' }] }, say('Opened your share options. Pick how to send it.')]
 
-const planSent: Beat[] = [
-  { type: 'effect', actions: [{ do: 'toast', text: 'Plan sent' }, { do: 'patch', fn: () => ({ planSaved: true }) }] },
-  say('Sent! The link brings back this plan and our chat. Want to see what it shows?'),
-  chips(
-    { label: 'Preview the plan', then: [{ type: 'effect', actions: [{ do: 'sheet', which: 'plan' }] }] },
-    { label: 'Share with my partner too', then: share },
-    { label: 'Book it now', then: [{ type: 'effect', actions: [{ do: 'end', card: 'checkout' }] }] },
-  ),
-]
+/** If the presenter jumps ahead, checkout still has a trip: Standard as a guest. */
+const ensureRate: Action = { do: 'patch', fn: (s) => (s.selected ? {} : { selected: { suite: 'pup-den-jr', rate: 'std-non' } }) }
+
+const sendToApp: Option = { label: 'Send it to the app', then: [{ type: 'effect', actions: [{ do: 'toast', text: 'Plan sent to the app' }, { do: 'end', card: 'plan' }] }] }
+const shareOption: Option = { label: 'Share with my partner', then: share }
 
 export const j2: Record<number, StepScript> = {
   1: {
@@ -317,7 +313,7 @@ export const j2: Record<number, StepScript> = {
     ],
     onRate: rateChosen,
     onExtra: onExtra(2),
-    path: ['Join free and save', 'Standard', 'Add the Pup Pass', 'Add the Wolf Wakeup Breakfast', 'Not needed', 'Save my trip'],
+    path: ['Join free and save', 'Standard', 'Add the Pup Pass', 'Add the Wolf Wakeup Breakfast', 'Not needed', 'Go to checkout'],
     voiceLine: 'Standard as a guest',
     rules: [
       [/join|member|voyager|save/i, join.then],
@@ -328,26 +324,40 @@ export const j2: Record<number, StepScript> = {
     fallback: [join, standardGuest, flexibleGuest],
   },
   6: {
-    enter: [{ do: 'openSheet', snap: 'half' }],
+    enter: [{ do: 'closeSheet' }, ensureRate],
+    beats: [],
+    voiceLine: 'Can we cancel later?',
+    rules: [[/card|pay|apple/i, [say('Payment happens on the page, with Apple Pay or a card. I never take card details in chat.')]]],
+    fallback: [{ label: 'Pay with Apple Pay', then: [{ type: 'effect', actions: [{ do: 'sheet', which: 'apple' }] }] }],
+  },
+  7: {
+    enter: [{ do: 'closeSheet' }, ensureRate],
+    beats: [],
+    voiceLine: 'What time is check-in?',
+    fallback: [{ label: 'Plan our weekend', then: [{ type: 'effect', actions: [{ do: 'go', to: 'j2/8' }] }] }],
+  },
+  8: {
+    // After booking: the weekend from the trip and the things they saved, to change and share with a partner.
+    enter: [ensureRate, { do: 'openSheet', snap: 'half' }],
     beats: [
-      { type: 'user', text: 'Let me check with my partner first' },
       {
         type: 'agent',
         text: (s) => {
           const [, d2, d3] = stayDays(s.stay)
           const sat = s.cart.some((c) => c.id === 'pup-pass') ? `Build-A-Bear on ${d2.long} morning, ` : s.cart.some((c) => c.kind === 'pass') ? `MagiQuest on ${d2.long} morning, ` : ''
           const sun = s.ideas.includes('zoo') ? `the zoo on ${d3.long} at 9:30` : `the zoo as a suggestion for ${d3.long} morning`
-          return `Of course! I laid your weekend out by day so it’s easy to show them: Cub Paw Pool when you arrive, ${sat}${sun}. Want me to text it to you? No account needed.`
+          return `Here’s a weekend I drafted from your trip and the things you saved: Cub Paw Pool when you arrive, ${sat}${sun}. Move anything you like, or share it with your partner.`
         },
-        textMobile: 'Of course! I laid your weekend out by day. Want me to text it to you? No account needed.',
+        textMobile: 'Here’s a weekend I drafted from your trip. Move anything you like, or share it.',
       },
-      { type: 'card', component: 'capture', then: () => planSent },
+      chips(shareOption, sendToApp),
     ],
-    voiceLine: 'Send it to my phone',
-    path: ['Preview the plan'],
+    voiceLine: 'Share it with my partner',
+    path: ['Send it to the app'],
     rules: [
       [/preview|see|show/i, [{ type: 'effect', actions: [{ do: 'sheet', which: 'plan' }] }]],
       [/share|partner/i, share],
+      [/app|send|phone/i, sendToApp.then],
       [
         /zoo|sunday/i,
         [
@@ -356,7 +366,7 @@ export const j2: Record<number, StepScript> = {
         ],
       ],
     ],
-    fallback: [{ label: 'Preview the plan', then: [{ type: 'effect', actions: [{ do: 'sheet', which: 'plan' }] }] }, { label: 'Share with my partner', then: share }],
+    fallback: [shareOption, sendToApp, { label: 'Preview the plan', then: [{ type: 'effect', actions: [{ do: 'sheet', which: 'plan' }] }] }],
   },
 }
 
@@ -367,6 +377,8 @@ const THINKING: Record<number, string[]> = {
   3: ['Opening the lodge water park guide', 'Finding spots for little ones'],
   4: ['Checking the GWL Things To Do guide', 'Filtering for your kids’ ages', 'Adding it to your plan'],
   5: ['Pulling rates for your dates', 'Checking passes for your kids', 'Updating your trip'],
-  6: ['Laying out your weekend by day', 'Saving your plan'],
+  6: ['Checking your booking'],
+  7: ['Getting your weekend ready'],
+  8: ['Laying out your weekend by day', 'Checking the GWL Things To Do guide'],
 }
 for (const [step, phrases] of Object.entries(THINKING)) j2[Number(step)].thinking = phrases

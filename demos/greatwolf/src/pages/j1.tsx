@@ -12,7 +12,6 @@ import { quoteOf, useDemo } from '~/state/demo'
 import { j1Plan } from '~/state/plan'
 import { guestsLong, longDates, shortDates, toDate } from '~/state/stay'
 import { usePageWide } from '~/state/layout'
-import type { PlanItem } from '~/wiley/types'
 import { Page, Popular, Title } from './shared'
 import { WeekendPlan } from './weekend'
 
@@ -112,9 +111,9 @@ function usePlan() {
   return j1Plan(s)
 }
 
-/** J1·4: the weekend in and around the lodge, built with Wiley from the trip. */
+/** J1·6: after booking, the weekend in and around the lodge, drafted by Wiley from the trip. */
 export function J1Plan() {
-  const { s, go } = useDemo()
+  const { s, run } = useDemo()
   const plan = usePlan()
   const suite = quoteOf(s)?.suite.name ?? 'Junior Wolf Pup Den Suite'
   return (
@@ -123,8 +122,8 @@ export function J1Plan() {
       title={`Your weekend · ${shortDates(s.stay) ?? 'dates to pick'}`}
       tag={<WileyTag>Built with Wiley</WileyTag>}
       primary={
-        <Button shape="pill" onClick={() => go('j1/5')}>
-          Go to checkout
+        <Button shape="pill" onClick={() => run([{ do: 'toast', text: 'Plan sent to the app' }, { do: 'end', card: 'companion' }])}>
+          Send to the app
         </Button>
       }
       printWhen={longDates(s.stay)}
@@ -134,10 +133,21 @@ export function J1Plan() {
   )
 }
 
-/** J1·5: checkout, prefilled from the account. Payment is native; Wiley stays out of it. */
-export function J1Checkout() {
-  const { s, run, go } = useDemo()
+/** Who is checking out: the Martinez family's account in Journey 1; the new member (fictional) in Journey 2. */
+function useGuest() {
+  const { s, journey } = useDemo()
+  return journey === 1
+    ? { name: `${fam.lead} ${fam.name}`, kids: 'Mia (7), Leo (4)', card: `${fam.card} (Saved card)`, badge: 'Prefilled from your account', note: 'I filled everything in from your account.' }
+    : s.signedIn
+      ? { name: 'Alex Rivera', kids: guestsLong(s.stay), card: 'Pay with a card', badge: 'Prefilled from your new Voyagers Club account', note: 'I filled in what you gave Voyagers Club.' }
+      : { name: 'Alex Rivera', kids: guestsLong(s.stay), card: 'Pay with a card', badge: 'Guest checkout', note: 'Check your details, then pay.' }
+}
+
+/** J1·4 and J2·6: checkout, prefilled from the account. Payment is native; Wiley stays out of it. */
+export function Checkout() {
+  const { s, run, go, journey } = useDemo()
   const desktop = usePageWide()
+  const who = useGuest()
   const total = quoteOf(s)?.total ?? 0
   const applePay = (
     <Button shape="pill" size="lg" className="w-full bg-[#000000] text-[#ffffff] hover:bg-[#222222] dark:bg-[#ffffff] dark:text-[#000000]" onClick={() => run([{ do: 'sheet', which: 'apple' }])}>
@@ -145,13 +155,13 @@ export function J1Checkout() {
     </Button>
   )
   const savedCard = (
-    <Button shape="pill" size="lg" variant="outline" intent="neutral" className="w-full" onClick={() => go('j1/6')}>
-      {fam.card} (Saved card)
+    <Button shape="pill" size="lg" variant="outline" intent="neutral" className="w-full" onClick={() => go(journey === 1 ? 'j1/5' : 'j2/7')}>
+      {who.card}
     </Button>
   )
   const prefilled = (
     <Badge variant="subtle" size="sm">
-      Prefilled from your account
+      {who.badge}
     </Badge>
   )
   const step = (
@@ -165,7 +175,7 @@ export function J1Checkout() {
     return (
       <Page>
         {step}
-        <WileyNote>I filled everything in from your account. Just review and pay. I’ll never ask for card details in chat.</WileyNote>
+        <WileyNote>{`${who.note} Just review and pay. I’ll never ask for card details in chat.`}</WileyNote>
         <div className="grid grid-cols-[1.4fr_1fr] items-start gap-5">
           <div className="flex flex-col gap-4">
             <Card className="gap-2 rounded-2xl p-4">
@@ -175,11 +185,9 @@ export function J1Checkout() {
               </div>
               <dl className="grid grid-cols-[1fr_auto] gap-y-1 type-text-sm-normal">
                 <dt>Lead guest</dt>
-                <dd className="type-text-sm-semibold">
-                  {fam.lead} {fam.name}
-                </dd>
-                <dt>Kids</dt>
-                <dd className="type-text-sm-semibold">Mia (7), Leo (4)</dd>
+                <dd className="type-text-sm-semibold">{who.name}</dd>
+                <dt>{journey === 1 ? 'Kids' : 'Guests'}</dt>
+                <dd className="type-text-sm-semibold">{who.kids}</dd>
               </dl>
             </Card>
             <Card className="gap-3 rounded-2xl p-4">
@@ -196,14 +204,14 @@ export function J1Checkout() {
   return (
     <Page className="pb-24">
       {step}
-      <WileyNote>I filled everything in from your account. I’ll never ask for card details in chat.</WileyNote>
+      <WileyNote>{`${who.note} I’ll never ask for card details in chat.`}</WileyNote>
       <TripQuote checkout title={title} />
       <Card className="items-start gap-1.5 rounded-2xl p-4">
         {prefilled}
         <span className="type-text-sm-semibold">
-          {fam.lead} {fam.name} · 2 adults, 2 kids
+          {who.name} · {guestsLong(s.stay)}
         </span>
-        <span className="type-text-xs-normal text-muted-foreground">Mia (7), Leo (4)</span>
+        {journey === 1 && <span className="type-text-xs-normal text-muted-foreground">{who.kids}</span>}
       </Card>
       {applePay}
       {savedCard}
@@ -211,50 +219,48 @@ export function J1Checkout() {
   )
 }
 
-/** J1·6: booked. The plan moves to the app. */
-export function J1Booked() {
-  const { s, run } = useDemo()
+/** J1·5 and J2·7: booked. The weekend plan is optional: now on the next page, or later in the app. */
+export function Booked() {
+  const { s, run, go, journey } = useDemo()
   const desktop = usePageWide()
-  const plan = usePlan()
   const q = quoteOf(s)
-  const sunday = plan.find((p) => p.day === 'sun' && (p.id === 'zoo' || p.id === 'garden'))
-  const items = [...plan.filter((p) => ['magiquest', 'party', 'dinner', 'ropes', 'dance'].includes(p.id) && p.status !== 'Suggested'), ...(sunday ? [sunday] : [])]
-  const when = (p: PlanItem) => `${p.day === 'sat' ? 'Sat' : p.day === 'sun' ? 'Sun' : 'Fri'} ${p.time}`
   const hasParty = s.cart.some((c) => c.kind === 'birthday')
-  const list = (
-    <div className="flex min-w-0 flex-1 flex-col gap-3">
-      <Label>Your weekend plan, in the app</Label>
-      <ul className="flex flex-col gap-1.5">
-        {items.map((p) => (
-          <li key={p.id} className="flex justify-between gap-3 type-text-sm-normal">
-            <span>
-              {p.title}
-              {p.status === 'Suggested' && ' (suggested)'}
-            </span>
-            <span className="type-text-sm-semibold whitespace-nowrap">{when(p)}</span>
-          </li>
-        ))}
-      </ul>
+  const plan = (
+    <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <Label>Plan your weekend</Label>
+      <p className="type-text-sm-normal">
+        {hasParty && journey === 1
+          ? 'Wiley drafted a weekend around Mia’s party, from your trip. Change it now, or later in the Great Wolf app.'
+          : journey === 2 && s.ideas.length
+            ? 'Wiley drafted a weekend from your trip and the things you saved. Change it now, or later in the Great Wolf app.'
+            : 'Wiley drafted a weekend from your trip. Change it now, or later in the Great Wolf app.'}
+      </p>
     </div>
+  )
+  const planButton = (
+    <Button shape="pill" size={desktop ? 'default' : 'lg'} onClick={() => go(journey === 1 ? 'j1/6' : 'j2/8')}>
+      Plan our weekend
+    </Button>
+  )
+  const calendar = (
+    <Button shape="pill" size={desktop ? 'default' : 'lg'} variant="outline" intent="neutral" onClick={() => run([{ do: 'toast', text: 'Added to your calendar' }])}>
+      Add to calendar
+    </Button>
   )
   return (
     <Page className={cn(!desktop && 'pb-24')}>
       <Badge variant="subtle" size="sm" className="w-fit">
         <Icon icon={CheckIcon} /> Confirmed
       </Badge>
-      <Title sub={`Confirmation GWL-48213 · ${q?.suite.name ?? 'Junior Wolf Pup Den Suite'} · ${longDates(s.stay)}`}>{`You’re booked! See you ${s.stay.start ? toDate(s.stay.start).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : 'soon'}.`}</Title>
+      <Title sub={`Confirmation ${journey === 1 ? 'GWL-48213' : 'GWL-52907'} · ${q?.suite.name ?? 'Junior Wolf Pup Den Suite'} · ${longDates(s.stay)}`}>{`You’re booked! See you ${s.stay.start ? toDate(s.stay.start).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : 'soon'}.`}</Title>
       <Card className="gap-4 rounded-2xl border-2 border-foreground p-5">
         {desktop ? (
           <div className="flex items-start gap-8">
             <div className="flex min-w-0 flex-1 flex-col gap-4">
-              {list}
+              {plan}
               <div className="flex gap-2">
-                <Button shape="pill" onClick={() => run([{ do: 'toast', text: 'App link sent' }, { do: 'end', card: 'companion' }])}>
-                  Text me the app link
-                </Button>
-                <Button shape="pill" variant="outline" intent="neutral" onClick={() => run([{ do: 'toast', text: 'Added to your calendar' }])}>
-                  Add to calendar
-                </Button>
+                {planButton}
+                {calendar}
               </div>
             </div>
             <div className="flex shrink-0 flex-col items-center gap-2">
@@ -266,19 +272,13 @@ export function J1Booked() {
           </div>
         ) : (
           <>
-            {list}
-            <Button shape="pill" size="lg" onClick={() => run([{ do: 'end', card: 'companion' }])}>
-              Open in the Great Wolf app
-            </Button>
-            <Button shape="pill" size="lg" variant="outline" intent="neutral" onClick={() => run([{ do: 'toast', text: 'Added to your calendar' }])}>
-              Add to calendar
-            </Button>
+            {plan}
+            {planButton}
+            {calendar}
           </>
         )}
       </Card>
-      <WileyNote>
-        {hasParty ? 'Mia’s going to love this! I’ll be in the app when you arrive, with Saturday planned around the party.' : 'I’ll be in the app when you arrive, with your Saturday ready.'}
-      </WileyNote>
+      <WileyNote>{hasParty && journey === 1 ? 'Mia’s going to love this! I’ll be in the app when you arrive, with your weekend ready.' : 'I’ll be in the app when you arrive, with your weekend ready.'}</WileyNote>
     </Page>
   )
 }

@@ -30,13 +30,16 @@ Every chip leads somewhere different, on the page and in the chat. **Next** alwa
 | Step | Choices |
 | --- | --- |
 | J1·2 | See the rates · More room for the kids (KidCabin to the top) · Something cheaper (Deluxe Queen to the top) |
-| J1·3 | Nothing is preselected: pick Flexible or Standard with a rate card's **Select** or in the chat (both answer in the chat), What’s the difference?; then the party, MagiQuest or Not now. The rates follow the suite picked in J1·2 |
-| J1·4 | Opens on Friday; the day tabs follow Wiley. Zoo on Sunday · Garden of the Gods instead · Keep Sunday free; then Go to checkout or Move MagiQuest to Friday. **Add to calendar** downloads an .ics file; **Print** prints the whole weekend |
+| J1·3 | Nothing is preselected: pick Flexible or Standard with a rate card's **Select** or in the chat (both answer in the chat), What’s the difference?; then the party, MagiQuest or Not now, then Go to checkout (the weekend plan comes after booking). The rates follow the suite picked in J1·2 |
+| J1·5 | Booked. **Plan our weekend** opens the plan (optional: the family can plan later in the app) |
+| J1·6 | After booking. Opens on Friday; the day tabs follow Wiley. Zoo on Sunday · Garden of the Gods instead · Keep Sunday free; then Send it to the app, late check-out or Move MagiQuest to Friday. **Add to calendar** downloads an .ics file; **Print** prints the whole weekend |
 | J2·2 | The two questions re-rank and re-tag; then the water park · Compare the top two · See rates |
 | J2·3 | What else is nearby? · And for our 6-year-old? (spotlight moves to Fort Mackenzie) · Back to suites |
 | J2·4 | Add the zoo · Add Garden of the Gods · Plan our Sunday · Why skip Barr Trail? |
-| J2·5 | Nothing is preselected. Join free and save · Standard or Flexible as a guest, or a card’s **Select**. A Voyagers Club rate picked while signed out opens the join sheet; joining keeps a picked rate or asks which one |
-| J2·6 | Send the plan, then Preview the plan (the full plan: suite, dates, rate and total, things to do), Share with my partner too or Book it now. The page has Preview plan too |
+| J2·5 | Nothing is preselected. Join free and save · Standard or Flexible as a guest, or a card’s **Select**. A Voyagers Club rate picked while signed out opens the join sheet; joining keeps a picked rate or asks which one. Then the Trip Builder and Go to checkout (the weekend plan comes after booking) |
+| J2·6 | Checkout: prefilled from the new Voyagers Club account (or as a guest); Apple Pay or a card |
+| J2·7 | Booked. **Plan our weekend** opens the plan (optional: they can plan later in the app) |
+| J2·8 | After booking: the weekend by day from the trip and the things they saved. Share with my partner · Send it to the app · Preview the plan |
 
 ## How it is built
 
@@ -79,7 +82,7 @@ Every chip leads somewhere different, on the page and in the chat. **Next** alwa
   the header has no lodge bar or Book Now on mobile and the utility bar of the live site on desktop; the Ask Wiley pill
   has no "AI" tag; J2·1 offers the live site's three prompts ("What's the best deal for my stay?", "Suite for my family
   vacation", "Things to do nearby"); J2·2 sets the filters and Wiley's pick before asking the two questions; J1·1 desktop
-  is a hero card with "See other dates" and "Popular at this lodge"; J1·5 and J1·6 desktop use the frames' layouts.
+  is a hero card with "See other dates" and "Popular at this lodge"; J1·4 (checkout) and J1·5 (booked) desktop use the frames' layouts.
 
 ## Setup
 

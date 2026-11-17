@@ -7,7 +7,7 @@ import { cn } from '@anvil/lib/utils'
 import { AppHeader } from '~/components/local/AppHeader/AppHeader'
 import { EndCard, Launcher, NativeSheets, Toast } from '~/components/local/Overlays/Overlays'
 import { WileyPanel } from '~/components/local/WileyPanel/WileyPanel'
-import { DemoProvider, useDemo } from '~/state/demo'
+import { DemoProvider, stepsOf, useDemo } from '~/state/demo'
 import { PageWidthProvider } from '~/state/layout'
 import { StayBar } from '~/components/local/StayBar/StayBar'
 import type { DeviceMode, Journey } from '~/wiley/types'
@@ -17,15 +17,17 @@ const TITLES: Record<string, string> = {
   '1.1': 'Personalized lodge home',
   '1.2': 'Voice; the booking page reacts',
   '1.3': 'Member rates, then one add-on',
-  '1.4': 'Plan the weekend',
-  '1.5': 'Checkout handoff, native payment',
-  '1.6': 'Booked, the plan moves to the app',
+  '1.4': 'Checkout handoff, native payment',
+  '1.5': 'Booked: plan now or later',
+  '1.6': 'Plan the weekend, after booking',
   '2.1': 'Landing: describe your trip',
   '2.2': 'Two questions, suites re-rank',
   '2.3': 'Guided tour of the water park',
   '2.4': 'Things to do around the lodge',
   '2.5': 'Rates: book as guest or join free',
-  '2.6': 'Not ready? Save the plan',
+  '2.6': 'Checkout as a new member',
+  '2.7': 'Booked: plan now or later',
+  '2.8': 'Plan the weekend, after booking',
   '3.1': 'Two days before: Wiley checks you in',
   '3.2': 'Arrival: suite ready, today planned',
   '3.3': 'Picks that fit each kid',
@@ -46,7 +48,7 @@ function DemoBar() {
         <ToggleGroupItem value="3">Journey 3</ToggleGroupItem>
       </ToggleGroup>
       <div className="flex items-center gap-1" role="group" aria-label="Steps">
-        {[1, 2, 3, 4, 5, 6].map((n) => (
+        {Array.from({ length: stepsOf(journey) }, (_, i) => i + 1).map((n) => (
           <button
             key={n}
             type="button"
@@ -201,7 +203,7 @@ export function JourneyShell() {
   const { pathname } = useLocation()
   const m = /\/j([123])\/(\d)/.exec(pathname)
   const journey = (m ? Number(m[1]) : 1) as Journey
-  const step = m ? Math.min(6, Math.max(1, Number(m[2]))) : 1
+  const step = m ? Math.min(stepsOf(journey), Math.max(1, Number(m[2]))) : 1
   return (
     <DemoProvider journey={journey} step={step}>
       <Frame />

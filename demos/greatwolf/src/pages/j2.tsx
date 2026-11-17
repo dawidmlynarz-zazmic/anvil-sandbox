@@ -350,7 +350,7 @@ export function J2ThingsToDo() {
   )
 }
 
-/** J2·6: the weekend Wiley saved, by day, built from the trip. Not booked yet: book, preview the link or share it. */
+/** J2·8: after booking, the weekend by day, drafted from the trip and the things they saved. Preview, share or send it to the app. */
 export function J2SavedPlan() {
   const { s, run } = useDemo()
   const desktop = usePageWide()
@@ -401,10 +401,10 @@ export function J2SavedPlan() {
     <WeekendPlan
       plan={j2Plan(s)}
       title={`Your weekend · ${p.weekend.short}`}
-      tag={<WileyTag>Saved by Wiley</WileyTag>}
+      tag={<WileyTag>Built with Wiley</WileyTag>}
       primary={
-        <Button shape="pill" onClick={() => run([{ do: 'end', card: 'checkout' }])}>
-          Book now
+        <Button shape="pill" onClick={() => run([{ do: 'toast', text: 'Plan sent to the app' }, { do: 'end', card: 'plan' }])}>
+          Send to the app
         </Button>
       }
       lead={trip}

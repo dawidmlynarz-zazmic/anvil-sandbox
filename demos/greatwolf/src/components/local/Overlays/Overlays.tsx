@@ -178,7 +178,7 @@ function Share() {
   )
 }
 
-/** J2·6: the saved plan in full, as the link Wiley sends would show it. */
+/** J2·8: the booked weekend in full, as the link the family shares would show it. */
 function PlanPreview() {
   const { s, run, desktop } = useDemo()
   const p = savedPlan(s)
@@ -271,7 +271,7 @@ function PlanPreview() {
             </section>
           ))}
           <p className="type-text-xs-normal text-muted-foreground">
-            {s.planSaved ? 'Wiley sent a link to this plan. It brings back this plan and your chat. ' : ''}Not booked yet: nothing is reserved until you book.
+            Booked. Anyone with the link sees this plan; only you can change it.
           </p>
         </div>
         <div className="flex justify-end gap-2 border-t px-5 py-4">
@@ -310,8 +310,8 @@ export function EndCard() {
   if (!endCard) return null
   const copy = {
     companion: { title: 'Next: the in-venue companion', body: 'Angle B picks up here: the same Wiley in the Great Wolf app, with Saturday ready when the family arrives.' },
-    checkout: { title: 'Checkout is the same flow as Journey 1', body: 'Review, prefilled details and native payment, as in step 5 of Journey 1.' },
-    plan: { title: 'End of Journey 2', body: 'The saved plan and the chat come back from the link Wiley sent.' },
+    checkout: { title: 'Checkout is the same flow as Journey 1', body: 'Review, prefilled details and native payment, as in step 4 of Journey 1.' },
+    plan: { title: 'End of Journey 2', body: 'Booked as new Voyagers Club members, with the weekend planned and shared. The same Wiley is in the app when they arrive.' },
     stay: { title: 'End of Journey 3', body: 'One Wiley from the first search to the next birthday: on the site, in the app, and with the lodge team when a person is needed.' },
   }[endCard]
   return (
