@@ -24,15 +24,17 @@ const PAGES: Record<string, string> = {
   '1.1': 'Home',
   '1.2': 'Choose a suite',
   '1.3': 'Junior Wolf Pup Den rates',
-  '1.4': 'Weekend plan',
-  '1.5': 'Checkout',
-  '1.6': 'Confirmation',
+  '1.4': 'Checkout',
+  '1.5': 'Confirmation',
+  '1.6': 'Weekend plan',
   '2.1': 'Home',
   '2.2': 'Choose a suite',
   '2.3': 'Water park',
   '2.4': 'Things to do',
   '2.5': 'Junior Wolf Pup Den rates',
-  '2.6': 'Your plan',
+  '2.6': 'Checkout',
+  '2.7': 'Confirmation',
+  '2.8': 'Weekend plan',
 }
 
 const REACTIONS: Record<string, string> = { 'thumbs up': '👍', wave: '👋' }

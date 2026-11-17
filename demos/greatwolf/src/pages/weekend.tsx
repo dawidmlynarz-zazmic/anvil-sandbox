@@ -32,7 +32,7 @@ import { stayDays } from '~/state/stay'
 import type { PlanItem } from '~/wiley/types'
 import { Page, PlanRow, Title } from './shared'
 
-// The weekend by day, for both journeys (J1·4 and J2·6): day tabs on a phone (Friday first, following the day Wiley
+// The weekend by day, for both journeys (J1·6 and J2·8, after booking): day tabs on a phone (Friday first, following the day Wiley
 // points at), three columns on desktop, plus calendar export and a print layout with every day.
 //
 // The family can rearrange it themselves. Desktop: drag a card by its grip into another day or between two cards; a
@@ -55,7 +55,7 @@ interface Props {
   tag?: ReactNode
   /** The page's primary action, after Add to calendar and Print. */
   primary?: ReactNode
-  /** Before the days: e.g. the saved trip on J2·6. */
+  /** Before the days: e.g. the booked trip on J2·8. */
   lead?: ReactNode
   /** Print header: when, who and which suite. */
   printWhen: string

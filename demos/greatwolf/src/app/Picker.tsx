@@ -7,7 +7,7 @@ import { Logo, WileyAvatar } from '~/components/local/Brand/Brand'
 const resume = () => {
   try {
     const v = localStorage.getItem('gwl-v2:resume')
-    return v && /^\/j[123]\/[1-6]$/.test(v) ? v : null
+    return v && /^\/j[123]\/[1-8]$/.test(v) ? v : null
   } catch {
     return null
   }
@@ -17,12 +17,12 @@ const JOURNEYS = [
   {
     to: '/j1/1',
     title: 'Journey 1 · Returning family',
-    body: 'The Martinez family, signed in, books Mia’s 7th birthday weekend by voice: member rates, a party, a weekend plan and native checkout.',
+    body: 'The Martinez family, signed in, books Mia’s 7th birthday weekend by voice: member rates, a party and native checkout, then a weekend plan after booking.',
   },
   {
     to: '/j2/1',
     title: 'Journey 2 · First-time visitor',
-    body: 'A signed-out family with kids aged 3 and 6 describes their trip. Wiley re-ranks suites, tours the water park, finds things nearby and saves the plan.',
+    body: 'A signed-out family with kids aged 3 and 6 describes their trip. Wiley re-ranks suites, tours the water park and finds things nearby; they book as new members, then plan the weekend.',
   },
   {
     to: '/j3/1',

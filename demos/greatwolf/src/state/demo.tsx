@@ -12,7 +12,8 @@ import { seed } from './seed'
 // One provider holds the demo state, the Wiley conversation and the engine that plays scripted beats.
 // A beat is a user line, an agent line (with typing time), chips, a card, or an effect on the page.
 
-const STEPS = 6
+/** Steps per journey: Journey 2 has its own looking-around steps (water park, things to do) before the same booking funnel. */
+export const stepsOf = (j: Journey) => (j === 2 ? 8 : 6)
 
 interface Demo {
   s: DemoState
@@ -463,7 +464,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
   }, [])
   const toggleWiley = useCallback(() => setS((x) => ({ ...x, open: !x.open, snap: x.open ? x.snap : 'half' })), [])
 
-  const goStep = useCallback((n: number) => go(`j${journey}/${Math.min(STEPS, Math.max(1, n))}`), [go, journey])
+  const goStep = useCallback((n: number) => go(`j${journey}/${Math.min(stepsOf(journey), Math.max(1, n))}`), [go, journey])
 
   const startJourney = useCallback((j: Journey) => go(`j${j}/1`), [go])
 
@@ -573,8 +574,8 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
 
   const payApple = useCallback(() => {
     run([{ do: 'sheet', which: null }])
-    go('j1/6')
-  }, [run, go])
+    go(journey === 1 ? 'j1/5' : 'j2/7')
+  }, [run, go, journey])
 
   const next = useCallback(() => {
     if (sRef.current.sheet === 'join') return joinVoyagers()
@@ -602,7 +603,7 @@ export function DemoProvider({ journey, step, children }: { journey: Journey; st
     if (waiting?.card && sc?.cardDefaults && waiting.card.component in sc.cardDefaults) {
       return submitCard(waiting.id, sc.cardDefaults[waiting.card.component])
     }
-    if (step >= STEPS) return setEndCard(journey === 1 ? 'companion' : journey === 2 ? 'plan' : 'stay')
+    if (step >= stepsOf(journey)) return setEndCard(journey === 1 ? 'companion' : journey === 2 ? 'plan' : 'stay')
     goStep(step + 1)
   }, [journey, step, pick, submitCard, goStep, joinVoyagers, payApple, run, tapBanner])
 

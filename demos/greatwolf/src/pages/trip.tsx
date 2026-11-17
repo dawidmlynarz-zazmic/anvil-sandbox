@@ -13,7 +13,6 @@ import { Photo, WileyTag } from '~/components/local/Brand/Brand'
 import { CompactRates, SuiteCard } from '~/components/local/SuiteCard/SuiteCard'
 import { TripQuote } from '~/components/local/WileyCards/WileyCards'
 import { quoteOf, useDemo } from '~/state/demo'
-import { j1Plan, j2Plan } from '~/state/plan'
 import { guestsLong, shortDates } from '~/state/stay'
 import { usePageWide } from '~/state/layout'
 import { Page, Title } from './shared'
@@ -97,37 +96,6 @@ function SuiteItem({ onChange, desktop }: { onChange: () => void; desktop: boole
   )
 }
 
-/** The trip so far, beside the builder on desktop and under it on a phone. */
-function PlanPreview() {
-  const { s, journey, go } = useDemo()
-  // Both journeys preview the same day plan their weekend page shows (J1·4, J2·6), built from this trip.
-  const items = (journey === 1 ? j1Plan(s) : j2Plan(s))
-    .filter((p) => p.status !== 'Suggested' && p.id !== 'checkin')
-    .slice(0, 6)
-    .map((p) => ({ id: p.id, title: p.title, when: `${p.day === 'fri' ? 'Fri' : p.day === 'sat' ? 'Sat' : 'Sun'} ${p.time}`, note: p.status === 'Included' ? p.sub : undefined }))
-  return (
-    <Card className="gap-3 rounded-2xl p-4">
-      <p className="type-text-xs-semibold tracking-wide text-muted-foreground uppercase">Your weekend plan</p>
-      <ul className="flex flex-col gap-1.5">
-        {items.map((p) => (
-          <li key={p.id} className="flex justify-between gap-3 type-text-sm-normal">
-            <span className="flex min-w-0 flex-col">
-              {p.title}
-              {p.note && <span className="type-text-xs-normal text-muted-foreground">{p.note}</span>}
-            </span>
-            {p.when && <span className="type-text-sm-semibold whitespace-nowrap">{p.when}</span>}
-          </li>
-        ))}
-      </ul>
-      {journey !== 1 && (
-        <Button shape="pill" variant="outline" intent="neutral" className="w-fit" onClick={() => go('j2/6')}>
-          Open the weekend plan
-        </Button>
-      )}
-    </Card>
-  )
-}
-
 /** J1·3 and J2·5 after a rate is chosen. */
 export function TripBuilder() {
   const { s, journey, go, toggleExtra, chooseRate } = useDemo()
@@ -138,22 +106,14 @@ export function TripBuilder() {
   const filled = (k: ExtraKind) => s.cart.some((c) => c.kind === k)
   const firstOpen = kinds.find((k) => !filled(k))
   const suiteId = s.selected!.suite
-  // Journey 2 saves the trip from the header. Journey 1 finishes under the trip summary: checkout is the one primary,
-  // planning the weekend is optional, so it sits under it as a secondary.
-  const primary =
-    journey === 2 ? (
-      <Button shape="pill" size="lg" onClick={() => go('j2/6')}>
-        Save my trip
-      </Button>
-    ) : undefined
-  const finish = journey === 1 && (
+  // Both journeys finish under the trip summary. The weekend plan comes after booking (J1·6, J2·8), so nothing stands
+  // between the trip and checkout.
+  const finish = (
     <div className="flex flex-col gap-2">
-      <Button shape="pill" size="lg" className="w-full" onClick={() => go('j1/5')}>
+      <Button shape="pill" size="lg" className="w-full" onClick={() => go(journey === 1 ? 'j1/4' : 'j2/6')}>
         Go to checkout
       </Button>
-      <Button shape="pill" variant="outline" intent="neutral" className="w-full" onClick={() => go('j1/4')}>
-        Plan our weekend
-      </Button>
+      <p className="text-center type-text-xs-normal text-muted-foreground">You can plan your weekend after you book.</p>
     </div>
   )
   const steps = (
@@ -192,7 +152,7 @@ export function TripBuilder() {
   )
   return (
     <Page wide>
-      <Title tag={<WileyTag>Built with Wiley</WileyTag>} sub={`${shortDates(s.stay) ?? 'Dates to pick'} · ${guestsLong(s.stay)}${desktop ? ' · Wiley suggests, you decide' : ''}`} actions={primary}>
+      <Title tag={<WileyTag>Built with Wiley</WileyTag>} sub={`${shortDates(s.stay) ?? 'Dates to pick'} · ${guestsLong(s.stay)}${desktop ? ' · Wiley suggests, you decide' : ''}`}>
         Your trip
       </Title>
       {steps}
@@ -206,7 +166,6 @@ export function TripBuilder() {
           <div className="sticky top-20 flex flex-col gap-4">
             <TripQuote title="Your trip so far" />
             {finish}
-            <PlanPreview />
           </div>
         </div>
       ) : (
@@ -214,14 +173,11 @@ export function TripBuilder() {
           <SuiteItem desktop={desktop} onChange={() => setChanging((v) => !v)} />
           {rates}
           {sections}
-          <PlanPreview />
-          {finish && (
-            // The summary the stay bar folds away, in full at the end of the trip, with the way out under it.
-            <section aria-label="Your trip so far" className="flex flex-col gap-3">
-              <TripQuote title="Your trip so far" />
-              {finish}
-            </section>
-          )}
+          {/* The summary the stay bar folds away, in full at the end of the trip, with the way out under it. */}
+          <section aria-label="Your trip so far" className="flex flex-col gap-3">
+            <TripQuote title="Your trip so far" />
+            {finish}
+          </section>
         </div>
       )}
     </Page>

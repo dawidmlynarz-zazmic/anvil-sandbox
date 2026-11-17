@@ -58,20 +58,17 @@ const PITCH_MOBILE: Record<J, Partial<Record<ExtraKind, string>>> = {
 }
 
 const DONE: Record<J, string> = {
-  1: 'That’s your trip. Ready to check out, or want to plan the weekend first?',
-  2: 'Your trip’s ready. Save it for later, or book now?',
+  1: 'That’s your trip. Ready to check out? You can plan the weekend after you book.',
+  2: 'That’s your trip. Ready to check out? You can plan the weekend after you book.',
 }
 
 function doneChips(j: J): Option[] {
   return j === 1
     ? [
-        { label: 'Go to checkout', then: [fx({ do: 'go', to: 'j1/5' })] },
-        { label: 'Plan our weekend', then: [fx({ do: 'go', to: 'j1/4' })] },
+        { label: 'Go to checkout', then: [fx({ do: 'go', to: 'j1/4' })] },
       ]
     : [
-        // Says what J2·6 opens with, so the chat shows it once.
-        { label: 'Save my trip', say: 'Let me check with my partner first', then: [fx({ do: 'go', to: 'j2/6' })] },
-        { label: 'Go to checkout', then: [fx({ do: 'end', card: 'checkout' })] },
+        { label: 'Go to checkout', then: [fx({ do: 'go', to: 'j2/6' })] },
       ]
 }
 
