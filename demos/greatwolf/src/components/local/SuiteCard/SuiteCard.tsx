@@ -7,7 +7,6 @@ import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronU
 import { cn } from '@anvil/lib/utils'
 import { money, ratesFor, type Rate, type RateKey, type Suite } from '~/data/fixtures'
 import { suitePhotos } from '~/data/photos'
-import { Sample } from '../Brand/Brand'
 
 // ANVIL-CANDIDATE: the live greatwolf.com suite card (gallery with tier tag and counter, details, water park info box,
 // "Starting Rate" price block, View / Hide Rates) and its rate cards. Anvil's Offer Card holds one product and one CTA;
@@ -76,7 +75,7 @@ export function Gallery({ suite, className }: { suite: Suite; className?: string
   )
 }
 
-export function RateCard({ rate, signedIn, selected, onSelect, sample }: { rate: Rate; signedIn: boolean; selected: boolean; onSelect: () => void; sample?: boolean }) {
+export function RateCard({ rate, signedIn, selected, onSelect }: { rate: Rate; signedIn: boolean; selected: boolean; onSelect: () => void }) {
   return (
     <div
       id={`rate-${rate.key}`}
@@ -94,7 +93,7 @@ export function RateCard({ rate, signedIn, selected, onSelect, sample }: { rate:
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="gwl-display text-2xl">
-            {money(rate.price)} {sample && <Sample className="align-middle" />}
+            {money(rate.price)}
           </p>
           <p className="type-text-xs-normal">Night Avg.</p>
         </div>
@@ -129,11 +128,10 @@ interface Props {
 
 function Rates({ suite, desktop, signedIn, selected, onSelectRate }: Pick<Props, 'suite' | 'desktop' | 'signedIn' | 'selected' | 'onSelectRate'>) {
   const rates = ratesFor(suite.id).filter((r) => !signedIn || r.member)
-  const sample = !suite.real
   return (
     <div id={`rates-${suite.id}`} className={cn('gwl-accordion grid scroll-mt-4 gap-4 border-t bg-muted/40 p-4', desktop && (rates.length > 2 ? 'grid-cols-4 p-6' : 'grid-cols-2 p-6'))}>
       {rates.map((r) => (
-        <RateCard key={r.key} rate={r} signedIn={signedIn} selected={selected === r.key} onSelect={() => onSelectRate(r.key)} sample={sample} />
+        <RateCard key={r.key} rate={r} signedIn={signedIn} selected={selected === r.key} onSelect={() => onSelectRate(r.key)} />
       ))}
     </div>
   )
@@ -179,7 +177,7 @@ export function SuiteCard(p: Props) {
         <Icon icon={CircleCheckIcon} size="xs" /> Promo Applied
       </p>
       <p className="gwl-display text-3xl">
-        {money(suite.from)} {!suite.real && <Sample className="align-middle" />}
+        {money(suite.from)}
       </p>
       <p className="type-text-xs-semibold">Night Avg.</p>
       <Button
